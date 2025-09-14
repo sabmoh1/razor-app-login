@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +29,6 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Eye, EyeOff, Lock, Mail, Loader2, AlertCircle } from "lucide-react";
-import { simulateAuthentication } from "@/ai/flows/simulate-authentication";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -53,11 +54,28 @@ export default function LoginForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
     startTransition(async () => {
-      const result = await simulateAuthentication(values);
-      if (result.success) {
+      try {
+        await signInWithEmailAndPassword(auth, values.email, values.password);
         router.push("/welcome");
-      } else {
-        setError(result.message);
+      } catch (error: any) {
+        let errorMessage = "An unexpected error occurred.";
+        switch (error.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            errorMessage = 'Invalid email or password. Please try again.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Please enter a valid email address.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Too many login attempts. Please try again later.';
+            break;
+          default:
+            errorMessage = 'Authentication failed. Please try again.';
+            break;
+        }
+        setError(errorMessage);
         form.reset({ email: values.email, password: "" });
       }
     });
