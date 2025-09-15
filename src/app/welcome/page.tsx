@@ -3,10 +3,10 @@
 
 import { useEffect, useRef, Suspense } from 'react';
 import Head from 'next/head';
-import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 function WelcomeContent() {
-  const searchParams = useSearchParams();
+  const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
@@ -37,6 +37,12 @@ function WelcomeContent() {
   };
 
   useEffect(() => {
+    const validity = sessionStorage.getItem('razor_session_validity');
+    if (!validity) {
+      router.push('/');
+      return;
+    }
+
     // --- Matrix background script ---
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -79,7 +85,6 @@ function WelcomeContent() {
     const matrixInterval = setInterval(drawMatrix, 40);
 
     // --- Timer script ---
-    const validity = searchParams.get('validity');
     let totalSeconds = parseValidityToSeconds(validity);
     const timerEl = timerRef.current;
 
@@ -102,6 +107,8 @@ function WelcomeContent() {
         }
         clearInterval(timerInterval);
         if (timerEl) timerEl.innerText = 'EXPIRED';
+        sessionStorage.removeItem('razor_session_validity');
+        router.push('/');
       }
     }, 1000);
     updateTimer();
@@ -212,8 +219,6 @@ function WelcomeContent() {
     document.addEventListener("click", handleDocumentClick);
     usernameButton.addEventListener("mousedown", handleUsernameMouseDown);
 
-    // The script for "movingText" is omitted as the element does not exist in the HTML.
-
     // --- Cleanup function ---
     return () => {
       window.removeEventListener('resize', matrixResize);
@@ -233,7 +238,7 @@ function WelcomeContent() {
         usernameButton.removeEventListener("mousedown", handleUsernameMouseDown);
       }
     };
-  }, [searchParams]);
+  }, [router]);
 
   return (
     <>

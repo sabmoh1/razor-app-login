@@ -58,7 +58,8 @@ export default function LoginForm() {
           }
 
           if (found) {
-            router.push(`/welcome?validity=${validity}`);
+            sessionStorage.setItem('razor_session_validity', validity);
+            router.push('/welcome');
           } else {
             setError("ACCESS DENIED: Incorrect password");
             form.reset({ password: "" });
