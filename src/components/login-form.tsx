@@ -41,13 +41,20 @@ export default function LoginForm() {
     setError(null);
     startTransition(async () => {
       try {
-        const dbRef = ref(database, 'secret/password');
+        const dbRef = ref(database, 'secret');
         const snapshot = await get(dbRef);
 
-        if (snapshot.exists() && snapshot.val() === values.password) {
-          router.push("/welcome");
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          if (data.password === values.password) {
+            const validity = data.validity || '1h'; // Default to 1 hour if not set
+            router.push(`/welcome?validity=${validity}`);
+          } else {
+            setError("ACCESS DENIED: Incorrect password");
+            form.reset({ password: "" });
+          }
         } else {
-          setError("ACCESS DENIED: Incorrect password");
+          setError("ACCESS DENIED: No password set in the database.");
           form.reset({ password: "" });
         }
       } catch (error: any) {

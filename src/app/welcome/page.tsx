@@ -1,10 +1,12 @@
 
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, Suspense } from 'react';
 import Head from 'next/head';
+import { useSearchParams } from 'next/navigation';
 
-export default function WelcomePage() {
+function WelcomeContent() {
+  const searchParams = useSearchParams();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
@@ -12,6 +14,27 @@ export default function WelcomePage() {
   const statusTextRef = useRef<HTMLSpanElement>(null);
   const timerRef = useRef<HTMLDivElement>(null);
   const usernameButtonRef = useRef<HTMLAnchorElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  const parseValidityToSeconds = (validity: string | null): number => {
+    if (!validity) return 60 * 60; // Default to 1 hour
+    const value = parseInt(validity.slice(0, -1));
+    const unit = validity.slice(-1).toLowerCase();
+    if (isNaN(value)) return 60 * 60;
+
+    switch (unit) {
+      case 'h':
+        return value * 3600;
+      case 'd':
+        return value * 86400;
+      case 'm':
+        return value * 60;
+      case 's':
+        return value;
+      default:
+        return 60 * 60;
+    }
+  };
 
   useEffect(() => {
     // --- Matrix background script ---
@@ -28,6 +51,7 @@ export default function WelcomePage() {
     const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
 
     function matrixResize(){
+      if (!canvas) return;
       W = canvas.width = window.innerWidth;
       H = canvas.height = window.innerHeight;
       cols = Math.floor(W / 10) + 1;
@@ -36,6 +60,7 @@ export default function WelcomePage() {
     window.addEventListener('resize', matrixResize);
 
     function drawMatrix(){
+      if (!ctx) return;
       ctx.fillStyle = 'rgba(0,0,0,0.22)';
       ctx.fillRect(0,0,W,H);
       ctx.font = '12px monospace';
@@ -54,8 +79,10 @@ export default function WelcomePage() {
     const matrixInterval = setInterval(drawMatrix, 40);
 
     // --- Timer script ---
-    let totalSeconds = 60*60; 
+    const validity = searchParams.get('validity');
+    let totalSeconds = parseValidityToSeconds(validity);
     const timerEl = timerRef.current;
+
     function updateTimer(){
       if (!timerEl) return;
       const h = Math.floor(totalSeconds/3600);
@@ -63,12 +90,20 @@ export default function WelcomePage() {
       const s = totalSeconds%60;
       timerEl.innerText = `${String(h).padStart(2,'0')} : ${String(m).padStart(2,'0')} : ${String(s).padStart(2,'0')}`;
     }
-    const timerInterval = setInterval(()=>{ 
-      if(totalSeconds>0) {
+    
+    const timerInterval = setInterval(() => { 
+      if (totalSeconds > 0) {
         totalSeconds--; 
         updateTimer(); 
+      } else {
+        // Time's up, disconnect websocket
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
+        clearInterval(timerInterval);
+        if (timerEl) timerEl.innerText = 'EXPIRED';
       }
-    },1000);
+    }, 1000);
     updateTimer();
 
     // --- WebSocket and UI update script ---
@@ -102,47 +137,56 @@ export default function WelcomePage() {
       }
     }
     
-    let ws: WebSocket;
     let reconnectTimeout: NodeJS.Timeout;
 
     function connectWebSocket() {
-        const WS_URL = 'wss://gamerazorvaule.onrender.com/';
-        ws = new WebSocket(WS_URL);
+      // Don't connect if time is already expired
+      if (totalSeconds <= 0) {
+        setStatusIndicator(false);
+        return;
+      }
+      const WS_URL = 'wss://gamerazorvaule.onrender.com/';
+      const ws = new WebSocket(WS_URL);
+      wsRef.current = ws;
 
-        ws.onopen = () => { 
-            setStatusIndicator(true); 
-        };
+      ws.onopen = () => { 
+        setStatusIndicator(true); 
+      };
 
-        ws.onmessage = (ev) => {
-            try {
-                const parsed = JSON.parse(ev.data);
-                if (parsed && typeof parsed === 'object') {
-                    if (parsed.crashValue !== undefined) {
-                        setCrashText(parsed.crashValue);
-                    } else if (parsed.value !== undefined) {
-                        setCrashText(parsed.value);
-                    } else {
-                        setCrashText(JSON.stringify(parsed));
-                    }
-                } else { 
-                    setCrashText(ev.data); 
-                }
-            } catch (e) { 
-                setCrashText(ev.data); 
+      ws.onmessage = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.data);
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.crashValue !== undefined) {
+              setCrashText(parsed.crashValue);
+            } else if (parsed.value !== undefined) {
+              setCrashText(parsed.value);
+            } else {
+              setCrashText(JSON.stringify(parsed));
             }
-        };
+          } else { 
+            setCrashText(ev.data); 
+          }
+        } catch (e) { 
+          setCrashText(ev.data); 
+        }
+      };
 
-        ws.onclose = () => { 
-            setStatusIndicator(false); 
-            clearTimeout(reconnectTimeout);
-            reconnectTimeout = setTimeout(connectWebSocket, 1200); 
-        };
+      ws.onclose = () => { 
+        wsRef.current = null;
+        setStatusIndicator(false); 
+        clearTimeout(reconnectTimeout);
+        // Only reconnect if the timer has not expired
+        if (totalSeconds > 0) {
+            reconnectTimeout = setTimeout(connectWebSocket, 1200);
+        }
+      };
 
-        ws.onerror = (e) => { 
-            setStatusIndicator(false); 
-            console.error('WebSocket error:', e);
-            ws.close(); // This will trigger onclose and attempt to reconnect
-        };
+      ws.onerror = (e) => { 
+        setStatusIndicator(false); 
+        console.error('WebSocket error:', e);
+        ws.close(); // This will trigger onclose and attempt to reconnect
+      };
     }
     
     connectWebSocket();
@@ -176,12 +220,12 @@ export default function WelcomePage() {
       clearInterval(matrixInterval);
       clearInterval(timerInterval);
       clearTimeout(reconnectTimeout);
-      if (ws) {
-        ws.onopen = null;
-        ws.onmessage = null;
-        ws.onerror = null;
-        ws.onclose = null; 
-        ws.close();
+      if (wsRef.current) {
+        wsRef.current.onopen = null;
+        wsRef.current.onmessage = null;
+        wsRef.current.onerror = null;
+        wsRef.current.onclose = null; 
+        wsRef.current.close();
       }
       if (usernameButton) {
         usernameButton.removeEventListener("click", handleUsernameClick);
@@ -189,7 +233,7 @@ export default function WelcomePage() {
         usernameButton.removeEventListener("mousedown", handleUsernameMouseDown);
       }
     };
-  }, []);
+  }, [searchParams]);
 
   return (
     <>
@@ -206,7 +250,11 @@ export default function WelcomePage() {
             --accent:#00ffd1;
           }
           *{box-sizing:border-box}
-          html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;font-weight: 700;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+          html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+          body, .font-orbitron {
+             font-family: 'Orbitron', sans-serif;
+             font-weight: 700;
+          }
           canvas#matrix{position:fixed;inset:0;z-index:0;display:block}
           .wrap{position:relative;z-index:3;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
           .panel{
@@ -217,14 +265,16 @@ export default function WelcomePage() {
           }
           .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
-          .brand h1{
-            font-size:2rem;margin:0;color:var(--neon-green);letter-spacing:4px;font-weight:900;
+          .brand h1, #crashValue {
             text-shadow:
               0 0 5px var(--neon-green),
               0 0 10px var(--neon-green),
               0 0 20px var(--neon-green),
               0 0 40px var(--neon-green),
               0 0 80px rgba(0,255,106,0.5);
+          }
+          .brand h1{
+            font-size:2rem;margin:0;color:var(--neon-green);letter-spacing:4px;font-weight:900;
           }
           .display-circle{
             width:420px;height:420px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;
@@ -234,12 +284,6 @@ export default function WelcomePage() {
           }
           #crashValue{
             font-size:6rem;font-weight:900;color:var(--neon-green);
-            text-shadow:
-              0 0 5px var(--neon-green),
-              0 0 10px var(--neon-green),
-              0 0 20px var(--neon-green),
-              0 0 40px var(--neon-green),
-              0 0 80px rgba(0,255,106,0.5);
             letter-spacing: 1px;transition:transform .18s ease, opacity .18s ease;
             text-align:center;white-space:nowrap;
             -webkit-font-smoothing:antialiased;
@@ -336,5 +380,13 @@ export default function WelcomePage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function WelcomePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <WelcomeContent />
+    </Suspense>
   );
 }
