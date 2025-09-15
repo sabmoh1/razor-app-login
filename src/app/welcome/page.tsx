@@ -4,6 +4,8 @@
 import { useEffect, useRef, Suspense } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
+import { database } from "@/lib/firebase";
+import { ref, remove } from "firebase/database";
 
 function WelcomeContent() {
   const router = useRouter();
@@ -38,7 +40,9 @@ function WelcomeContent() {
 
   useEffect(() => {
     const validity = sessionStorage.getItem('razor_session_validity');
-    if (!validity) {
+    const passwordKey = sessionStorage.getItem('razor_session_key');
+
+    if (!validity || !passwordKey) {
       router.push('/');
       return;
     }
@@ -88,6 +92,27 @@ function WelcomeContent() {
     let totalSeconds = parseValidityToSeconds(validity);
     const timerEl = timerRef.current;
 
+    async function handleSessionEnd() {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      if (timerEl) timerEl.innerText = 'EXPIRED';
+      
+      // Delete from Firebase
+      if (passwordKey) {
+        try {
+          const passwordRef = ref(database, `passwords/${passwordKey}`);
+          await remove(passwordRef);
+        } catch (error) {
+          console.error("Failed to delete password:", error);
+        }
+      }
+
+      sessionStorage.removeItem('razor_session_validity');
+      sessionStorage.removeItem('razor_session_key');
+      router.push('/');
+    }
+
     function updateTimer(){
       if (!timerEl) return;
       const h = Math.floor(totalSeconds/3600);
@@ -101,14 +126,8 @@ function WelcomeContent() {
         totalSeconds--; 
         updateTimer(); 
       } else {
-        // Time's up, disconnect websocket
-        if (wsRef.current) {
-          wsRef.current.close();
-        }
         clearInterval(timerInterval);
-        if (timerEl) timerEl.innerText = 'EXPIRED';
-        sessionStorage.removeItem('razor_session_validity');
-        router.push('/');
+        handleSessionEnd();
       }
     }, 1000);
     updateTimer();
@@ -256,9 +275,13 @@ function WelcomeContent() {
           }
           *{box-sizing:border-box}
           html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
-          body, .font-orbitron {
-             font-family: 'Orbitron', sans-serif;
-             font-weight: 700;
+          body, .font-orbitron, .timer-big, .last-box .value, .last-box .label, #crashValue {
+             font-family: 'Orbitron', sans-serif !important;
+             font-weight: 900 !important;
+          }
+          .brand .logo-text, .brand h1, #username {
+            font-family: 'Orbitron', sans-serif !important;
+            font-weight: 900 !important;
           }
           canvas#matrix{position:fixed;inset:0;z-index:0;display:block}
           .wrap{position:relative;z-index:3;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -270,7 +293,7 @@ function WelcomeContent() {
           }
           .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
-          .brand h1, #crashValue {
+          #crashValue, .brand h1, .status-dot.connected {
             text-shadow:
               0 0 5px var(--neon-green),
               0 0 10px var(--neon-green),
@@ -339,10 +362,6 @@ function WelcomeContent() {
           }
           .status-dot.connected{
             background:var(--neon-green);
-             box-shadow:
-              0 0 5px var(--neon-green),
-              0 0 10px var(--neon-green),
-              0 0 15px var(--neon-green);
           }
           footer{display:none}
           @media (max-width:900px){

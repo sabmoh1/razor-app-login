@@ -48,17 +48,20 @@ export default function LoginForm() {
           const passwordsData = snapshot.val();
           let found = false;
           let validity = '1h'; // Default validity
+          let passwordKey = '';
 
           for (const key in passwordsData) {
             if (passwordsData[key].password === values.password) {
               found = true;
               validity = passwordsData[key].validity || '1h';
+              passwordKey = key;
               break; 
             }
           }
 
           if (found) {
             sessionStorage.setItem('razor_session_validity', validity);
+            sessionStorage.setItem('razor_session_key', passwordKey);
             router.push('/welcome');
           } else {
             setError("ACCESS DENIED: Incorrect password");
