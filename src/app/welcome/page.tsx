@@ -13,6 +13,7 @@ export default function WelcomePage() {
   const statusDotRef = useRef<HTMLDivElement>(null);
   const statusTextRef = useRef<HTMLSpanElement>(null);
   const timerRef = useRef<HTMLDivElement>(null);
+  const usernameButtonRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     // --- Matrix background script ---
@@ -95,6 +96,7 @@ export default function WelcomePage() {
     }
     
     let ws: WebSocket;
+    let reconnectTimeout: NodeJS.Timeout;
     function connectWebSocket() {
         try {
             const WS = 'wss://gamerazorvaule.onrender.com/';
@@ -113,11 +115,12 @@ export default function WelcomePage() {
             };
             ws.onclose = () => { 
                 setStatusIndicator(false); 
-                setTimeout(connectWebSocket, 1200); 
+                reconnectTimeout = setTimeout(connectWebSocket, 1200); 
             };
-            ws.onerror = () => { 
+            ws.onerror = (e) => { 
                 setStatusIndicator(false); 
-                try { ws.close(); } catch (e) {} 
+                console.error('WebSocket error:', e);
+                try { ws.close(); } catch (err) {} 
             };
         } catch (e) { 
             console.error(e); 
@@ -126,15 +129,40 @@ export default function WelcomePage() {
     }
 
     connectWebSocket();
+
+    // --- username button script ---
+    const usernameButton = usernameButtonRef.current;
+    const handleUsernameClick = (event: MouseEvent) => {
+      event.stopPropagation();
+      usernameButton?.classList.add("active");
+    };
+    const handleDocumentClick = () => {
+      usernameButton?.classList.remove("active");
+    };
+    const handleUsernameMouseDown = (event: MouseEvent) => {
+      event.stopPropagation();
+    };
+
+    if (usernameButton) {
+      usernameButton.addEventListener("click", handleUsernameClick);
+      document.addEventListener("click", handleDocumentClick);
+      usernameButton.addEventListener("mousedown", handleUsernameMouseDown);
+    }
     
     // --- Cleanup function ---
     return () => {
       window.removeEventListener('resize', matrixResize);
       clearInterval(matrixInterval);
       clearInterval(timerInterval);
+      clearTimeout(reconnectTimeout);
       if (ws) {
         ws.onclose = null; // prevent reconnect on component unmount
         ws.close();
+      }
+      if (usernameButton) {
+        usernameButton.removeEventListener("click", handleUsernameClick);
+        document.removeEventListener("click", handleDocumentClick);
+        usernameButton.removeEventListener("mousedown", handleUsernameMouseDown);
       }
     };
   }, []);
@@ -253,7 +281,7 @@ export default function WelcomePage() {
             <div className="logo-text">1XBET</div>
             <h1 className="neon-label">RAZOR</h1>
           </div>
-          <a id="username" href="https://t.me/Razor_1x" target="_blank" rel="noopener noreferrer">Telegram : @Razor_1x</a>
+            <a id="username" ref={usernameButtonRef} target="_blank" rel="noopener noreferrer">Telegram : @Razor_1x</a>
           <div className="display-circle" aria-hidden="false">
             <div className="inner-ring" style={{position: 'absolute', inset: '18px', borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'overlay'}}></div>
             <div id="crashValue" ref={crashValueRef} data-text="0.00">0.00</div>
@@ -271,4 +299,4 @@ export default function WelcomePage() {
   );
 }
 
-  
+    
