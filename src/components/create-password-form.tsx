@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { database } from "@/lib/firebase";
-import { ref, set } from "firebase/database";
+import { ref, push, set } from "firebase/database";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -72,11 +72,13 @@ export default function CreatePasswordForm({ adminPassword }: CreatePasswordForm
 
   async function onCreateSubmit(values: z.infer<typeof createSchema>) {
     try {
-      const passwordRef = ref(database, 'secret/password');
-      const validityRef = ref(database, 'secret/validity');
+      const passwordsListRef = ref(database, 'passwords');
+      const newPasswordRef = push(passwordsListRef);
       
-      await set(passwordRef, values.newPassword);
-      await set(validityRef, values.validity);
+      await set(newPasswordRef, {
+        password: values.newPassword,
+        validity: values.validity
+      });
 
       toast({
         title: "Success",
