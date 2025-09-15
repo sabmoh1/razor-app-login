@@ -206,7 +206,7 @@ export default function WelcomePage() {
             --accent:#00ffd1;
           }
           *{box-sizing:border-box}
-          html,body{height:100%;margin:0;font-family: 'Orbitron', "Segoe UI", Roboto, monospace;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+          html,body{height:100%;margin:0;font-family: 'Orbitron', monospace;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
           canvas#matrix{position:fixed;inset:0;z-index:0;display:block}
           .wrap{position:relative;z-index:3;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
           .panel{
@@ -219,7 +219,12 @@ export default function WelcomePage() {
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
           .brand h1{
             font-size:2rem;margin:0;color:var(--neon-green);letter-spacing:4px;font-weight:900;
-            text-shadow:0 0 6px rgba(0,255,120,0.28), 0 0 12px rgba(0,255,120,0.12);
+            text-shadow:
+              0 0 5px var(--neon-green),
+              0 0 10px var(--neon-green),
+              0 0 20px var(--neon-green),
+              0 0 40px var(--neon-green),
+              0 0 80px rgba(0,255,106,0.5);
           }
           .display-circle{
             width:420px;height:420px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;
@@ -229,7 +234,12 @@ export default function WelcomePage() {
           }
           #crashValue{
             font-size:6rem;font-weight:900;color:var(--neon-green);
-            text-shadow:0 0 8px rgba(0,255,120,0.22),0 0 18px rgba(0,255,120,0.10);
+            text-shadow:
+              0 0 5px var(--neon-green),
+              0 0 10px var(--neon-green),
+              0 0 20px var(--neon-green),
+              0 0 40px var(--neon-green),
+              0 0 80px rgba(0,255,106,0.5);
             letter-spacing: 1px;transition:transform .18s ease, opacity .18s ease;
             text-align:center;white-space:nowrap;
             -webkit-font-smoothing:antialiased;
@@ -267,7 +277,7 @@ export default function WelcomePage() {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-family: monospace;
+            font-family: 'Orbitron', monospace;
             font-size: 16px;
             color: white;
             z-index: 9999;
@@ -280,7 +290,10 @@ export default function WelcomePage() {
           }
           .status-dot.connected{
             background:var(--neon-green);
-            box-shadow:0 0 8px rgba(0,255,120,0.28), 0 0 16px rgba(0,255,120,0.12);
+             box-shadow:
+              0 0 5px var(--neon-green),
+              0 0 10px var(--neon-green),
+              0 0 15px var(--neon-green);
           }
           footer{display:none}
           @media (max-width:900px){
@@ -325,5 +338,3 @@ export default function WelcomePage() {
     </>
   );
 }
-
-    
