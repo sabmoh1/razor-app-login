@@ -2,11 +2,9 @@
 "use client";
 
 import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 
 export default function WelcomePage() {
-  const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
@@ -97,58 +95,59 @@ export default function WelcomePage() {
     
     let ws: WebSocket;
     let reconnectTimeout: NodeJS.Timeout;
+
     function connectWebSocket() {
-        try {
-            const WS = 'wss://gamerazorvaule.onrender.com/';
-            ws = new WebSocket(WS);
+        const WS = 'wss://gamerazorvaule.onrender.com/';
+        ws = new WebSocket(WS);
 
-            ws.onopen = () => { setStatusIndicator(true); };
-            ws.onmessage = (ev) => {
-                try {
-                    const parsed = JSON.parse(ev.data);
-                    if (parsed && typeof parsed === 'object') {
-                        if (parsed.crashValue !== undefined) return setCrashText(parsed.crashValue);
-                        if (parsed.value !== undefined) return setCrashText(parsed.value);
-                        return setCrashText(JSON.stringify(parsed));
-                    } else { return setCrashText(parsed); }
-                } catch (e) { setCrashText(ev.data); }
-            };
-            ws.onclose = () => { 
-                setStatusIndicator(false); 
-                reconnectTimeout = setTimeout(connectWebSocket, 1200); 
-            };
-            ws.onerror = (e) => { 
-                setStatusIndicator(false); 
-                console.error('WebSocket error:', e);
-                try { ws.close(); } catch (err) {} 
-            };
-        } catch (e) { 
-            console.error(e); 
+        ws.onopen = () => { setStatusIndicator(true); };
+        ws.onmessage = (ev) => {
+            try {
+                const parsed = JSON.parse(ev.data);
+                if (parsed && typeof parsed === 'object') {
+                    if (parsed.crashValue !== undefined) return setCrashText(parsed.crashValue);
+                    if (parsed.value !== undefined) return setCrashText(parsed.value);
+                    return setCrashText(JSON.stringify(parsed));
+                } else { return setCrashText(parsed); }
+            } catch (e) { setCrashText(ev.data); }
+        };
+        ws.onclose = () => { 
             setStatusIndicator(false); 
-        }
+            reconnectTimeout = setTimeout(connectWebSocket, 1200); 
+        };
+        ws.onerror = (e) => { 
+            setStatusIndicator(false); 
+            console.error('WebSocket error:', e);
+            ws.close();
+        };
     }
-
+    
     connectWebSocket();
 
     // --- username button script ---
     const usernameButton = usernameButtonRef.current;
+    if (!usernameButton) return;
+
     const handleUsernameClick = (event: MouseEvent) => {
       event.stopPropagation();
-      usernameButton?.classList.add("active");
+      usernameButton.classList.add("active");
     };
+
     const handleDocumentClick = () => {
-      usernameButton?.classList.remove("active");
+      usernameButton.classList.remove("active");
     };
+
     const handleUsernameMouseDown = (event: MouseEvent) => {
       event.stopPropagation();
     };
 
-    if (usernameButton) {
-      usernameButton.addEventListener("click", handleUsernameClick);
-      document.addEventListener("click", handleDocumentClick);
-      usernameButton.addEventListener("mousedown", handleUsernameMouseDown);
-    }
-    
+    usernameButton.addEventListener("click", handleUsernameClick);
+    document.addEventListener("click", handleDocumentClick);
+    usernameButton.addEventListener("mousedown", handleUsernameMouseDown);
+
+    // There is a script block trying to animate an element with id "movingText" which does not exist.
+    // I am omitting that script block to avoid errors.
+
     // --- Cleanup function ---
     return () => {
       window.removeEventListener('resize', matrixResize);
@@ -159,11 +158,9 @@ export default function WelcomePage() {
         ws.onclose = null; // prevent reconnect on component unmount
         ws.close();
       }
-      if (usernameButton) {
-        usernameButton.removeEventListener("click", handleUsernameClick);
-        document.removeEventListener("click", handleDocumentClick);
-        usernameButton.removeEventListener("mousedown", handleUsernameMouseDown);
-      }
+      usernameButton.removeEventListener("click", handleUsernameClick);
+      document.removeEventListener("click", handleDocumentClick);
+      usernameButton.removeEventListener("mousedown", handleUsernameMouseDown);
     };
   }, []);
 
@@ -298,5 +295,3 @@ export default function WelcomePage() {
     </>
   );
 }
-
-    
