@@ -206,7 +206,7 @@ export default function WelcomePage() {
             --accent:#00ffd1;
           }
           *{box-sizing:border-box}
-          html,body{height:100%;margin:0;font-family: 'Orbitron', monospace;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+          html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;font-weight: 700;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
           canvas#matrix{position:fixed;inset:0;z-index:0;display:block}
           .wrap{position:relative;z-index:3;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
           .panel{
