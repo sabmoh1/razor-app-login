@@ -16,9 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Eye, EyeOff, Lock, Loader2, AlertCircle, Terminal } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight } from "lucide-react";
 
 const formSchema = z.object({
   password: z
@@ -75,7 +73,7 @@ export default function LoginForm() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {error && (
-              <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md text-sm flex items-center gap-2">
+              <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md text-sm flex items-center gap-2 font-code">
                 <AlertCircle className="h-5 w-5" />
                 <span>{error}</span>
               </div>
@@ -85,49 +83,51 @@ export default function LoginForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <div className="relative">
+                  <div className="relative flex items-center">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neon-green/70" />
                     <FormControl>
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder="> Enter password..."
-                        className="font-code bg-transparent border-2 border-neon-green/30 focus:border-neon-green focus:ring-neon-green focus:ring-offset-0 text-neon-white pl-10 pr-10 h-12 text-base placeholder:text-neon-green/50"
+                        className="font-code bg-transparent border-2 border-neon-green/30 focus:border-neon-green focus:ring-neon-green focus:ring-offset-0 text-neon-white pl-10 pr-24 h-12 text-base placeholder:text-neon-green/50 flex-grow"
                         {...field}
                       />
                     </FormControl>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 text-neon-green/70 hover:bg-neon-green/10 hover:text-neon-green"
-                      onClick={() => setShowPassword(!showPassword)}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
-                    </Button>
+                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-neon-green/70 hover:bg-neon-green/10 hover:text-neon-green"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </Button>
+                       <Button 
+                        type="submit" 
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-neon-green bg-neon-green/10 hover:bg-neon-green/20 hover:text-neon-white disabled:opacity-50"
+                        disabled={isPending}
+                        aria-label="Initiate Connection"
+                      >
+                        {isPending ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <ArrowRight className="h-6 w-6" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                  <FormMessage className="text-red-400 text-xs pt-1" />
+                  <FormMessage className="text-red-400 text-xs pt-1 font-code" />
                 </FormItem>
               )}
             />
-            <Button 
-              type="submit" 
-              className="w-full h-12 bg-neon-green/90 text-black font-bold text-base hover:bg-neon-green hover:shadow-[0_0_20px_rgba(0,255,106,0.5)] transition-all duration-300" 
-              disabled={isPending}
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  <span>Authenticating...</span>
-                </>
-              ) : (
-                "Initiate Connection"
-              )}
-            </Button>
           </form>
         </Form>
       </div>
