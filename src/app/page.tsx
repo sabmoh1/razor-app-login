@@ -59,7 +59,7 @@ export default function Home() {
       <canvas ref={canvasRef} className="fixed inset-0 z-0 block"></canvas>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
         <div className="absolute top-4 right-4">
-          <CreatePasswordForm adminPassword={'ZR1'} />
+          <CreatePasswordForm adminPassword={process.env.ADMIN_PASSWORD || ''} />
         </div>
         <LoginForm />
       </main>
