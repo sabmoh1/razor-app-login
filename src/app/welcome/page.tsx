@@ -20,16 +20,16 @@ export default function WelcomePage() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let W = canvas.width = innerWidth;
-    let H = canvas.height = innerHeight;
+    let W = canvas.width = window.innerWidth;
+    let H = canvas.height = window.innerHeight;
 
     let cols = Math.floor(W / 10) + 1;
     let ypos = Array(cols).fill(0);
     const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
 
     function matrixResize(){
-      W = canvas.width = innerWidth;
-      H = canvas.height = innerHeight;
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
       cols = Math.floor(W / 10) + 1;
       ypos = Array(cols).fill(0);
     }
@@ -39,13 +39,17 @@ export default function WelcomePage() {
       ctx.fillStyle = 'rgba(0,0,0,0.22)';
       ctx.fillRect(0,0,W,H);
       ctx.font = '12px monospace';
-      for(let i=0;i<ypos.length;i++){
-        const text = letters.charAt(Math.floor(Math.random()*letters.length));
-        const x = i*10;
+      ypos.forEach((y, ind) => {
+        const text = letters.charAt(Math.floor(Math.random() * letters.length));
+        const x = ind * 10;
         ctx.fillStyle = 'rgba(0,255,120,'+ (0.18 + Math.random()*0.6) +')';
-        ctx.fillText(text, x, ypos[i]);
-        if(ypos[i] > H + Math.random()*700) ypos[i]=0; else ypos[i]+=12 + Math.random()*8;
-      }
+        ctx.fillText(text, x, y);
+        if(y > H + Math.random()*700) {
+          ypos[ind] = 0;
+        } else {
+          ypos[ind] = y + 12 + Math.random()*8;
+        }
+      });
     }
     const matrixInterval = setInterval(drawMatrix, 40);
 
@@ -59,7 +63,12 @@ export default function WelcomePage() {
       const s = totalSeconds%60;
       timerEl.innerText = `${String(h).padStart(2,'0')} : ${String(m).padStart(2,'0')} : ${String(s).padStart(2,'0')}`;
     }
-    const timerInterval = setInterval(()=>{ if(totalSeconds>0) totalSeconds--; updateTimer(); },1000);
+    const timerInterval = setInterval(()=>{ 
+      if(totalSeconds>0) {
+        totalSeconds--; 
+        updateTimer(); 
+      }
+    },1000);
     updateTimer();
 
     // --- WebSocket and UI update script ---
@@ -97,28 +106,42 @@ export default function WelcomePage() {
     let reconnectTimeout: NodeJS.Timeout;
 
     function connectWebSocket() {
-        const WS = 'wss://gamerazorvaule.onrender.com/';
-        ws = new WebSocket(WS);
+        const WS_URL = 'wss://gamerazorvaule.onrender.com/';
+        ws = new WebSocket(WS_URL);
 
-        ws.onopen = () => { setStatusIndicator(true); };
+        ws.onopen = () => { 
+            setStatusIndicator(true); 
+        };
+
         ws.onmessage = (ev) => {
             try {
                 const parsed = JSON.parse(ev.data);
                 if (parsed && typeof parsed === 'object') {
-                    if (parsed.crashValue !== undefined) return setCrashText(parsed.crashValue);
-                    if (parsed.value !== undefined) return setCrashText(parsed.value);
-                    return setCrashText(JSON.stringify(parsed));
-                } else { return setCrashText(parsed); }
-            } catch (e) { setCrashText(ev.data); }
+                    if (parsed.crashValue !== undefined) {
+                        setCrashText(parsed.crashValue);
+                    } else if (parsed.value !== undefined) {
+                        setCrashText(parsed.value);
+                    } else {
+                        setCrashText(JSON.stringify(parsed));
+                    }
+                } else { 
+                    setCrashText(ev.data); 
+                }
+            } catch (e) { 
+                setCrashText(ev.data); 
+            }
         };
+
         ws.onclose = () => { 
             setStatusIndicator(false); 
+            clearTimeout(reconnectTimeout);
             reconnectTimeout = setTimeout(connectWebSocket, 1200); 
         };
+
         ws.onerror = (e) => { 
             setStatusIndicator(false); 
             console.error('WebSocket error:', e);
-            ws.close();
+            ws.close(); // This will trigger onclose and attempt to reconnect
         };
     }
     
@@ -145,8 +168,7 @@ export default function WelcomePage() {
     document.addEventListener("click", handleDocumentClick);
     usernameButton.addEventListener("mousedown", handleUsernameMouseDown);
 
-    // There is a script block trying to animate an element with id "movingText" which does not exist.
-    // I am omitting that script block to avoid errors.
+    // The script for "movingText" is omitted as the element does not exist in the HTML.
 
     // --- Cleanup function ---
     return () => {
@@ -155,12 +177,17 @@ export default function WelcomePage() {
       clearInterval(timerInterval);
       clearTimeout(reconnectTimeout);
       if (ws) {
-        ws.onclose = null; // prevent reconnect on component unmount
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onerror = null;
+        ws.onclose = null; 
         ws.close();
       }
-      usernameButton.removeEventListener("click", handleUsernameClick);
-      document.removeEventListener("click", handleDocumentClick);
-      usernameButton.removeEventListener("mousedown", handleUsernameMouseDown);
+      if (usernameButton) {
+        usernameButton.removeEventListener("click", handleUsernameClick);
+        document.removeEventListener("click", handleDocumentClick);
+        usernameButton.removeEventListener("mousedown", handleUsernameMouseDown);
+      }
     };
   }, []);
 
@@ -169,7 +196,8 @@ export default function WelcomePage() {
       <Head>
         <title>RAZOR — Neon Matrix</title>
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
-        <style>{`
+      </Head>
+      <style jsx global>{`
           :root{
             --bg:#000;
             --neon-green:#00ff6a;
@@ -265,8 +293,10 @@ export default function WelcomePage() {
             text-decoration: none;
             color: var(--neon-white);
           }
+          #username.active {
+             /* Add styles for active state if needed */
+          }
         `}</style>
-      </Head>
       <canvas id="matrix" ref={canvasRef}></canvas>
       <div className="connection-status">
         <div id="statusDot" className="status-dot" ref={statusDotRef}></div>
@@ -295,3 +325,5 @@ export default function WelcomePage() {
     </>
   );
 }
+
+    
