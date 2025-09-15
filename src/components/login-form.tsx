@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { database } from "@/lib/firebase";
-import { ref, get, query, orderByChild, equalTo } from "firebase/database";
+import { ref, get } from "firebase/database";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -42,25 +42,24 @@ export default function LoginForm() {
     startTransition(async () => {
       try {
         const passwordsRef = ref(database, 'passwords');
-        const q = query(passwordsRef, orderByChild('password'), equalTo(values.password));
-        const snapshot = await get(q);
+        const snapshot = await get(passwordsRef);
 
         if (snapshot.exists()) {
+          const passwordsData = snapshot.val();
           let found = false;
           let validity = '1h'; // Default validity
 
-          snapshot.forEach((childSnapshot) => {
-            const passwordData = childSnapshot.val();
-            if (passwordData.password === values.password) {
+          for (const key in passwordsData) {
+            if (passwordsData[key].password === values.password) {
               found = true;
-              validity = passwordData.validity || '1h';
+              validity = passwordsData[key].validity || '1h';
+              break; 
             }
-          });
+          }
 
           if (found) {
             router.push(`/welcome?validity=${validity}`);
           } else {
-             // This case should theoretically not be reached due to the query, but it's good for safety.
             setError("ACCESS DENIED: Incorrect password");
             form.reset({ password: "" });
           }
