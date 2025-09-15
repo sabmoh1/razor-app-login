@@ -16,7 +16,6 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -27,8 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, AlertCircle, KeyRound, CalendarClock } from "lucide-react";
+import { Loader2, KeyRound, CalendarClock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "./ui/toaster";
 
@@ -108,14 +106,19 @@ export default function CreatePasswordForm({ adminPassword }: CreatePasswordForm
         }
       }}>
         <DialogTrigger asChild>
-          <Button variant="outline">إنشاء كود</Button>
+           <Button 
+            variant="outline" 
+            className="font-orbitron border-neon-green/50 bg-black text-neon-green hover:bg-neon-green/10 hover:text-neon-green hover:shadow-[0_0_15px_rgba(0,255,106,0.4)] transition-all duration-300"
+          >
+            إنشاء كود
+          </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] bg-black border-neon-green/30 text-neon-white font-orbitron">
           {step === "admin_check" && (
             <>
               <DialogHeader>
-                <DialogTitle>Admin Verification</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-neon-green text-glow">Admin Verification</DialogTitle>
+                <DialogDescription className="text-neon-white/70">
                   Enter the admin password to proceed.
                 </DialogDescription>
               </DialogHeader>
@@ -128,14 +131,14 @@ export default function CreatePasswordForm({ adminPassword }: CreatePasswordForm
                       <FormItem>
                         <FormLabel>Admin Password</FormLabel>
                         <FormControl>
-                          <Input type="password" {...field} />
+                          <Input type="password" {...field} className="bg-black border-neon-green/50 focus:ring-neon-green focus:border-neon-green"/>
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-400" />
                       </FormItem>
                     )}
                   />
                   <DialogFooter>
-                    <Button type="submit" disabled={adminForm.formState.isSubmitting}>
+                    <Button type="submit" disabled={adminForm.formState.isSubmitting} className="bg-neon-green/80 text-black hover:bg-neon-green hover:shadow-[0_0_15px_rgba(0,255,106,0.6)]">
                       {adminForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Verify
                     </Button>
@@ -147,8 +150,8 @@ export default function CreatePasswordForm({ adminPassword }: CreatePasswordForm
           {step === "create_password" && (
             <>
               <DialogHeader>
-                <DialogTitle>Create New Password</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-neon-green text-glow">Create New Password</DialogTitle>
+                <DialogDescription className="text-neon-white/70">
                   Enter the new password and its validity period.
                 </DialogDescription>
               </DialogHeader>
@@ -161,12 +164,12 @@ export default function CreatePasswordForm({ adminPassword }: CreatePasswordForm
                       <FormItem>
                         <FormLabel>New Password</FormLabel>
                         <div className="relative">
-                          <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neon-green/50" />
                           <FormControl>
-                            <Input placeholder="Enter new password" className="pl-10" {...field} />
+                            <Input placeholder="Enter new password" className="pl-10 bg-black border-neon-green/50 focus:ring-neon-green focus:border-neon-green" {...field} />
                           </FormControl>
                         </div>
-                        <FormMessage />
+                        <FormMessage className="text-red-400" />
                       </FormItem>
                     )}
                   />
@@ -177,17 +180,17 @@ export default function CreatePasswordForm({ adminPassword }: CreatePasswordForm
                       <FormItem>
                         <FormLabel>Validity Period</FormLabel>
                          <div className="relative">
-                          <CalendarClock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <CalendarClock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neon-green/50" />
                           <FormControl>
-                            <Input placeholder="e.g., 24h, 7d, 30m" className="pl-10" {...field} />
+                            <Input placeholder="e.g., 24h, 7d, 30m" className="pl-10 bg-black border-neon-green/50 focus:ring-neon-green focus:border-neon-green" {...field} />
                           </FormControl>
                         </div>
-                        <FormMessage />
+                        <FormMessage className="text-red-400"/>
                       </FormItem>
                     )}
                   />
                   <DialogFooter>
-                    <Button type="submit" disabled={createForm.formState.isSubmitting}>
+                    <Button type="submit" disabled={createForm.formState.isSubmitting} className="bg-neon-green/80 text-black hover:bg-neon-green hover:shadow-[0_0_15px_rgba(0,255,106,0.6)]">
                       {createForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Save Password
                     </Button>

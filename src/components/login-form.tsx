@@ -7,27 +7,18 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { database } from "@/lib/firebase";
 import { ref, get } from "firebase/database";
-
-
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Eye, EyeOff, Lock, Loader2, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Lock, Loader2, AlertCircle, Terminal } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   password: z
@@ -58,11 +49,11 @@ export default function LoginForm() {
         if (snapshot.exists() && snapshot.val() === values.password) {
           router.push("/welcome");
         } else {
-          setError("Incorrect password. Please try again.");
+          setError("ACCESS DENIED: Incorrect password");
           form.reset({ password: "" });
         }
       } catch (error: any) {
-        setError("An error occurred while trying to log in.");
+        setError("SYSTEM ERROR: Could not connect to database.");
         console.error("Firebase error:", error);
         form.reset({ password: "" });
       }
@@ -70,36 +61,37 @@ export default function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md shadow-2xl">
-      <CardHeader className="text-center">
-        <CardTitle className="text-3xl font-bold font-headline">Enter Password</CardTitle>
-        <CardDescription>
-          Enter the password to access the application
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="w-full max-w-md font-orbitron">
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-black text-neon-green text-glow uppercase">
+          RAZOR TERMINAL
+        </h1>
+        <p className="text-neon-white/80 text-sm mt-2 tracking-widest">
+          Awaiting authentication credentials
+        </p>
+      </div>
+      
+      <div className="border border-neon-green/30 bg-black/50 p-6 rounded-lg backdrop-blur-sm">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {error && (
-              <Alert variant="destructive" className="animate-in fade-in-50">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Login Failed</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md text-sm flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                <span>{error}</span>
+              </div>
             )}
             <FormField
               control={form.control}
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neon-green/70" />
                     <FormControl>
                       <Input
                         type={showPassword ? "text" : "password"}
-                        placeholder="Enter your password"
-                        className="pl-10 pr-10"
+                        placeholder="> Enter password..."
+                        className="font-code bg-transparent border-2 border-neon-green/30 focus:border-neon-green focus:ring-neon-green focus:ring-offset-0 text-neon-white pl-10 pr-10 h-12 text-base placeholder:text-neon-green/50"
                         {...field}
                       />
                     </FormControl>
@@ -107,7 +99,7 @@ export default function LoginForm() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:bg-transparent"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 text-neon-green/70 hover:bg-neon-green/10 hover:text-neon-green"
                       onClick={() => setShowPassword(!showPassword)}
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
@@ -118,17 +110,30 @@ export default function LoginForm() {
                       )}
                     </Button>
                   </div>
-                  <FormMessage />
+                  <FormMessage className="text-red-400 text-xs pt-1" />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Login
+            <Button 
+              type="submit" 
+              className="w-full h-12 bg-neon-green/90 text-black font-bold text-base hover:bg-neon-green hover:shadow-[0_0_20px_rgba(0,255,106,0.5)] transition-all duration-300" 
+              disabled={isPending}
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <span>Authenticating...</span>
+                </>
+              ) : (
+                "Initiate Connection"
+              )}
             </Button>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </div>
+       <p className="text-center text-xs text-neon-green/40 mt-4 tracking-widest">
+        System active. All attempts are logged.
+      </p>
+    </div>
   );
 }
