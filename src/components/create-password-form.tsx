@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Loader2, KeyRound, CalendarClock } from "lucide-react";
+import { Loader2, KeyRound, CalendarClock, Dice5 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "./ui/toaster";
 
@@ -123,6 +123,13 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
     }
   }
 
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const randomBlock = () => Array.from({ length: 4 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+    const newPassword = `RAZOR-${randomBlock()}-${randomBlock()}`;
+    createForm.setValue('newPassword', newPassword);
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={(isOpen) => {
@@ -186,11 +193,21 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>New Password</FormLabel>
-                        <div className="relative">
-                          <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neon-green/50" />
+                        <div className="relative flex items-center">
+                          <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neon-green/50 pointer-events-none" />
                           <FormControl>
-                            <Input placeholder="Enter new password" className="pl-10 bg-black border-neon-green/50 focus:ring-neon-green focus:border-neon-green" {...field} />
+                            <Input placeholder="Enter new password" className="pl-10 pr-10 bg-black border-neon-green/50 focus:ring-neon-green focus:border-neon-green" {...field} />
                           </FormControl>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-neon-green/70 hover:bg-neon-green/10 hover:text-neon-green"
+                            onClick={generateRandomPassword}
+                            aria-label="Generate random password"
+                          >
+                            <Dice5 className="h-5 w-5" />
+                          </Button>
                         </div>
                         <FormMessage className="text-red-400" />
                       </FormItem>
