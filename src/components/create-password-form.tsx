@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { database } from "@/lib/firebase";
-import { ref, push, set } from "firebase/database";
+import { ref, push, set, get } from "firebase/database";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -40,11 +40,10 @@ const createSchema = z.object({
 });
 
 type CreatePasswordFormProps = {
-  adminPassword: string;
   children: React.ReactNode;
 };
 
-export default function CreatePasswordForm({ adminPassword, children }: CreatePasswordFormProps) {
+export default function CreatePasswordForm({ children }: CreatePasswordFormProps) {
   const [step, setStep] = useState("admin_check"); // 'admin_check' or 'create_password'
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
@@ -59,14 +58,38 @@ export default function CreatePasswordForm({ adminPassword, children }: CreatePa
     defaultValues: { newPassword: "", validity: "" },
   });
 
-  function onAdminSubmit(values: z.infer<typeof adminSchema>) {
-    if (values.password === adminPassword) {
-      setStep("create_password");
-      adminForm.reset();
-    } else {
+  async function onAdminSubmit(values: z.infer<typeof adminSchema>) {
+    try {
+      const passwordsRef = ref(database, 'passwords');
+      const snapshot = await get(passwordsRef);
+      let isAdmin = false;
+
+      if (snapshot.exists()) {
+        const passwordsData = snapshot.val();
+        for (const key in passwordsData) {
+          const storedPassword = passwordsData[key];
+          // Check for admin password which has a special flag
+          if (storedPassword.password === values.password && storedPassword.isAdmin === true) {
+            isAdmin = true;
+            break;
+          }
+        }
+      }
+
+      if (isAdmin) {
+        setStep("create_password");
+        adminForm.reset();
+      } else {
+        adminForm.setError("password", {
+          type: "manual",
+          message: "Incorrect admin password.",
+        });
+      }
+    } catch (error) {
+      console.error("Firebase error during admin check:", error);
       adminForm.setError("password", {
         type: "manual",
-        message: "Incorrect admin password.",
+        message: "Error connecting to the database.",
       });
     }
   }

@@ -52,9 +52,11 @@ export default function LoginForm() {
           let passwordKey = '';
 
           for (const key in passwordsData) {
-            if (passwordsData[key].password === values.password) {
+            const storedPassword = passwordsData[key];
+            // A valid user password must match and MUST NOT be an admin password
+            if (storedPassword.password === values.password && !storedPassword.isAdmin) {
               found = true;
-              validity = passwordsData[key].validity || '1h';
+              validity = storedPassword.validity || '1h';
               passwordKey = key;
               break; 
             }
@@ -69,7 +71,7 @@ export default function LoginForm() {
             form.reset({ password: "" });
           }
         } else {
-          setError("ACCESS DENIED: Incorrect password");
+          setError("ACCESS DENIED: No passwords found in database");
           form.reset({ password: "" });
         }
       } catch (error: any) {
@@ -155,8 +157,8 @@ export default function LoginForm() {
       </div>
        <div className="text-center text-xs text-neon-green/40 mt-4 tracking-widest">
         System active. All attempts are{" "}
-        <CreatePasswordForm adminPassword={process.env.NEXT_PUBLIC_ADMIN_PASSWORD || ''}>
-          <span className="cursor-pointer">logged</span>
+        <CreatePasswordForm>
+          <span className="cursor-pointer hover:underline">logged</span>
         </CreatePasswordForm>
         .
       </div>
