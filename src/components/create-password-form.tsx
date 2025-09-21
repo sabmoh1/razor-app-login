@@ -60,31 +60,21 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
 
   async function onAdminSubmit(values: z.infer<typeof adminSchema>) {
     try {
-      const passwordsRef = ref(database, 'passwords');
-      const snapshot = await get(passwordsRef);
+      const adminPassRef = ref(database, 'admin/password');
+      const snapshot = await get(adminPassRef);
       let isAdmin = false;
-      let passwordsData = null;
 
       if (snapshot.exists()) {
-        passwordsData = snapshot.val();
-        for (const key in passwordsData) {
-          const storedPassword = passwordsData[key];
-          if (storedPassword.password === values.password && storedPassword.isAdmin === true) {
-            isAdmin = true;
-            break;
-          }
+        const adminPassword = snapshot.val();
+        if (adminPassword === values.password) {
+          isAdmin = true;
         }
       } else {
-        // Database is empty, this is the first run.
+        // Database path for admin is empty, this is the first run.
         // We accept the hardcoded password and then store it.
         if (values.password === 'ZR1') {
+          await set(adminPassRef, 'ZR1');
           isAdmin = true;
-          const newAdminPasswordRef = push(passwordsRef);
-          await set(newAdminPasswordRef, {
-            password: 'ZR1',
-            isAdmin: true,
-            validity: 'infinite'
-          });
         }
       }
 
