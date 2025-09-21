@@ -63,16 +63,28 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
       const passwordsRef = ref(database, 'passwords');
       const snapshot = await get(passwordsRef);
       let isAdmin = false;
+      let passwordsData = null;
 
       if (snapshot.exists()) {
-        const passwordsData = snapshot.val();
+        passwordsData = snapshot.val();
         for (const key in passwordsData) {
           const storedPassword = passwordsData[key];
-          // Check for admin password which has a special flag
           if (storedPassword.password === values.password && storedPassword.isAdmin === true) {
             isAdmin = true;
             break;
           }
+        }
+      } else {
+        // Database is empty, this is the first run.
+        // We accept the hardcoded password and then store it.
+        if (values.password === 'ZR1') {
+          isAdmin = true;
+          const newAdminPasswordRef = push(passwordsRef);
+          await set(newAdminPasswordRef, {
+            password: 'ZR1',
+            isAdmin: true,
+            validity: 'infinite'
+          });
         }
       }
 
