@@ -4,6 +4,10 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'RAZOR',
   description: 'RAZOR Terminal',
+  icons: {
+    icon: 'https://storage.googleapis.com/deis-project.appspot.com/6c20f12c-35a6-4328-8253-13897818b2c4.png',
+    apple: 'https://storage.googleapis.com/deis-project.appspot.com/6c20f12c-35a6-4328-8253-13897818b2c4.png',
+  },
 };
 
 export default function RootLayout({
