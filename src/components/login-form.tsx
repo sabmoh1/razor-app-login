@@ -84,11 +84,13 @@ export default function LoginForm() {
     <div className="w-full max-w-md font-orbitron">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-black text-neon-green text-glow uppercase">
-          RAZ
-          <CreatePasswordForm adminPassword={process.env.NEXT_PUBLIC_ADMIN_PASSWORD || ''}>
-            <span className="cursor-pointer hover:text-white transition-colors duration-300">O</span>
-          </CreatePasswordForm>
-          R TERMINAL
+          <span>
+            RAZ
+            <CreatePasswordForm adminPassword={process.env.NEXT_PUBLIC_ADMIN_PASSWORD || ''}>
+              <span className="cursor-pointer hover:text-white transition-colors duration-300">O</span>
+            </CreatePasswordForm>
+            R TERMINAL
+          </span>
         </h1>
         <p className="text-neon-white/80 text-sm mt-2 tracking-widest">
           Awaiting authentication credentials
