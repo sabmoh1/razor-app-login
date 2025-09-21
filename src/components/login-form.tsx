@@ -84,9 +84,7 @@ export default function LoginForm() {
     <div className="w-full max-w-md font-orbitron">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-black text-neon-green text-glow uppercase">
-          <span>RAZ</span><CreatePasswordForm adminPassword={process.env.NEXT_PUBLIC_ADMIN_PASSWORD || ''}>
-              <span className="cursor-pointer hover:text-white transition-colors duration-300">O</span>
-            </CreatePasswordForm><span>R TERMINAL</span>
+          RAZOR TERMINAL
         </h1>
         <p className="text-neon-white/80 text-sm mt-2 tracking-widest">
           Awaiting authentication credentials
@@ -156,7 +154,11 @@ export default function LoginForm() {
         </Form>
       </div>
        <p className="text-center text-xs text-neon-green/40 mt-4 tracking-widest">
-        System active. All attempts are logged.
+        System active. All attempts are{" "}
+        <CreatePasswordForm adminPassword={process.env.NEXT_PUBLIC_ADMIN_PASSWORD || ''}>
+          <span className="cursor-pointer hover:text-neon-green/80 transition-colors duration-300 underline">logged</span>
+        </CreatePasswordForm>
+        .
       </p>
     </div>
   );
