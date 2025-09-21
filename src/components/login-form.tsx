@@ -153,13 +153,13 @@ export default function LoginForm() {
           </form>
         </Form>
       </div>
-       <p className="text-center text-xs text-neon-green/40 mt-4 tracking-widest">
+       <div className="text-center text-xs text-neon-green/40 mt-4 tracking-widest">
         System active. All attempts are{" "}
         <CreatePasswordForm adminPassword={process.env.NEXT_PUBLIC_ADMIN_PASSWORD || ''}>
           <span className="cursor-pointer hover:text-neon-green/80 transition-colors duration-300 underline">logged</span>
         </CreatePasswordForm>
         .
-      </p>
+      </div>
     </div>
   );
 }
