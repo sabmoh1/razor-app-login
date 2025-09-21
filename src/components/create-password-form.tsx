@@ -41,9 +41,10 @@ const createSchema = z.object({
 
 type CreatePasswordFormProps = {
   adminPassword: string;
+  children: React.ReactNode;
 };
 
-export default function CreatePasswordForm({ adminPassword }: CreatePasswordFormProps) {
+export default function CreatePasswordForm({ adminPassword, children }: CreatePasswordFormProps) {
   const [step, setStep] = useState("admin_check"); // 'admin_check' or 'create_password'
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
@@ -108,12 +109,7 @@ export default function CreatePasswordForm({ adminPassword }: CreatePasswordForm
         }
       }}>
         <DialogTrigger asChild>
-           <Button 
-            variant="outline" 
-            className="font-orbitron border-neon-green/50 bg-black text-neon-green hover:bg-neon-green/10 hover:text-neon-green hover:shadow-[0_0_15px_rgba(0,255,106,0.4)] transition-all duration-300"
-          >
-            إنشاء كود
-          </Button>
+          {children}
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px] bg-black border-neon-green/30 text-neon-white font-orbitron">
           {step === "admin_check" && (

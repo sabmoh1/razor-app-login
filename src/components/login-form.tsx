@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight } from "lucide-react";
+import CreatePasswordForm from "./create-password-form";
 
 const formSchema = z.object({
   password: z
@@ -83,7 +84,11 @@ export default function LoginForm() {
     <div className="w-full max-w-md font-orbitron">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-black text-neon-green text-glow uppercase">
-          RAZOR TERMINAL
+          RAZ
+          <CreatePasswordForm adminPassword={process.env.NEXT_PUBLIC_ADMIN_PASSWORD || ''}>
+            <span className="cursor-pointer hover:text-white transition-colors duration-300">O</span>
+          </CreatePasswordForm>
+          R TERMINAL
         </h1>
         <p className="text-neon-white/80 text-sm mt-2 tracking-widest">
           Awaiting authentication credentials
