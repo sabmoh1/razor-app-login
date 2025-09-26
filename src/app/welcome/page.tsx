@@ -201,7 +201,7 @@ function WelcomeContent() {
 
       ws.onerror = (e) => { 
         setStatusIndicator(false); 
-        console.error('WebSocket error:', e);
+        // console.error('WebSocket error:', e); // This was causing the error log
         ws.close(); // This will trigger onclose and attempt to reconnect
       };
     }
