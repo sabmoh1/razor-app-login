@@ -40,9 +40,9 @@ function WelcomeContent() {
 
   useEffect(() => {
     const validity = sessionStorage.getItem('razor_session_validity');
-    const passwordKey = sessionStorage.getItem('razor_session_key');
+    // const passwordKey = sessionStorage.getItem('razor_session_key'); // No longer needed
 
-    if (!validity || !passwordKey) {
+    if (!validity) {
       router.push('/');
       return;
     }
@@ -98,18 +98,9 @@ function WelcomeContent() {
       }
       if (timerEl) timerEl.innerText = 'EXPIRED';
       
-      // Delete from Firebase
-      if (passwordKey) {
-        try {
-          const passwordRef = ref(database, `passwords/${passwordKey}`);
-          await remove(passwordRef);
-        } catch (error) {
-          console.error("Failed to delete password:", error);
-        }
-      }
-
+      // The password is now deleted on login, so we don't need to delete it here.
+      // We just clear session storage.
       sessionStorage.removeItem('razor_session_validity');
-      sessionStorage.removeItem('razor_session_key');
       router.push('/');
     }
 

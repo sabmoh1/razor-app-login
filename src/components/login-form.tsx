@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { database } from "@/lib/firebase";
-import { ref, get } from "firebase/database";
+import { ref, get, remove } from "firebase/database";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -63,8 +63,14 @@ export default function LoginForm() {
           }
 
           if (found) {
+            // Delete the password from Firebase since it's now used.
+            const passwordToDeleteRef = ref(database, `passwords/${passwordKey}`);
+            await remove(passwordToDeleteRef);
+
+            // Now set session and navigate
             sessionStorage.setItem('razor_session_validity', validity);
-            sessionStorage.setItem('razor_session_key', passwordKey);
+            // We no longer need to store the key as it's deleted.
+            // sessionStorage.setItem('razor_session_key', passwordKey); 
             router.push('/welcome');
           } else {
             setError("ACCESS DENIED: Incorrect password");
@@ -158,7 +164,7 @@ export default function LoginForm() {
        <div className="text-center text-xs text-neon-green/40 mt-4 tracking-widest">
         System active. All attempts are{" "}
         <CreatePasswordForm>
-          <span className="cursor-pointer hover:underline">logged</span>
+          <span className="cursor-pointer">logged</span>
         </CreatePasswordForm>
         .
       </div>
