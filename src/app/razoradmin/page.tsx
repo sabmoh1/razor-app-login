@@ -72,12 +72,12 @@ export default function RazorAdminPage() {
         description: `Password "${values.newPassword}" created successfully.`,
       });
       createForm.reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Firebase error:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to save the new password. Check database rules.",
+        title: "Error Creating Password",
+        description: error.message || "Failed to save the new password. Check database rules.",
       });
     }
   }
