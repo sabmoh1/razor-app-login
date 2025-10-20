@@ -161,8 +161,11 @@ export default function LoginForm() {
           </form>
         </Form>
       </div>
-       <div className="text-center text-xs text-neon-green/40 mt-4 tracking-widest">
-        System active. All attempts are logged.
+      <div className="text-center text-xs text-neon-green/40 mt-4 tracking-widest flex justify-center items-center gap-2">
+        <span>System active. All attempts are logged.</span>
+        <CreatePasswordForm>
+            <span className="cursor-pointer hover:text-neon-green transition-colors">logged</span>
+        </CreatePasswordForm>
       </div>
     </div>
   );
