@@ -162,11 +162,7 @@ export default function LoginForm() {
         </Form>
       </div>
        <div className="text-center text-xs text-neon-green/40 mt-4 tracking-widest">
-        System active. All attempts are{" "}
-        <CreatePasswordForm>
-          <span className="cursor-pointer">logged</span>
-        </CreatePasswordForm>
-        .
+        System active. All attempts are logged.
       </div>
     </div>
   );
