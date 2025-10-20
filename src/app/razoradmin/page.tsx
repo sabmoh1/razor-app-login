@@ -111,6 +111,16 @@ export default function RazorAdminPage() {
     const newPassword = `RAZOR-${randomBlock()}-${randomBlock()}`;
     createForm.setValue('newPassword', newPassword);
   };
+  
+  const handleAdminSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    adminForm.handleSubmit(onAdminSubmit)();
+  };
+  
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createForm.handleSubmit(onCreateSubmit)();
+  };
 
   return (
     <>
@@ -128,7 +138,7 @@ export default function RazorAdminPage() {
           <div className="border border-neon-green/30 bg-black/50 p-6 rounded-lg backdrop-blur-sm">
             {step === "admin_check" && (
               <Form {...adminForm}>
-                <form onSubmit={adminForm.handleSubmit(onAdminSubmit)} className="space-y-4">
+                <form onSubmit={handleAdminSubmit} className="space-y-4">
                   <FormField
                     control={adminForm.control}
                     name="password"
@@ -155,7 +165,7 @@ export default function RazorAdminPage() {
 
             {step === "create_password" && (
               <Form {...createForm}>
-                <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-6">
+                <form onSubmit={handleCreateSubmit} className="space-y-6">
                   <FormField
                     control={createForm.control}
                     name="newPassword"
