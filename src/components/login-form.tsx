@@ -16,8 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight, UserCog } from "lucide-react";
-import CreatePasswordForm from "./create-password-form";
+import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight } from "lucide-react";
 
 const formSchema = z.object({
   password: z
@@ -158,9 +157,6 @@ export default function LoginForm() {
       </div>
       <div className="text-center text-xs text-neon-green/40 mt-4 tracking-widest flex justify-center items-center gap-2">
         <span>System active.</span>
-        <CreatePasswordForm>
-          <button className="text-neon-green/60 hover:text-neon-green hover:underline focus:outline-none focus:ring-2 focus:ring-neon-green rounded-sm">Admin Login</button>
-        </CreatePasswordForm>
       </div>
     </div>
   );
