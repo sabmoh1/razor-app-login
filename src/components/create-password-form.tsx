@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { database } from "@/lib/firebase";
-import { ref, push, set, get } from "firebase/database";
+import { ref, push, set } from "firebase/database";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +58,7 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
     defaultValues: { newPassword: "", validity: "" },
   });
 
-  async function onAdminSubmit(values: z.infer<typeof adminSchema>) {
+  function onAdminSubmit(values: z.infer<typeof adminSchema>) {
     // Hardcoded check for admin password to avoid permission issues
     if (values.password === 'ZR1') {
       setStep("create_password");
@@ -83,17 +83,17 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
 
       toast({
         title: "Success",
-        description: "New password has been saved successfully.",
+        description: `Password "${values.newPassword}" created successfully.`,
       });
       createForm.reset();
       setOpen(false);
-      setStep("admin_check"); // Reset for next time
-    } catch (error) {
+      setTimeout(() => setStep("admin_check"), 300); // Reset for next time after dialog closes
+    } catch (error: any) {
       console.error("Firebase error:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to save the new password. Check database rules.",
+        title: "Error Creating Password",
+        description: error.message || "Failed to save the new password. Check database rules.",
       });
     }
   }
@@ -104,6 +104,16 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
     const newPassword = `RAZOR-${randomBlock()}-${randomBlock()}`;
     createForm.setValue('newPassword', newPassword);
   };
+  
+  const handleAdminSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    adminForm.handleSubmit(onAdminSubmit)();
+  };
+  
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createForm.handleSubmit(onCreateSubmit)();
+  };
 
   return (
     <>
@@ -112,7 +122,8 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
         if (!isOpen) {
           adminForm.reset();
           createForm.reset();
-          setStep('admin_check');
+          // Reset step after a short delay to allow the dialog to close gracefully
+          setTimeout(() => setStep('admin_check'), 300);
         }
       }}>
         <DialogTrigger asChild>
@@ -128,7 +139,7 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
                 </DialogDescription>
               </DialogHeader>
               <Form {...adminForm}>
-                <form onSubmit={adminForm.handleSubmit(onAdminSubmit)} className="space-y-4">
+                <form onSubmit={handleAdminSubmit} className="space-y-4">
                   <FormField
                     control={adminForm.control}
                     name="password"
@@ -141,7 +152,7 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
                             <Input type="password" {...field} className="pl-10 bg-black border-neon-green/50 focus:ring-neon-green focus:border-neon-green"/>
                            </div>
                         </FormControl>
-                        <FormMessage className="text-red-400" />
+                        <FormMessage className="text-red-400 font-code text-xs" />
                       </FormItem>
                     )}
                   />
@@ -164,13 +175,13 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
                 </DialogDescription>
               </DialogHeader>
               <Form {...createForm}>
-                <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4">
+                <form onSubmit={handleCreateSubmit} className="space-y-6">
                   <FormField
                     control={createForm.control}
                     name="newPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>New Password</FormLabel>
+                        <FormLabel>New User Password</FormLabel>
                         <div className="relative flex items-center">
                           <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neon-green/50 pointer-events-none" />
                           <FormControl>
@@ -208,9 +219,9 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
                     )}
                   />
                   <DialogFooter>
-                    <Button type="submit" disabled={createForm.formState.isSubmitting} className="bg-neon-green/80 text-black hover:bg-neon-green hover:shadow-[0_0_15px_rgba(0,255,106,0.6)]">
+                    <Button type="submit" disabled={createForm.formState.isSubmitting} className="w-full bg-neon-green/80 text-black hover:bg-neon-green hover:shadow-[0_0_15px_rgba(0,255,106,0.6)]">
                       {createForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Save Password
+                      Save New Password
                     </Button>
                   </DialogFooter>
                 </form>
