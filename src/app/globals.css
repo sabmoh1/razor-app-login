@@ -32,9 +32,8 @@
     --input: 140 100% 50% / 0.3;
     --ring: 140 100% 50%;
 
-    --radius: 0.5rem;
-
     --neon-green: #00ff6a;
+    --neon-red: #ff003c;
     --neon-white: #e6fff8;
   }
 }
@@ -46,13 +45,21 @@
   body {
     @apply bg-background text-foreground;
   }
-  .text-glow {
+  .text-glow-green {
     text-shadow:
       0 0 5px var(--neon-green),
       0 0 10px var(--neon-green),
       0 0 20px var(--neon-green),
       0 0 40px var(--neon-green),
       0 0 80px rgba(0,255,106,0.5);
+  }
+  .text-glow-red {
+    text-shadow:
+      0 0 5px var(--neon-red),
+      0 0 10px var(--neon-red),
+      0 0 20px var(--neon-red),
+      0 0 40px var(--neon-red),
+      0 0 80px rgba(255,0,60,0.5);
   }
 }
 

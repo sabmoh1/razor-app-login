@@ -24,7 +24,13 @@ const formSchema = z.object({
     .min(1, { message: "Password is required." }),
 });
 
-export default function LoginForm() {
+export type LoginFormProps = {
+  theme?: 'green' | 'red';
+  welcomePath?: string;
+  title?: string;
+};
+
+export default function LoginForm({ theme = 'green', welcomePath = '/welcome', title = 'RAZOR TERMINAL' }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -36,6 +42,40 @@ export default function LoginForm() {
       password: "",
     },
   });
+  
+  const colors = {
+    green: {
+      glow: 'text-glow-green',
+      text: 'text-neon-green',
+      border: 'border-neon-green/30',
+      focusBorder: 'focus:border-neon-green',
+      ring: 'focus:ring-neon-green',
+      placeholder: 'placeholder:text-neon-green/50',
+      icon: 'text-neon-green/70',
+      buttonHoverBg: 'hover:bg-neon-green/10',
+      buttonHoverText: 'hover:text-neon-green',
+      submitBg: 'bg-neon-green/10',
+      submitHoverBg: 'hover:bg-neon-green/20',
+      submitText: 'text-neon-green',
+    },
+    red: {
+      glow: 'text-glow-red',
+      text: 'text-neon-red',
+      border: 'border-neon-red/30',
+      focusBorder: 'focus:border-neon-red',
+      ring: 'focus:ring-neon-red',
+      placeholder: 'placeholder:text-neon-red/50',
+      icon: 'text-neon-red/70',
+      buttonHoverBg: 'hover:bg-neon-red/10',
+      buttonHoverText: 'hover:text-neon-red',
+      submitBg: 'bg-neon-red/10',
+      submitHoverBg: 'hover:bg-neon-red/20',
+      submitText: 'text-neon-red',
+    }
+  };
+
+  const currentTheme = colors[theme];
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
@@ -65,7 +105,7 @@ export default function LoginForm() {
             await remove(passwordToDeleteRef);
 
             sessionStorage.setItem('razor_session_validity', validity);
-            router.push('/welcome');
+            router.push(welcomePath);
           } else {
             setError("ACCESS DENIED: Incorrect password");
             form.reset({ password: "" });
@@ -85,15 +125,15 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-md font-orbitron">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-black text-neon-green text-glow uppercase">
-          RAZOR TERMINAL
+        <h1 className={`text-4xl font-black ${currentTheme.text} ${currentTheme.glow} uppercase`}>
+          {title}
         </h1>
         <p className="text-neon-white/80 text-sm mt-2 tracking-widest">
           Awaiting authentication credentials
         </p>
       </div>
       
-      <div className="border border-neon-green/30 bg-black/50 p-6 rounded-lg backdrop-blur-sm">
+      <div className={`border ${currentTheme.border} bg-black/50 p-6 rounded-lg backdrop-blur-sm`}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {error && (
@@ -108,12 +148,12 @@ export default function LoginForm() {
               render={({ field }) => (
                 <FormItem>
                   <div className="relative flex items-center">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neon-green/70" />
+                    <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 ${currentTheme.icon}`} />
                     <FormControl>
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder="> Enter password..."
-                        className="font-code bg-transparent border-2 border-neon-green/30 focus:border-neon-green focus:ring-neon-green focus:ring-offset-0 text-neon-white pl-10 pr-24 h-12 text-base placeholder:text-neon-green/50 flex-grow"
+                        className={`font-code bg-transparent border-2 ${currentTheme.border} ${currentTheme.focusBorder} ${currentTheme.ring} focus:ring-offset-0 text-neon-white pl-10 pr-24 h-12 text-base ${currentTheme.placeholder} flex-grow`}
                         {...field}
                       />
                     </FormControl>
@@ -122,7 +162,7 @@ export default function LoginForm() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 text-neon-green/70 hover:bg-neon-green/10 hover:text-neon-green"
+                        className={`h-9 w-9 ${currentTheme.icon} ${currentTheme.buttonHoverBg} ${currentTheme.buttonHoverText}`}
                         onClick={() => setShowPassword(!showPassword)}
                         aria-label={showPassword ? "Hide password" : "Show password"}
                       >
@@ -136,7 +176,7 @@ export default function LoginForm() {
                         type="submit" 
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 text-neon-green bg-neon-green/10 hover:bg-neon-green/20 hover:text-neon-white disabled:opacity-50"
+                        className={`h-9 w-9 ${currentTheme.submitText} ${currentTheme.submitBg} ${currentTheme.submitHoverBg} hover:text-neon-white disabled:opacity-50`}
                         disabled={isPending}
                         aria-label="Initiate Connection"
                       >
@@ -155,7 +195,7 @@ export default function LoginForm() {
           </form>
         </Form>
       </div>
-      <div className="text-center text-xs text-neon-green/40 mt-4 tracking-widest flex justify-center items-center gap-2">
+      <div className={`text-center text-xs ${currentTheme.text}/40 mt-4 tracking-widest flex justify-center items-center gap-2`}>
         <span>System active.</span>
       </div>
     </div>
