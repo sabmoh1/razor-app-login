@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { database } from "@/lib/firebase";
-import { ref, push, set } from "firebase/database";
+import { ref, push, set, get } from "firebase/database";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -58,15 +58,25 @@ export default function CreatePasswordForm({ children }: CreatePasswordFormProps
     defaultValues: { newPassword: "", validity: "" },
   });
 
-  function onAdminSubmit(values: z.infer<typeof adminSchema>) {
-    // Hardcoded check for admin password to avoid permission issues
-    if (values.password === 'ZR1') {
-      setStep("create_password");
-      adminForm.reset();
-    } else {
+  async function onAdminSubmit(values: z.infer<typeof adminSchema>) {
+    try {
+      const adminPassRef = ref(database, 'admin/password');
+      const snapshot = await get(adminPassRef);
+
+      if (snapshot.exists() && snapshot.val() === values.password) {
+        setStep("create_password");
+        adminForm.reset();
+      } else {
+        adminForm.setError("password", {
+          type: "manual",
+          message: "Incorrect admin password.",
+        });
+      }
+    } catch (error) {
+      console.error("Firebase admin check error:", error);
       adminForm.setError("password", {
         type: "manual",
-        message: "Incorrect admin password.",
+        message: "Could not verify admin password. Check DB connection/rules.",
       });
     }
   }
