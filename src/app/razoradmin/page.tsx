@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { database } from "@/lib/firebase";
-import { ref, push, set, get } from "firebase/database";
+import { ref, push, set } from "firebase/database";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Loader2, KeyRound, CalendarClock, Dice5, ShieldCheck, AlertCircle } from "lucide-react";
+import { Loader2, KeyRound, CalendarClock, Dice5, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 

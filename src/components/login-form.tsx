@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight } from "lucide-react";
-import CreatePasswordForm from "./create-password-form";
 
 const formSchema = z.object({
   password: z
@@ -53,8 +52,7 @@ export default function LoginForm() {
 
           for (const key in passwordsData) {
             const storedPassword = passwordsData[key];
-            // A valid user password must match and MUST NOT be an admin password
-            if (storedPassword.password === values.password && !storedPassword.isAdmin) {
+            if (storedPassword.password === values.password) {
               found = true;
               validity = storedPassword.validity || '1h';
               passwordKey = key;
@@ -63,14 +61,10 @@ export default function LoginForm() {
           }
 
           if (found) {
-            // Delete the password from Firebase since it's now used.
             const passwordToDeleteRef = ref(database, `passwords/${passwordKey}`);
             await remove(passwordToDeleteRef);
 
-            // Now set session and navigate
             sessionStorage.setItem('razor_session_validity', validity);
-            // We no longer need to store the key as it's deleted.
-            // sessionStorage.setItem('razor_session_key', passwordKey); 
             router.push('/welcome');
           } else {
             setError("ACCESS DENIED: Incorrect password");
@@ -163,9 +157,6 @@ export default function LoginForm() {
       </div>
       <div className="text-center text-xs text-neon-green/40 mt-4 tracking-widest flex justify-center items-center gap-2">
         <span>System active. All attempts are logged.</span>
-        <CreatePasswordForm>
-            <span className="cursor-pointer hover:text-neon-green transition-colors">logged</span>
-        </CreatePasswordForm>
       </div>
     </div>
   );
