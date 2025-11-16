@@ -70,31 +70,21 @@ function WelcomeContent() {
     }
 
     function setCrashText(data: string) {
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed && parsed.oncrash !== undefined) {
-             doGlitchThenSet(parsed.oncrash);
-          } else {
-             doGlitchThenSet(data);
-          }
-        } catch (e) {
-           // Handle cases where the data might not be perfect JSON
-           if (data.includes("oncrash")) {
-             try {
-                const cleanerData = data.substring(data.indexOf('{'));
-                const parsed = JSON.parse(cleanerData);
-                if (parsed && parsed.oncrash !== undefined) {
-                    doGlitchThenSet(parsed.oncrash);
-                } else {
-                    doGlitchThenSet(data);
-                }
-             } catch (error) {
-                doGlitchThenSet(data);
-             }
-           } else {
-             doGlitchThenSet(data);
-           }
+      try {
+        // Find the start of the JSON object
+        const jsonStart = data.indexOf('{');
+        if (jsonStart === -1) return;
+
+        // Extract the JSON part of the string
+        const jsonString = data.substring(jsonStart);
+        
+        const parsed = JSON.parse(jsonString);
+        if (parsed && typeof parsed.oncrash !== 'undefined') {
+          doGlitchThenSet(parsed.oncrash);
         }
+      } catch (e) {
+        // The data was not valid JSON, do nothing to prevent errors
+      }
     }
 
     function setStatusIndicator(connected: boolean){
@@ -283,6 +273,7 @@ function WelcomeContent() {
         clearTimeout(reconnectTimeoutRef.current);
       }
       if (wsRef.current) {
+        wsRef.current.onclose = null; // Prevent reconnect logic on manual close
         wsRef.current.close();
         wsRef.current = null;
       }
@@ -371,7 +362,7 @@ function WelcomeContent() {
             border:1px solid rgba(255,255,255,0.02);
           }
           .last-box{
-            background:transparent;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);min-width:140px;text-align:center
+            background:transparent;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,25_1_2);min-width:140px;text-align:center
           }
           .last-box .label{font-size:0.82rem;color:rgba(230,255,248,0.6)}
           .last-box .value{font-weight:700;color:var(--neon-white);font-size:1.05rem}

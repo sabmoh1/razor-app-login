@@ -70,31 +70,21 @@ function WelcomeContent() {
     }
 
     function setCrashText(data: string) {
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed && parsed.oncrash !== undefined) {
-             doGlitchThenSet(parsed.oncrash);
-          } else {
-             doGlitchThenSet(data);
-          }
-        } catch (e) {
-           // Handle cases where the data might not be perfect JSON
-           if (data.includes("oncrash")) {
-             try {
-                const cleanerData = data.substring(data.indexOf('{'));
-                const parsed = JSON.parse(cleanerData);
-                if (parsed && parsed.oncrash !== undefined) {
-                    doGlitchThenSet(parsed.oncrash);
-                } else {
-                    doGlitchThenSet(data);
-                }
-             } catch (error) {
-                doGlitchThenSet(data);
-             }
-           } else {
-             doGlitchThenSet(data);
-           }
+      try {
+        // Find the start of the JSON object
+        const jsonStart = data.indexOf('{');
+        if (jsonStart === -1) return;
+
+        // Extract the JSON part of the string
+        const jsonString = data.substring(jsonStart);
+        
+        const parsed = JSON.parse(jsonString);
+        if (parsed && typeof parsed.oncrash !== 'undefined') {
+          doGlitchThenSet(parsed.oncrash);
         }
+      } catch (e) {
+        // The data was not valid JSON, do nothing to prevent errors
+      }
     }
 
     function setStatusIndicator(connected: boolean){
@@ -283,6 +273,7 @@ function WelcomeContent() {
         clearTimeout(reconnectTimeoutRef.current);
       }
       if (wsRef.current) {
+        wsRef.current.onclose = null; // Prevent reconnect logic on manual close
         wsRef.current.close();
         wsRef.current = null;
       }
