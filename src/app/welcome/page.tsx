@@ -5,7 +5,7 @@ import { useEffect, useRef, Suspense } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { database } from "@/lib/firebase";
-import { ref, remove } from "firebase/database";
+import { ref, get } from "firebase/database";
 
 function WelcomeContent() {
   const router = useRouter();
@@ -17,6 +17,7 @@ function WelcomeContent() {
   const timerRef = useRef<HTMLDivElement>(null);
   const usernameButtonRef = useRef<HTMLAnchorElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const parseValidityToSeconds = (validity: string | null): number => {
     if (!validity) return 60 * 60; // Default to 1 hour
@@ -40,66 +41,185 @@ function WelcomeContent() {
 
   useEffect(() => {
     const validity = sessionStorage.getItem('razor_session_validity');
-    // const passwordKey = sessionStorage.getItem('razor_session_key'); // No longer needed
 
     if (!validity) {
       router.push('/');
       return;
     }
+    
+    // --- Refs for UI elements ---
+    const crashEl = crashValueRef.current;
+    const lastRawEl = lastRawRef.current;
+    const statusDot = statusDotRef.current;
+    const statusText = statusTextRef.current;
+    const timerEl = timerRef.current;
+    const usernameButton = usernameButtonRef.current;
+
+    // --- Utility functions for UI ---
+    function doGlitchThenSet(newVal: any){
+      if (!crashEl || !lastRawEl) return;
+      crashEl.classList.add('glitch');
+      setTimeout(()=>{
+        const prev = crashEl.innerText;
+        if(prev && prev.trim() !== '') lastRawEl.innerText = prev;
+        const t = (newVal===undefined||newVal===null) ? '' : String(newVal);
+        crashEl.innerText = t;
+        crashEl.setAttribute('data-text', t);
+      }, 220);
+      setTimeout(()=> crashEl.classList.remove('glitch'), 560);
+    }
+
+    function setCrashText(data: string) {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed && parsed.oncrash !== undefined) {
+             doGlitchThenSet(parsed.oncrash);
+          } else {
+             doGlitchThenSet(data);
+          }
+        } catch (e) {
+           // Handle cases where the data might not be perfect JSON
+           if (data.includes("oncrash")) {
+             try {
+                const cleanerData = data.substring(data.indexOf('{'));
+                const parsed = JSON.parse(cleanerData);
+                if (parsed && parsed.oncrash !== undefined) {
+                    doGlitchThenSet(parsed.oncrash);
+                } else {
+                    doGlitchThenSet(data);
+                }
+             } catch (error) {
+                doGlitchThenSet(data);
+             }
+           } else {
+             doGlitchThenSet(data);
+           }
+        }
+    }
+
+    function setStatusIndicator(connected: boolean){
+      if (!statusDot || !statusText) return;
+      if(connected){
+        statusDot.classList.add('connected');
+        statusText.textContent = "connected ";
+      } else {
+        statusDot.classList.remove('connected');
+        statusText.textContent = "disconnected";
+      }
+    }
+
+    // --- WebSocket Connection Logic ---
+    const connectWebSocket = (url: string) => {
+        if (wsRef.current) {
+            wsRef.current.close();
+        }
+
+        wsRef.current = new WebSocket(url);
+        
+        wsRef.current.onopen = () => { 
+            setStatusIndicator(true); 
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+                reconnectTimeoutRef.current = null;
+            }
+        };
+
+        wsRef.current.onmessage = (ev) => {
+            setCrashText(ev.data);
+        };
+
+        wsRef.current.onclose = () => { 
+            wsRef.current = null;
+            setStatusIndicator(false); 
+            // Only try to reconnect if the session is still valid
+            if (totalSeconds > 0) {
+                if (!reconnectTimeoutRef.current) {
+                    reconnectTimeoutRef.current = setTimeout(initializeWebSocket, 1200);
+                }
+            }
+        };
+
+        wsRef.current.onerror = () => { 
+            setStatusIndicator(false); 
+            wsRef.current?.close(); // This will trigger onclose and the reconnect logic
+        };
+    }
+    
+    const initializeWebSocket = async () => {
+        try {
+            const snapshot = await get(ref(database, 'websocket_url'));
+            if (snapshot.exists()) {
+                const WS_URL = snapshot.val();
+                connectWebSocket(WS_URL);
+            } else {
+                setStatusIndicator(false);
+            }
+        } catch (error) {
+            console.error("Error fetching WebSocket URL:", error);
+            setStatusIndicator(false);
+        }
+    }
 
     // --- Matrix background script ---
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    let matrixInterval: NodeJS.Timeout;
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            let W = canvas.width = window.innerWidth;
+            let H = canvas.height = window.innerHeight;
+            let cols = Math.floor(W / 10) + 1;
+            let ypos = Array(cols).fill(0);
+            const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
 
-    let W = canvas.width = window.innerWidth;
-    let H = canvas.height = window.innerHeight;
+            const matrixResize = () => {
+                W = canvas.width = window.innerWidth;
+                H = canvas.height = window.innerHeight;
+                cols = Math.floor(W / 10) + 1;
+                ypos = Array(cols).fill(0);
+            };
+            window.addEventListener('resize', matrixResize);
 
-    let cols = Math.floor(W / 10) + 1;
-    let ypos = Array(cols).fill(0);
-    const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
+            const drawMatrix = () => {
+                ctx.fillStyle = 'rgba(0,0,0,0.22)';
+                ctx.fillRect(0,0,W,H);
+                ctx.font = '12px monospace';
+                ypos.forEach((y, ind) => {
+                    const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                    const x = ind * 10;
+                    ctx.fillStyle = 'rgba(0,255,120,'+ (0.18 + Math.random()*0.6) +')';
+                    ctx.fillText(text, x, y);
+                    if(y > H + Math.random()*700) {
+                    ypos[ind] = 0;
+                    } else {
+                    ypos[ind] = y + 12 + Math.random()*8;
+                    }
+                });
+            };
+            matrixInterval = setInterval(drawMatrix, 40);
 
-    function matrixResize(){
-      if (!canvas) return;
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-      cols = Math.floor(W / 10) + 1;
-      ypos = Array(cols).fill(0);
-    }
-    window.addEventListener('resize', matrixResize);
-
-    function drawMatrix(){
-      if (!ctx) return;
-      ctx.fillStyle = 'rgba(0,0,0,0.22)';
-      ctx.fillRect(0,0,W,H);
-      ctx.font = '12px monospace';
-      ypos.forEach((y, ind) => {
-        const text = letters.charAt(Math.floor(Math.random() * letters.length));
-        const x = ind * 10;
-        ctx.fillStyle = 'rgba(0,255,120,'+ (0.18 + Math.random()*0.6) +')';
-        ctx.fillText(text, x, y);
-        if(y > H + Math.random()*700) {
-          ypos[ind] = 0;
-        } else {
-          ypos[ind] = y + 12 + Math.random()*8;
+            // Cleanup for matrix
+            // Note: Other cleanup is in the main return
+            const mainCleanup = () => {
+                window.removeEventListener('resize', matrixResize);
+                clearInterval(matrixInterval);
+            };
+            // This is a bit unusual, but we need to return it from the outer useEffect
+            // We'll call it in the main cleanup function
+            (window as any).__matrixCleanup = mainCleanup;
         }
-      });
     }
-    const matrixInterval = setInterval(drawMatrix, 40);
+
 
     // --- Timer script ---
     let totalSeconds = parseValidityToSeconds(validity);
-    const timerEl = timerRef.current;
-
-    async function handleSessionEnd() {
+    
+    const handleSessionEnd = () => {
       if (wsRef.current) {
         wsRef.current.close();
       }
       if (timerEl) timerEl.innerText = 'EXPIRED';
       
-      // The password is now deleted on login, so we don't need to delete it here.
-      // We just clear session storage.
       sessionStorage.removeItem('razor_session_validity');
       router.push('/');
     }
@@ -123,128 +243,51 @@ function WelcomeContent() {
     }, 1000);
     updateTimer();
 
-    // --- WebSocket and UI update script ---
-    const crashEl = crashValueRef.current;
-    const lastRawEl = lastRawRef.current;
-    const statusDot = statusDotRef.current;
-    const statusText = statusTextRef.current;
-
-    function doGlitchThenSet(newVal: any){
-      if (!crashEl || !lastRawEl) return;
-      crashEl.classList.add('glitch');
-      setTimeout(()=>{
-        const prev = crashEl.innerText;
-        if(prev && prev.trim() !== '') lastRawEl.innerText = prev;
-        const t = (newVal===undefined||newVal===null) ? '' : String(newVal);
-        crashEl.innerText = t;
-        crashEl.setAttribute('data-text', t);
-      }, 220);
-      setTimeout(()=> crashEl.classList.remove('glitch'), 560);
-    }
-    function setCrashText(v: any){ doGlitchThenSet(v); }
-
-    function setStatusIndicator(connected: boolean){
-      if (!statusDot || !statusText) return;
-      if(connected){
-        statusDot.classList.add('connected');
-        statusText.textContent = "connected ";
-      } else {
-        statusDot.classList.remove('connected');
-        statusText.textContent = "disconnected";
-      }
-    }
-    
-    let reconnectTimeout: NodeJS.Timeout;
-
-    function connectWebSocket() {
-      // Don't connect if time is already expired
-      if (totalSeconds <= 0) {
-        setStatusIndicator(false);
-        return;
-      }
-      const WS_URL = 'wss://gamerazorvaule-v21m.onrender.com/';
-      const ws = new WebSocket(WS_URL);
-      wsRef.current = ws;
-
-      ws.onopen = () => { 
-        setStatusIndicator(true); 
-      };
-
-      ws.onmessage = (ev) => {
-        try {
-          const parsed = JSON.parse(ev.data);
-          if (parsed && typeof parsed === 'object') {
-            if (parsed.crashValue !== undefined) {
-              setCrashText(parsed.crashValue);
-            } else if (parsed.value !== undefined) {
-              setCrashText(parsed.value);
-            } else {
-              setCrashText(JSON.stringify(parsed));
-            }
-          } else { 
-            setCrashText(ev.data); 
-          }
-        } catch (e) { 
-          setCrashText(ev.data); 
-        }
-      };
-
-      ws.onclose = () => { 
-        wsRef.current = null;
-        setStatusIndicator(false); 
-        clearTimeout(reconnectTimeout);
-        // Only reconnect if the timer has not expired
-        if (totalSeconds > 0) {
-            reconnectTimeout = setTimeout(connectWebSocket, 1200);
-        }
-      };
-
-      ws.onerror = (e) => { 
-        setStatusIndicator(false); 
-        ws.close(); // This will trigger onclose and attempt to reconnect
-      };
-    }
-    
-    connectWebSocket();
-
     // --- username button script ---
-    const usernameButton = usernameButtonRef.current;
-    if (!usernameButton) return;
+    if (usernameButton) {
+        const handleUsernameClick = (event: MouseEvent) => {
+            event.stopPropagation();
+            usernameButton.classList.add("active");
+        };
 
-    const handleUsernameClick = (event: MouseEvent) => {
-      event.stopPropagation();
-      usernameButton.classList.add("active");
-    };
+        const handleDocumentClick = () => {
+            usernameButton.classList.remove("active");
+        };
 
-    const handleDocumentClick = () => {
-      usernameButton.classList.remove("active");
-    };
+        const handleUsernameMouseDown = (event: MouseEvent) => {
+            event.stopPropagation();
+        };
 
-    const handleUsernameMouseDown = (event: MouseEvent) => {
-      event.stopPropagation();
-    };
+        usernameButton.addEventListener("click", handleUsernameClick);
+        document.addEventListener("click", handleDocumentClick);
+        usernameButton.addEventListener("mousedown", handleUsernameMouseDown);
 
-    usernameButton.addEventListener("click", handleUsernameClick);
-    document.addEventListener("click", handleDocumentClick);
-    usernameButton.addEventListener("mousedown", handleUsernameMouseDown);
+        // This is a bit unusual, but we need to return it from the outer useEffect
+        (window as any).__usernameCleanup = () => {
+            usernameButton.removeEventListener("click", handleUsernameClick);
+            document.removeEventListener("click", handleDocumentClick);
+            usernameButton.removeEventListener("mousedown", handleUsernameMouseDown);
+        }
+    }
 
-    // --- Cleanup function ---
+    // --- Initial connection ---
+    initializeWebSocket();
+
+    // --- Main Cleanup function ---
     return () => {
-      window.removeEventListener('resize', matrixResize);
-      clearInterval(matrixInterval);
-      clearInterval(timerInterval);
-      clearTimeout(reconnectTimeout);
-      if (wsRef.current) {
-        wsRef.current.onopen = null;
-        wsRef.current.onmessage = null;
-        wsRef.current.onerror = null;
-        wsRef.current.onclose = null; 
-        wsRef.current.close();
+      if ((window as any).__matrixCleanup) {
+          (window as any).__matrixCleanup();
       }
-      if (usernameButton) {
-        usernameButton.removeEventListener("click", handleUsernameClick);
-        document.removeEventListener("click", handleDocumentClick);
-        usernameButton.removeEventListener("mousedown", handleUsernameMouseDown);
+      clearInterval(timerInterval);
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      if ((window as any).__usernameCleanup) {
+          (window as any).__usernameCleanup();
       }
     };
   }, [router]);
@@ -404,3 +447,5 @@ export default function WelcomePage() {
     </Suspense>
   );
 }
+
+    
