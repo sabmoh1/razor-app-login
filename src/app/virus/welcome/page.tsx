@@ -71,12 +71,11 @@ function WelcomeContent() {
 
     function setCrashText(data: string) {
       try {
-        // Find the start of the JSON object
         const jsonStart = data.indexOf('{');
-        if (jsonStart === -1) return;
+        const jsonEnd = data.lastIndexOf('}');
+        if (jsonStart === -1 || jsonEnd === -1 || jsonEnd < jsonStart) return;
 
-        // Extract the JSON part of the string
-        const jsonString = data.substring(jsonStart);
+        const jsonString = data.substring(jsonStart, jsonEnd + 1);
         
         const parsed = JSON.parse(jsonString);
         if (parsed && typeof parsed.oncrash !== 'undefined') {
@@ -438,5 +437,7 @@ export default function VirusWelcomePage() {
     </Suspense>
   );
 }
+
+    
 
     
