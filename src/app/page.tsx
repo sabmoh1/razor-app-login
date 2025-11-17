@@ -1,34 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import LoginForm from '@/components/login-form';
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { HeartCrack, AlertCircle } from "lucide-react";
-import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [adminPassword, setAdminPassword] = useState("");
-  const [adminError, setAdminError] = useState("");
-  const router = useRouter();
-
-  const handleAdminSubmit = () => {
-    if (adminPassword === "ZR1") {
-      router.push('/virus');
-    } else {
-      setAdminError("Incorrect admin password.");
-      setAdminPassword("");
-    }
-  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -80,52 +56,9 @@ export default function Home() {
   return (
     <>
       <canvas ref={canvasRef} className="fixed inset-0 z-0 block"></canvas>
-      <div className="fixed top-4 right-4 z-20">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setIsDialogOpen(true)}
-          className="text-neon-white/70 hover:text-neon-red hover:bg-neon-red/10"
-        >
-          <HeartCrack className="h-6 w-6" />
-        </Button>
-      </div>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
-        <LoginForm />
+        <LoginForm welcomePath="/Razor_1x" />
       </main>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-black/80 border-neon-red/50 text-neon-white font-orbitron">
-          <DialogHeader>
-            <DialogTitle className="text-neon-red text-glow-red">VIRUS MODE ACCESS</DialogTitle>
-            <DialogDescription className="text-neon-white/70 font-code">
-              Enter admin credentials to switch modes.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-             {adminError && (
-              <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md text-sm flex items-center gap-2 font-code">
-                <AlertCircle className="h-5 w-5" />
-                <span>{adminError}</span>
-              </div>
-            )}
-            <Input
-              type="password"
-              placeholder="> Admin Password..."
-              value={adminPassword}
-              onChange={(e) => setAdminPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdminSubmit()}
-              className="font-code bg-transparent border-2 border-neon-red/50 focus:border-neon-red focus:ring-neon-red text-neon-white placeholder:text-neon-red/50"
-            />
-            <Button 
-              onClick={handleAdminSubmit} 
-              className="w-full bg-neon-red/80 text-black font-bold hover:bg-neon-red"
-            >
-              INITIATE
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

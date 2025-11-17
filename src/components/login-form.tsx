@@ -25,12 +25,12 @@ const formSchema = z.object({
 });
 
 export type LoginFormProps = {
-  theme?: 'green' | 'red';
+  theme?: 'green' | 'red' | 'blue';
   welcomePath?: string;
   title?: string;
 };
 
-export default function LoginForm({ theme = 'green', welcomePath = '/welcome', title = 'RAZOR TERMINAL' }: LoginFormProps) {
+export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', title = 'RAZOR TERMINAL' }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -71,6 +71,20 @@ export default function LoginForm({ theme = 'green', welcomePath = '/welcome', t
       submitBg: 'bg-neon-red/10',
       submitHoverBg: 'hover:bg-neon-red/20',
       submitText: 'text-neon-red',
+    },
+    blue: {
+      glow: 'text-glow-blue',
+      text: 'text-neon-blue',
+      border: 'border-neon-blue/30',
+      focusBorder: 'focus:border-neon-blue',
+      ring: 'focus:ring-neon-blue',
+      placeholder: 'placeholder:text-neon-blue/50',
+      icon: 'text-neon-blue/70',
+      buttonHoverBg: 'hover:bg-neon-blue/10',
+      buttonHoverText: 'hover:text-neon-blue',
+      submitBg: 'bg-neon-blue/10',
+      submitHoverBg: 'hover:bg-neon-blue/20',
+      submitText: 'text-neon-blue',
     }
   };
 

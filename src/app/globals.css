@@ -34,6 +34,7 @@
 
     --neon-green: #00ff6a;
     --neon-red: #ff003c;
+    --neon-blue: #00bfff;
     --neon-white: #e6fff8;
   }
 }
@@ -60,6 +61,14 @@
       0 0 20px var(--neon-red),
       0 0 40px var(--neon-red),
       0 0 80px rgba(255,0,60,0.5);
+  }
+  .text-glow-blue {
+    text-shadow:
+      0 0 5px var(--neon-blue),
+      0 0 10px var(--neon-blue),
+      0 0 20px var(--neon-blue),
+      0 0 40px var(--neon-blue),
+      0 0 80px rgba(0,191,255,0.5);
   }
 }
 

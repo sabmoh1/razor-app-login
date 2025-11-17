@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import LoginForm from '@/components/login-form';
 
-export default function VirusHome() {
+export default function SigmaHome() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function VirusHome() {
       ypos.forEach((y, ind) => {
         const text = letters.charAt(Math.floor(Math.random() * letters.length));
         const x = ind * 10;
-        ctx.fillStyle = 'rgba(255,0,60,'+ (0.18 + Math.random()*0.6) +')'; // RED
+        ctx.fillStyle = 'rgba(0,191,255,'+ (0.18 + Math.random()*0.6) +')'; // BLUE
         ctx.fillText(text, x, y);
         if(y > H + Math.random()*700) {
           ypos[ind] = 0;
@@ -57,7 +57,7 @@ export default function VirusHome() {
     <>
       <canvas ref={canvasRef} className="fixed inset-0 z-0 block"></canvas>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
-        <LoginForm theme="red" welcomePath="/virus/Razor_1x" title="VIRUS TERMINAL" />
+        <LoginForm theme="blue" welcomePath="/sigma/Razor_1x" title="SIGMA TERMINAL" />
       </main>
     </>
   );
