@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { database } from "@/lib/firebase";
-import { ref, get, remove } from "firebase/database";
+import { ref, get, remove, update } from "firebase/database";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -103,6 +103,8 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
           let found = false;
           let validity = '1h'; // Default validity
           let passwordKey = '';
+          let storedPasswordData: any = null;
+
 
           for (const key in passwordsData) {
             const storedPassword = passwordsData[key];
@@ -110,13 +112,21 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
               found = true;
               validity = storedPassword.validity || '1h';
               passwordKey = key;
+              storedPasswordData = storedPassword;
               break; 
             }
           }
 
-          if (found) {
-            const passwordToDeleteRef = ref(database, `passwords/${passwordKey}`);
-            await remove(passwordToDeleteRef);
+          if (found && storedPasswordData) {
+            const passwordRef = ref(database, `passwords/${passwordKey}`);
+            
+            if (storedPasswordData.uses && storedPasswordData.uses > 1) {
+              // Decrement uses and update
+              await update(passwordRef, { uses: storedPasswordData.uses - 1 });
+            } else {
+              // Remove if uses is 1 or less, or if uses doesn't exist
+              await remove(passwordRef);
+            }
 
             sessionStorage.setItem('razor_session_validity', validity);
             router.push(welcomePath);
