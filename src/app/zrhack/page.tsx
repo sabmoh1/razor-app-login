@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import LoginForm from '@/components/login-form';
 
-export default function VirusHome() {
+export default function ZRHackHome() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function VirusHome() {
     <>
       <canvas ref={canvasRef} className="fixed inset-0 z-0 block"></canvas>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
-        <LoginForm theme="red" welcomePath="/virus/Razor_1x" title="VIRUS TERMINAL" />
+        <LoginForm theme="red" welcomePath="/zrhack/Razor_1x" title="ZR HACK TERMINAL" />
       </main>
     </>
   );

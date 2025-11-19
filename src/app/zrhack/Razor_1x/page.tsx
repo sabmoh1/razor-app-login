@@ -43,7 +43,7 @@ function WelcomeContent() {
     const validity = sessionStorage.getItem('razor_session_validity');
 
     if (!validity) {
-      router.push('/virus');
+      router.push('/zrhack');
       return;
     }
     
@@ -210,7 +210,7 @@ function WelcomeContent() {
       if (timerEl) timerEl.innerText = 'EXPIRED';
       
       sessionStorage.removeItem('razor_session_validity');
-      router.push('/virus');
+      router.push('/zrhack');
     }
 
     function updateTimer(){
@@ -285,7 +285,7 @@ function WelcomeContent() {
   return (
     <>
       <Head>
-        <title>VIRUS — Crimson Matrix</title>
+        <title>ZR HACK — Crimson Matrix</title>
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
       <style jsx global>{`
@@ -421,6 +421,8 @@ function WelcomeContent() {
           #username {
             text-decoration: none;
             color: var(--neon-white);
+            white-space: nowrap;
+            font-size: 0.9rem;
           }
           #username.active {
              /* Add styles for active state if needed */
@@ -435,9 +437,9 @@ function WelcomeContent() {
         <div className="panel">
           <div className="brand">
             <div className="logo-text">1XBET</div>
-            <h1 className="neon-label">VIRUS</h1>
+            <h1 className="neon-label">ZR HACK</h1>
           </div>
-            <a id="username" ref={usernameButtonRef} target="_blank" rel="noopener noreferrer">Telegram : @Razor_1x</a>
+            <a id="username" ref={usernameButtonRef} target="_blank" rel="noopener noreferrer">Telegram : @Ruusagsyityou</a>
           <div className="display-circle" aria-hidden="false">
             <div className="inner-ring" style={{position: 'absolute', inset: '18px', borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'overlay'}}></div>
             <div id="crashValue" ref={crashValueRef} data-text="0.00">0.00</div>
@@ -455,7 +457,7 @@ function WelcomeContent() {
   );
 }
 
-export default function VirusWelcomePage() {
+export default function ZRHackWelcomePage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <WelcomeContent />
