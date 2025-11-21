@@ -4,8 +4,6 @@
 import { useEffect, useRef, Suspense } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
-import { database } from "@/lib/firebase";
-import { ref, get } from "firebase/database";
 
 function WelcomeContent() {
   const router = useRouter();
@@ -136,11 +134,12 @@ function WelcomeContent() {
     
     const initializeWebSocket = async () => {
         try {
-            const snapshot = await get(ref(database, 'websocket_url'));
-            if (snapshot.exists()) {
-                const WS_URL = snapshot.val();
-                connectWebSocket(WS_URL);
+            const response = await fetch('/api/ws-url');
+            const data = await response.json();
+            if (response.ok && data.url) {
+                connectWebSocket(data.url);
             } else {
+                console.error("Failed to fetch WebSocket URL:", data.error);
                 setStatusIndicator(false);
             }
         } catch (error) {
@@ -188,13 +187,10 @@ function WelcomeContent() {
             matrixInterval = setInterval(drawMatrix, 40);
 
             // Cleanup for matrix
-            // Note: Other cleanup is in the main return
             const mainCleanup = () => {
                 window.removeEventListener('resize', matrixResize);
                 clearInterval(matrixInterval);
             };
-            // This is a bit unusual, but we need to return it from the outer useEffect
-            // We'll call it in the main cleanup function
             (window as any).__matrixCleanup = mainCleanup;
         }
     }
@@ -251,7 +247,6 @@ function WelcomeContent() {
         document.addEventListener("click", handleDocumentClick);
         usernameButton.addEventListener("mousedown", handleUsernameMouseDown);
 
-        // This is a bit unusual, but we need to return it from the outer useEffect
         (window as any).__usernameCleanup = () => {
             usernameButton.removeEventListener("click", handleUsernameClick);
             document.removeEventListener("click", handleDocumentClick);
@@ -318,11 +313,11 @@ function WelcomeContent() {
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
           #crashValue, .brand h1, .status-dot.connected {
             text-shadow:
-              0 0 5px var(--neon-blue),
-              0 0 10px var(--neon-blue),
-              0 0 20px var(--neon-blue),
-              0 0 40px var(--neon-blue),
-              0 0 80px rgba(0,191,255,0.5);
+              0 0 7px var(--neon-blue),
+              0 0 12px var(--neon-blue),
+              0 0 25px var(--neon-blue),
+              0 0 50px var(--neon-blue),
+              0 0 90px rgba(0,191,255,0.6);
           }
           .brand h1{
             font-size:2rem;margin:0;color:var(--neon-blue);letter-spacing:4px;font-weight:900;
