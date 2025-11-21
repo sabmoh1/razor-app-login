@@ -5,8 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { database } from "@/lib/firebase";
-import { ref, get, remove, update } from "firebase/database";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -95,52 +93,26 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
     setError(null);
     startTransition(async () => {
       try {
-        const passwordsRef = ref(database, 'passwords');
-        const snapshot = await get(passwordsRef);
+        const response = await fetch('/api/auth', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ password: values.password }),
+        });
 
-        if (snapshot.exists()) {
-          const passwordsData = snapshot.val();
-          let found = false;
-          let validity = '1h'; // Default validity
-          let passwordKey = '';
-          let storedPasswordData: any = null;
+        const result = await response.json();
 
-
-          for (const key in passwordsData) {
-            const storedPassword = passwordsData[key];
-            if (storedPassword.password === values.password) {
-              found = true;
-              validity = storedPassword.validity || '1h';
-              passwordKey = key;
-              storedPasswordData = storedPassword;
-              break; 
-            }
-          }
-
-          if (found && storedPasswordData) {
-            const passwordRef = ref(database, `passwords/${passwordKey}`);
-            
-            if (storedPasswordData.uses && storedPasswordData.uses > 1) {
-              // Decrement uses and update
-              await update(passwordRef, { uses: storedPasswordData.uses - 1 });
-            } else {
-              // Remove if uses is 1 or less, or if uses doesn't exist
-              await remove(passwordRef);
-            }
-
-            sessionStorage.setItem('razor_session_validity', validity);
-            router.push(welcomePath);
-          } else {
-            setError("ACCESS DENIED: Incorrect password");
-            form.reset({ password: "" });
-          }
+        if (response.ok) {
+          sessionStorage.setItem('razor_session_validity', result.validity);
+          router.push(welcomePath);
         } else {
-          setError("ACCESS DENIED: No passwords found in database");
+          setError(result.error || "An unknown error occurred");
           form.reset({ password: "" });
         }
-      } catch (error: any) {
-        setError("SYSTEM ERROR: Could not connect to database.");
-        console.error("Firebase error:", error);
+      } catch (error) {
+        setError("SYSTEM ERROR: Could not connect to the server.");
+        console.error("Fetch error:", error);
         form.reset({ password: "" });
       }
     });
