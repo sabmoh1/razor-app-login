@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight } from "lucide-react";
+import { database } from "@/lib/firebase";
+import { ref, get, set, remove, update } from "firebase/database";
 
 const formSchema = z.object({
   password: z
@@ -108,19 +110,43 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
     setError(null);
     startTransition(async () => {
       try {
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: values.password }),
-        });
+        const passwordsRef = ref(database, 'passwords');
+        const snapshot = await get(passwordsRef);
 
-        const data = await response.json();
+        if (snapshot.exists()) {
+          const allPasswords = snapshot.val();
+          let isValid = false;
+          let validity = '1h';
+          let passwordKey: string | null = null;
+          let passwordData: any = null;
 
-        if (response.ok) {
-          sessionStorage.setItem('razor_session_validity', data.validity);
-          router.push(welcomePath);
+          for (const key in allPasswords) {
+            if (allPasswords[key].password === values.password) {
+              isValid = true;
+              validity = allPasswords[key].validity || '1h';
+              passwordKey = key;
+              passwordData = allPasswords[key];
+              break;
+            }
+          }
+
+          if (isValid && passwordKey && passwordData) {
+            const passwordRef = ref(database, `passwords/${passwordKey}`);
+
+            if (passwordData.uses && passwordData.uses > 1) {
+              await update(passwordRef, { uses: passwordData.uses - 1 });
+            } else {
+              await remove(passwordRef);
+            }
+
+            sessionStorage.setItem('razor_session_validity', validity);
+            router.push(welcomePath);
+          } else {
+            setError("ACCESS DENIED: Incorrect password");
+            form.reset({ password: "" });
+          }
         } else {
-          setError(data.message || "An unknown error occurred");
+          setError("ACCESS DENIED: No passwords found in database");
           form.reset({ password: "" });
         }
       } catch (error: any) {

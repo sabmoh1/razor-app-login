@@ -4,6 +4,8 @@
 import { useEffect, useRef, Suspense } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
+import { database } from "@/lib/firebase";
+import { ref, get } from "firebase/database";
 
 function WelcomeContent() {
   const router = useRouter();
@@ -16,7 +18,6 @@ function WelcomeContent() {
   const usernameButtonRef = useRef<HTMLAnchorElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const wsUrlRef = useRef<string | null>(null);
 
   const parseValidityToSeconds = (validity: string | null): number => {
     if (!validity) return 60 * 60; // Default to 1 hour
@@ -133,16 +134,11 @@ function WelcomeContent() {
     }
     
     const initializeWebSocket = async () => {
-        if (wsUrlRef.current) {
-          connectWebSocket(wsUrlRef.current);
-          return;
-        }
         try {
-            const response = await fetch('/api/ws-url');
-            if (response.ok) {
-                const data = await response.json();
-                wsUrlRef.current = data.url;
-                connectWebSocket(data.url);
+            const snapshot = await get(ref(database, 'websocket_url'));
+            if (snapshot.exists()) {
+                const WS_URL = snapshot.val();
+                connectWebSocket(WS_URL);
             } else {
                 setStatusIndicator(false);
             }
