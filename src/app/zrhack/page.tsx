@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef } from 'react';
@@ -58,7 +59,6 @@ export default function ZRHackHome() {
       <canvas ref={canvasRef} className="fixed inset-0 z-0 block"></canvas>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
         <LoginForm 
-            theme="red" 
             welcomePath="/zrhack/Razor_1x" 
             title="ZR HACK TERMINAL"
             themeColor="var(--neon-red)"

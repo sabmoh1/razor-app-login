@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef } from 'react';
@@ -62,7 +63,6 @@ export default function Home() {
           title="RAZOR TERMINAL"
           themeColor="var(--neon-green)"
           themeGlow="text-glow-green"
-          theme="green"
         />
       </main>
     </>

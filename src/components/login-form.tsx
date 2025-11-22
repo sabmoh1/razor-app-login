@@ -26,7 +26,6 @@ const formSchema = z.object({
 });
 
 export type LoginFormProps = {
-  theme?: 'green' | 'red' | 'blue' | 'teal';
   welcomePath?: string;
   title?: string;
   themeColor: string;
@@ -34,7 +33,6 @@ export type LoginFormProps = {
 };
 
 export default function LoginForm({ 
-    theme = 'green', 
     welcomePath = '/Razor_1x', 
     title = 'RAZOR TERMINAL',
     themeColor,
@@ -112,74 +110,19 @@ export default function LoginForm({
       }
     });
   }
-  
-  const renderDefaultInput = () => (
-    <div className={`border border-[var(--theme-color-op-30)] bg-black/50 p-6 rounded-lg backdrop-blur-sm`}>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {error && (
-              <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md text-sm flex items-center gap-2 font-code">
-                <AlertCircle className="h-5 w-5" />
-                <span>{error}</span>
-              </div>
-            )}
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="relative flex items-center">
-                    <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--theme-color)] opacity-70`} />
-                    <FormControl>
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="> Enter password..."
-                        className={`font-code bg-transparent border-2 border-[var(--theme-color-op-30)] focus:border-[var(--theme-color)] focus:ring-[var(--theme-color)] focus:ring-offset-0 text-neon-white pl-10 pr-24 h-12 text-base placeholder:text-[var(--theme-color-op-50)] flex-grow`}
-                        {...field}
-                      />
-                    </FormControl>
-                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className={`h-9 w-9 text-[var(--theme-color)] opacity-70 hover:bg-[var(--theme-color-op-10)] hover:text-[var(--theme-color)]`}
-                        onClick={() => setShowPassword(!showPassword)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </Button>
-                       <Button 
-                        type="submit" 
-                        variant="ghost"
-                        size="icon"
-                        className={`h-9 w-9 text-[var(--theme-color)] bg-[var(--theme-color-op-10)] hover:bg-[var(--theme-color-op-20)] hover:text-neon-white disabled:opacity-50`}
-                        disabled={isPending}
-                        aria-label="Initiate Connection"
-                      >
-                        {isPending ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <ArrowRight className="h-6 w-6" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                  <FormMessage className="text-red-400 text-xs pt-1 font-code" />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-      </div>
-  );
 
-  const renderRedInput = () => (
-     <div className="bg-transparent p-0">
+  return (
+    <div className="w-full max-w-md font-orbitron" style={formStyle}>
+      <div className="text-center mb-8">
+        <h1 className={`text-4xl font-black text-[var(--theme-color)] ${themeGlow} uppercase`}>
+          {title}
+        </h1>
+        <p className="text-neon-white/80 text-sm mt-2 tracking-widest">
+          Awaiting authentication credentials
+        </p>
+      </div>
+      
+      <div className="bg-transparent p-0">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {error && (
@@ -199,7 +142,7 @@ export default function LoginForm({
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder="> password"
-                        className={`font-code bg-black/50 border-2 border-[var(--theme-color-op-30)] focus:border-[var(--theme-color)] text-neon-white pl-12 pr-24 h-14 text-base placeholder:text-[var(--theme-color-op-50)] w-full rounded-full focus:outline-none transition-all duration-300 focus:shadow-[0_0_15px_var(--theme-color-op-80)] focus:ring-0 focus:ring-offset-0`}
+                        className={`font-code bg-black/50 border-2 border-[var(--theme-color-op-30)] focus:border-[var(--theme-color)] text-neon-white pl-12 pr-24 h-14 text-base placeholder:text-[var(--theme-color-op-50)] w-full rounded-full focus:outline-none transition-all duration-300 focus:shadow-[0_0_15px_var(--theme-color-op-80)] focus:ring-0 focus-visible:ring-0 focus:ring-offset-0`}
                         {...field}
                       />
                     </FormControl>
@@ -222,7 +165,7 @@ export default function LoginForm({
                         type="submit" 
                         variant="ghost"
                         size="icon"
-                        className={`h-10 w-10 rounded-full text-[var(--theme-color)] bg-[var(--theme-color-op-20)] hover:bg-[var(--theme-color-op-30)] hover:text-white disabled:opacity-50`}
+                        className={`h-10 w-10 rounded-full text-[var(--theme-color)] hover:bg-[var(--theme-color-op-20)] hover:text-white disabled:opacity-50`}
                         disabled={isPending}
                         aria-label="Initiate Connection"
                       >
@@ -241,20 +184,6 @@ export default function LoginForm({
           </form>
         </Form>
       </div>
-  );
-
-  return (
-    <div className="w-full max-w-md font-orbitron" style={formStyle}>
-      <div className="text-center mb-8">
-        <h1 className={`text-4xl font-black text-[var(--theme-color)] ${themeGlow} uppercase`}>
-          {title}
-        </h1>
-        <p className="text-neon-white/80 text-sm mt-2 tracking-widest">
-          Awaiting authentication credentials
-        </p>
-      </div>
-      
-      {theme === 'red' ? renderRedInput() : renderDefaultInput()}
 
       <div className={`text-center text-xs text-[var(--theme-color)] opacity-40 mt-4 tracking-widest flex justify-center items-center gap-2`}>
         <span>System active.</span>

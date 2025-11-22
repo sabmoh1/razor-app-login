@@ -63,7 +63,6 @@ export default function NasserbetsHome() {
             title="NASSERBETS"
             themeColor="var(--neon-teal)"
             themeGlow="text-glow-teal"
-            theme="teal"
         />
       </main>
     </>
