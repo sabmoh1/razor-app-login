@@ -57,7 +57,13 @@ export default function SigmaHome() {
     <>
       <canvas ref={canvasRef} className="fixed inset-0 z-0 block"></canvas>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
-        <LoginForm theme="blue" welcomePath="/sigma/Razor_1x" title="SIGMA TERMINAL" />
+        <LoginForm 
+            theme="blue" 
+            welcomePath="/sigma/Razor_1x" 
+            title="SIGMA TERMINAL"
+            themeColor="var(--neon-blue)"
+            themeGlow="text-glow-blue"
+        />
       </main>
     </>
   );

@@ -29,9 +29,17 @@ export type LoginFormProps = {
   theme?: 'green' | 'red' | 'blue' | 'teal';
   welcomePath?: string;
   title?: string;
+  themeColor: string;
+  themeGlow: string;
 };
 
-export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', title = 'RAZOR TERMINAL' }: LoginFormProps) {
+export default function LoginForm({ 
+    theme = 'green', 
+    welcomePath = '/Razor_1x', 
+    title = 'RAZOR TERMINAL',
+    themeColor,
+    themeGlow,
+}: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -44,66 +52,14 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
     },
   });
 
-  const colorThemes = {
-    green: {
-      glow: 'text-glow-green',
-      text: 'text-neon-green',
-      border: 'border-neon-green/30',
-      focusBorder: 'focus:border-neon-green',
-      ring: 'focus:ring-neon-green',
-      placeholder: 'placeholder:text-neon-green/50',
-      icon: 'text-neon-green/70',
-      buttonHoverBg: 'hover:bg-neon-green/10',
-      buttonHoverText: 'hover:text-neon-green',
-      submitBg: 'bg-neon-green/10',
-      submitHoverBg: 'hover:bg-neon-green/20',
-      submitText: 'text-neon-green',
-    },
-    red: {
-      glow: 'text-glow-red',
-      text: 'text-neon-red',
-      border: 'border-neon-red/30',
-      focusBorder: 'focus:border-neon-red',
-      ring: 'focus:ring-neon-red',
-      placeholder: 'placeholder:text-neon-red/50',
-      icon: 'text-neon-red/70',
-      buttonHoverBg: 'hover:bg-neon-red/10',
-      buttonHoverText: 'hover:text-neon-red',
-      submitBg: 'bg-neon-red/10',
-      submitHoverBg: 'hover:bg-neon-red/20',
-      submitText: 'text-neon-red',
-    },
-    blue: {
-      glow: 'text-glow-blue',
-      text: 'text-neon-blue',
-      border: 'border-neon-blue/30',
-      focusBorder: 'focus:border-neon-blue',
-      ring: 'focus:ring-neon-blue',
-      placeholder: 'placeholder:text-neon-blue/50',
-      icon: 'text-neon-blue/70',
-      buttonHoverBg: 'hover:bg-neon-blue/10',
-      buttonHoverText: 'hover:text-neon-blue',
-      submitBg: 'bg-neon-blue/10',
-      submitHoverBg: 'hover:bg-neon-blue/20',
-      submitText: 'text-neon-blue',
-    },
-    teal: {
-      glow: 'text-glow-teal',
-      text: 'text-neon-teal',
-      border: 'border-neon-teal/30',
-      focusBorder: 'focus:border-neon-teal',
-      ring: 'focus:ring-neon-teal',
-      placeholder: 'placeholder:text-neon-teal/50',
-      icon: 'text-neon-teal/70',
-      buttonHoverBg: 'hover:bg-neon-teal/10',
-      buttonHoverText: 'hover:text-neon-teal',
-      submitBg: 'bg-neon-teal/10',
-      submitHoverBg: 'hover:bg-neon-teal/20',
-      submitText: 'text-neon-teal',
-    }
-  };
-
-  const currentTheme = colorThemes[theme];
+  const formStyle = {
+    '--theme-color': themeColor,
+    '--theme-color-op-10': themeColor.replace(')', ', 0.1)'),
+    '--theme-color-op-20': themeColor.replace(')', ', 0.2)'),
+    '--theme-color-op-30': themeColor.replace(')', ', 0.3)'),
+    '--theme-color-op-50': themeColor.replace(')', ', 0.5)'),
+    '--theme-color-op-80': themeColor.replace(')', ', 0.8)'),
+  } as React.CSSProperties;
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -158,7 +114,7 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
   }
   
   const renderDefaultInput = () => (
-    <div className={`border ${currentTheme.border} bg-black/50 p-6 rounded-lg backdrop-blur-sm`}>
+    <div className={`border border-[var(--theme-color-op-30)] bg-black/50 p-6 rounded-lg backdrop-blur-sm`}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {error && (
@@ -173,12 +129,12 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
               render={({ field }) => (
                 <FormItem>
                   <div className="relative flex items-center">
-                    <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 ${currentTheme.icon}`} />
+                    <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--theme-color)] opacity-70`} />
                     <FormControl>
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder="> Enter password..."
-                        className={`font-code bg-transparent border-2 ${currentTheme.border} ${currentTheme.focusBorder} ${currentTheme.ring} focus:ring-offset-0 text-neon-white pl-10 pr-24 h-12 text-base ${currentTheme.placeholder} flex-grow`}
+                        className={`font-code bg-transparent border-2 border-[var(--theme-color-op-30)] focus:border-[var(--theme-color)] focus:ring-[var(--theme-color)] focus:ring-offset-0 text-neon-white pl-10 pr-24 h-12 text-base placeholder:text-[var(--theme-color-op-50)] flex-grow`}
                         {...field}
                       />
                     </FormControl>
@@ -187,7 +143,7 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className={`h-9 w-9 ${currentTheme.icon} ${currentTheme.buttonHoverBg} ${currentTheme.buttonHoverText}`}
+                        className={`h-9 w-9 text-[var(--theme-color)] opacity-70 hover:bg-[var(--theme-color-op-10)] hover:text-[var(--theme-color)]`}
                         onClick={() => setShowPassword(!showPassword)}
                         aria-label={showPassword ? "Hide password" : "Show password"}
                       >
@@ -201,7 +157,7 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
                         type="submit" 
                         variant="ghost"
                         size="icon"
-                        className={`h-9 w-9 ${currentTheme.submitText} ${currentTheme.submitBg} ${currentTheme.submitHoverBg} hover:text-neon-white disabled:opacity-50`}
+                        className={`h-9 w-9 text-[var(--theme-color)] bg-[var(--theme-color-op-10)] hover:bg-[var(--theme-color-op-20)] hover:text-neon-white disabled:opacity-50`}
                         disabled={isPending}
                         aria-label="Initiate Connection"
                       >
@@ -238,12 +194,12 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
               render={({ field }) => (
                 <FormItem>
                   <div className="relative group">
-                     <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 ${currentTheme.icon} transition-all duration-300 group-focus-within:text-neon-red`} />
+                     <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--theme-color)] opacity-70 transition-all duration-300 group-focus-within:text-[var(--theme-color)]`} />
                     <FormControl>
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder="> password"
-                        className={`font-code bg-black/50 border-2 ${currentTheme.border} ${currentTheme.focusBorder} text-neon-white pl-12 pr-24 h-14 text-base ${currentTheme.placeholder} w-full rounded-full focus:outline-none transition-all duration-300 focus:shadow-[0_0_15px_rgba(255,0,60,0.8)] ${currentTheme.ring} focus:ring-offset-0`}
+                        className={`font-code bg-black/50 border-2 border-[var(--theme-color-op-30)] focus:border-[var(--theme-color)] text-neon-white pl-12 pr-24 h-14 text-base placeholder:text-[var(--theme-color-op-50)] w-full rounded-full focus:outline-none transition-all duration-300 focus:shadow-[0_0_15px_var(--theme-color-op-80)] focus:ring-0 focus:ring-offset-0`}
                         {...field}
                       />
                     </FormControl>
@@ -252,7 +208,7 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className={`h-9 w-9 rounded-full ${currentTheme.icon} ${currentTheme.buttonHoverBg} ${currentTheme.buttonHoverText}`}
+                        className={`h-9 w-9 rounded-full text-[var(--theme-color)] opacity-70 hover:bg-[var(--theme-color-op-10)] hover:text-[var(--theme-color)]`}
                         onClick={() => setShowPassword(!showPassword)}
                         aria-label={showPassword ? "Hide password" : "Show password"}
                       >
@@ -266,7 +222,7 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
                         type="submit" 
                         variant="ghost"
                         size="icon"
-                        className={`h-10 w-10 rounded-full ${currentTheme.submitText} bg-neon-red/20 hover:bg-neon-red/30 hover:text-white disabled:opacity-50`}
+                        className={`h-10 w-10 rounded-full text-[var(--theme-color)] bg-[var(--theme-color-op-20)] hover:bg-[var(--theme-color-op-30)] hover:text-white disabled:opacity-50`}
                         disabled={isPending}
                         aria-label="Initiate Connection"
                       >
@@ -288,9 +244,9 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
   );
 
   return (
-    <div className="w-full max-w-md font-orbitron">
+    <div className="w-full max-w-md font-orbitron" style={formStyle}>
       <div className="text-center mb-8">
-        <h1 className={`text-4xl font-black ${currentTheme.text} ${currentTheme.glow} uppercase`}>
+        <h1 className={`text-4xl font-black text-[var(--theme-color)] ${themeGlow} uppercase`}>
           {title}
         </h1>
         <p className="text-neon-white/80 text-sm mt-2 tracking-widest">
@@ -300,11 +256,9 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
       
       {theme === 'red' ? renderRedInput() : renderDefaultInput()}
 
-      <div className={`text-center text-xs ${currentTheme.text}/40 mt-4 tracking-widest flex justify-center items-center gap-2`}>
+      <div className={`text-center text-xs text-[var(--theme-color)] opacity-40 mt-4 tracking-widest flex justify-center items-center gap-2`}>
         <span>System active.</span>
       </div>
     </div>
   );
 }
-
-    

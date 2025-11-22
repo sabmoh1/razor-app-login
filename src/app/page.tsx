@@ -57,7 +57,13 @@ export default function Home() {
     <>
       <canvas ref={canvasRef} className="fixed inset-0 z-0 block"></canvas>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
-        <LoginForm welcomePath="/Razor_1x" />
+        <LoginForm 
+          welcomePath="/Razor_1x" 
+          title="RAZOR TERMINAL"
+          themeColor="var(--neon-green)"
+          themeGlow="text-glow-green"
+          theme="green"
+        />
       </main>
     </>
   );

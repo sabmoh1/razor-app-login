@@ -58,7 +58,13 @@ export default function NasserbetsHome() {
     <>
       <canvas ref={canvasRef} className="fixed inset-0 z-0 block"></canvas>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
-        <LoginForm theme="teal" welcomePath="/nasserbets/Razor_1x" title="NASSERBETS" />
+        <LoginForm 
+            welcomePath="/nasserbets/Razor_1x" 
+            title="NASSERBETS"
+            themeColor="var(--neon-teal)"
+            themeGlow="text-glow-teal"
+            theme="teal"
+        />
       </main>
     </>
   );
