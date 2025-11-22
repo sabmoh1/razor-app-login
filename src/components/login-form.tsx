@@ -243,7 +243,7 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder="> password"
-                        className={`font-code bg-black/50 border-2 border-neon-red/30 focus:border-neon-red text-neon-white pl-12 pr-24 h-14 text-base placeholder:text-neon-red/50 w-full rounded-full focus:outline-none transition-all duration-300 focus:shadow-[0_0_15px_rgba(255,0,60,0.8)]`}
+                        className={`font-code bg-black/50 border-2 ${currentTheme.border} ${currentTheme.focusBorder} text-neon-white pl-12 pr-24 h-14 text-base ${currentTheme.placeholder} w-full rounded-full focus:outline-none transition-all duration-300 focus:shadow-[0_0_15px_rgba(255,0,60,0.8)] ${currentTheme.ring} focus:ring-offset-0`}
                         {...field}
                       />
                     </FormControl>

@@ -292,6 +292,7 @@ function WelcomeContent() {
           }
           .brand h1{
             font-size:2rem;margin:0;color:var(--neon-red);letter-spacing:4px;font-weight:900;
+            white-space: nowrap;
           }
           .display-circle{
             width:420px;height:420px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;
@@ -382,6 +383,7 @@ function WelcomeContent() {
             .panel{padding:18px}
             .display-circle{width:320px;height:320px}
             #crashValue{font-size:4rem}
+            .brand h1 { font-size: 1.5rem; }
             .meta-row{gap:10px}
           }
           #username {
@@ -403,7 +405,7 @@ function WelcomeContent() {
             <div className="logo-text">1XBET</div>
             <h1 className="neon-label">SPIDER BET</h1>
           </div>
-            <a id="username" target="_blank" rel="noopener noreferrer">Telegram : @Razor_1x</a>
+            <a id="username" target="_blank" rel="noopener noreferrer">Telegram : spider_dz</a>
           <div className="display-circle" aria-hidden="false">
             <div className="inner-ring" style={{position: 'absolute', inset: '18px', borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'overlay'}}></div>
             <div id="crashValue" ref={crashValueRef} data-text="0.00">0.00</div>
