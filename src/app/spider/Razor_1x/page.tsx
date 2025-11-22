@@ -4,13 +4,12 @@
 import { useEffect, useRef, Suspense } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
+import { get } from "firebase/database";
 import { database } from "@/lib/firebase";
-import { ref, get } from "firebase/database";
 
 function WelcomeContent() {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const spiderCanvasRef = useRef<HTMLCanvasElement>(null);
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
   const statusDotRef = useRef<HTMLDivElement>(null);
@@ -43,16 +42,18 @@ function WelcomeContent() {
     const validity = sessionStorage.getItem('razor_session_validity');
 
     if (!validity) {
-      router.push('/spider/login');
+      router.push('/spider');
       return;
     }
     
+    // --- Refs for UI elements ---
     const crashEl = crashValueRef.current;
     const lastRawEl = lastRawRef.current;
     const statusDot = statusDotRef.current;
     const statusText = statusTextRef.current;
     const timerEl = timerRef.current;
 
+    // --- Utility functions for UI ---
     function doGlitchThenSet(newVal: any){
       if (!crashEl || !lastRawEl) return;
       crashEl.classList.add('glitch');
@@ -71,13 +72,15 @@ function WelcomeContent() {
         const jsonStart = data.indexOf('{');
         const jsonEnd = data.lastIndexOf('}');
         if (jsonStart === -1 || jsonEnd === -1 || jsonEnd < jsonStart) return;
+
         const jsonString = data.substring(jsonStart, jsonEnd + 1);
+        
         const parsed = JSON.parse(jsonString);
         if (parsed && typeof parsed.oncrash !== 'undefined') {
           doGlitchThenSet(parsed.oncrash);
         }
       } catch (e) {
-        // Not valid JSON
+        // The data was not valid JSON, do nothing to prevent errors
       }
     }
 
@@ -92,33 +95,50 @@ function WelcomeContent() {
       }
     }
 
+    // --- WebSocket Connection Logic ---
     const connectWebSocket = (url: string) => {
-        if (wsRef.current) wsRef.current.close();
+        if (wsRef.current) {
+            wsRef.current.close();
+        }
+
         wsRef.current = new WebSocket(url);
+        
         wsRef.current.onopen = () => { 
             setStatusIndicator(true); 
-            if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-            reconnectTimeoutRef.current = null;
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+                reconnectTimeoutRef.current = null;
+            }
         };
-        wsRef.current.onmessage = (ev) => setCrashText(ev.data);
+
+        wsRef.current.onmessage = (ev) => {
+            setCrashText(ev.data);
+        };
+
         wsRef.current.onclose = () => { 
             wsRef.current = null;
             setStatusIndicator(false); 
-            if (totalSeconds > 0 && !reconnectTimeoutRef.current) {
-                reconnectTimeoutRef.current = setTimeout(initializeWebSocket, 1200);
+            // Only try to reconnect if the session is still valid
+            if (totalSeconds > 0) {
+                if (!reconnectTimeoutRef.current) {
+                    reconnectTimeoutRef.current = setTimeout(initializeWebSocket, 1200);
+                }
             }
         };
+
         wsRef.current.onerror = () => { 
             setStatusIndicator(false); 
-            wsRef.current?.close();
+            wsRef.current?.close(); // This will trigger onclose and the reconnect logic
         };
     }
     
     const initializeWebSocket = async () => {
         try {
+            const { ref } = await import("firebase/database");
             const snapshot = await get(ref(database, 'websocket_url'));
             if (snapshot.exists()) {
-                connectWebSocket(snapshot.val());
+                const WS_URL = snapshot.val();
+                connectWebSocket(WS_URL);
             } else {
                 setStatusIndicator(false);
             }
@@ -129,20 +149,20 @@ function WelcomeContent() {
     }
 
     // --- Matrix background script ---
-    const matrixCanvas = canvasRef.current;
+    const canvas = canvasRef.current;
     let matrixInterval: NodeJS.Timeout;
-    if (matrixCanvas) {
-        const ctx = matrixCanvas.getContext('2d');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
         if (ctx) {
-            let W = matrixCanvas.width = window.innerWidth;
-            let H = matrixCanvas.height = window.innerHeight;
+            let W = canvas.width = window.innerWidth;
+            let H = canvas.height = window.innerHeight;
             let cols = Math.floor(W / 10) + 1;
             let ypos = Array(cols).fill(0);
             const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
 
             const matrixResize = () => {
-                W = matrixCanvas.width = window.innerWidth;
-                H = matrixCanvas.height = window.innerHeight;
+                W = canvas.width = window.innerWidth;
+                H = canvas.height = window.innerHeight;
                 cols = Math.floor(W / 10) + 1;
                 ypos = Array(cols).fill(0);
             };
@@ -157,11 +177,16 @@ function WelcomeContent() {
                     const x = ind * 10;
                     ctx.fillStyle = 'rgba(255,0,60,'+ (0.18 + Math.random()*0.6) +')'; // RED
                     ctx.fillText(text, x, y);
-                    if(y > H + Math.random()*700) ypos[ind] = 0;
-                    else ypos[ind] = y + 12 + Math.random()*8;
+                    if(y > H + Math.random()*700) {
+                    ypos[ind] = 0;
+                    } else {
+                    ypos[ind] = y + 12 + Math.random()*8;
+                    }
                 });
             };
             matrixInterval = setInterval(drawMatrix, 40);
+
+            // Cleanup for matrix
             (window as any).__matrixCleanup = () => {
                 window.removeEventListener('resize', matrixResize);
                 clearInterval(matrixInterval);
@@ -169,95 +194,18 @@ function WelcomeContent() {
         }
     }
 
-    // --- Hanging spiders animation ---
-    const spiderCanvas = spiderCanvasRef.current;
-    let spiderInterval: NodeJS.Timeout;
-    if (spiderCanvas) {
-      const ctx = spiderCanvas.getContext('2d');
-      if (ctx) {
-        let W = spiderCanvas.width = window.innerWidth;
-        let H = spiderCanvas.height = window.innerHeight;
-        
-        class Spider {
-          x: number;
-          y: number;
-          threadLength: number;
-          maxThreadLength: number;
-          speed: number;
-          direction: number;
-
-          constructor() {
-            this.x = Math.random() * W;
-            this.y = -10;
-            this.maxThreadLength = 100 + Math.random() * (H * 0.6);
-            this.threadLength = 0;
-            this.speed = 0.5 + Math.random() * 1.5;
-            this.direction = 1; // 1 for down, -1 for up
-          }
-          
-          draw() {
-            if(!ctx) return;
-            // Thread
-            ctx.beginPath();
-            ctx.moveTo(this.x, 0);
-            ctx.lineTo(this.x, this.y);
-            ctx.strokeStyle = 'rgba(255, 0, 60, 0.3)';
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-            
-            // Spider body
-            ctx.fillStyle = 'rgba(255, 0, 60, 0.9)';
-            ctx.font = '12px monospace';
-            ctx.fillText("╭(🕷)╮", this.x - 12, this.y + 10);
-          }
-          
-          update() {
-            this.y += this.speed * this.direction;
-            this.threadLength = this.y;
-            
-            if (this.threadLength > this.maxThreadLength) this.direction = -1;
-            if (this.y < -20) {
-              // Reset
-              this.x = Math.random() * W;
-              this.y = -10;
-              this.direction = 1;
-              this.maxThreadLength = 100 + Math.random() * (H * 0.6);
-            }
-          }
-        }
-
-        const hangingSpiders = [new Spider(), new Spider(), new Spider()];
-
-        const resizeSpiderCanvas = () => {
-          W = spiderCanvas.width = window.innerWidth;
-          H = spiderCanvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeSpiderCanvas);
-
-        const animateSpiders = () => {
-          ctx.clearRect(0,0,W,H);
-          hangingSpiders.forEach(s => {
-            s.update();
-            s.draw();
-          });
-        }
-        spiderInterval = setInterval(animateSpiders, 50);
-
-        (window as any).__spiderCleanup = () => {
-            window.removeEventListener('resize', resizeSpiderCanvas);
-            clearInterval(spiderInterval);
-        };
-      }
-    }
-
 
     // --- Timer script ---
     let totalSeconds = parseValidityToSeconds(validity);
+    
     const handleSessionEnd = () => {
-      if (wsRef.current) wsRef.current.close();
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
       if (timerEl) timerEl.innerText = 'EXPIRED';
+      
       sessionStorage.removeItem('razor_session_validity');
-      router.push('/spider/login');
+      router.push('/spider');
     }
 
     function updateTimer(){
@@ -279,16 +227,23 @@ function WelcomeContent() {
     }, 1000);
     updateTimer();
 
+
+    // --- Initial connection ---
     initializeWebSocket();
 
+    // --- Main Cleanup function ---
     return () => {
-      if ((window as any).__matrixCleanup) (window as any).__matrixCleanup();
-      if ((window as any).__spiderCleanup) (window as any).__spiderCleanup();
+      if ((window as any).__matrixCleanup) {
+          (window as any).__matrixCleanup();
+      }
       clearInterval(timerInterval);
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
       if (wsRef.current) {
-        wsRef.current.onclose = null;
+        wsRef.current.onclose = null; // Prevent reconnect logic on manual close
         wsRef.current.close();
+        wsRef.current = null;
       }
     };
   }, [router]);
@@ -309,8 +264,15 @@ function WelcomeContent() {
           }
           *{box-sizing:border-box}
           html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+          body, .font-orbitron, .timer-big, .last-box .value, .last-box .label, #crashValue {
+             font-family: 'Orbitron', sans-serif !important;
+             font-weight: 900 !important;
+          }
+          .brand .logo-text, .brand h1, #username {
+            font-family: 'Orbitron', sans-serif !important;
+            font-weight: 900 !important;
+          }
           canvas#matrix{position:fixed;inset:0;z-index:0;display:block}
-          canvas#spider-canvas{position:fixed;inset:0;z-index:1;display:block;pointer-events:none;}
           .wrap{position:relative;z-index:3;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
           .panel{
             width:min(920px,94%);max-width:920px;margin:0 auto;
@@ -343,13 +305,39 @@ function WelcomeContent() {
             text-align:center;white-space:nowrap;
             -webkit-font-smoothing:antialiased;
           }
-          #crashValue.glitch{animation:glitchShort .55s linear}
-          @keyframes glitchShort{
-            0% { transform: translateY(0) skewX(0deg); opacity:1; filter:brightness(1); }
-            20% { transform: translateY(-6px) skewX(-2deg); opacity:0.85; filter:brightness(0.9); }
-            40% { transform: translateY(6px) skewX(2deg); opacity:0.9; filter:brightness(1.05); }
-            60% { transform: translateY(-3px) skewX(-1deg); opacity:0.95; filter:brightness(0.98); }
-            100% { transform: translateY(0) skewX(0deg); opacity:1; filter:brightness(1); }
+          #crashValue.small{font-size:2.2rem}
+          #crashValue.glitch{
+            animation: glitch-taz-taz 0.5s linear;
+          }
+          @keyframes glitch-taz-taz {
+            0% {
+              clip-path: inset(3% 0 94% 0);
+              transform: translate(-10px, -5px);
+              opacity: 0.8;
+            }
+            20% {
+              clip-path: inset(80% 0 3% 0);
+              transform: translate(10px, 5px);
+            }
+            40% {
+              clip-path: inset(45% 0 45% 0);
+              transform: translate(-5px, 0);
+              opacity: 0.7;
+            }
+            60% {
+              clip-path: inset(90% 0 5% 0);
+              transform: translate(5px, 0);
+            }
+            80% {
+              clip-path: inset(5% 0 88% 0);
+              transform: translate(-10px, -5px);
+              opacity: 0.9;
+            }
+            100% {
+              clip-path: inset(0 0 0 0);
+              transform: translate(0, 0);
+              opacity: 1;
+            }
           }
           .meta-row{
             display:flex;gap:18px;align-items:center;
@@ -369,18 +357,42 @@ function WelcomeContent() {
           .last-box .label{font-size:0.82rem;color:rgba(230,255,248,0.6)}
           .last-box .value{font-weight:700;color:var(--neon-white);font-size:1.05rem}
           .connection-status {
-            position: fixed; top: 15px; right: 20px; display: flex; align-items: center; gap: 8px;
-            font-family: 'Orbitron', monospace; font-size: 16px; color: white; z-index: 9999;
+            position: fixed;
+            top: 15px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Orbitron', monospace;
+            font-size: 16px;
+            color: white;
+            z-index: 9999;
           }
           .status-dot{
-            width:14px;height:14px;border-radius:50%; background:var(--neon-gray);
-            box-shadow:0 0 6px rgba(0,0,0,0.6) inset; transition:all .28s ease;
+            width:14px;height:14px;border-radius:50%;
+            background:var(--neon-gray);
+            box-shadow:0 0 6px rgba(0,0,0,0.6) inset;
+            transition:all .28s ease;
           }
-          .status-dot.connected{ background:var(--neon-red); }
-          #username { text-decoration: none; color: var(--neon-white); }
+          .status-dot.connected{
+            background:var(--neon-red);
+          }
+          footer{display:none}
+          @media (max-width:900px){
+            .panel{padding:18px}
+            .display-circle{width:320px;height:320px}
+            #crashValue{font-size:4rem}
+            .meta-row{gap:10px}
+          }
+          #username {
+            text-decoration: none;
+            color: var(--neon-white);
+          }
+          #username.active {
+             /* Add styles for active state if needed */
+          }
         `}</style>
       <canvas id="matrix" ref={canvasRef}></canvas>
-      <canvas id="spider-canvas" ref={spiderCanvasRef}></canvas>
       <div className="connection-status">
         <div id="statusDot" className="status-dot" ref={statusDotRef}></div>
         <span id="statusText" ref={statusTextRef}>Disconnected</span>
@@ -393,6 +405,7 @@ function WelcomeContent() {
           </div>
             <a id="username" target="_blank" rel="noopener noreferrer">Telegram : @Razor_1x</a>
           <div className="display-circle" aria-hidden="false">
+            <div className="inner-ring" style={{position: 'absolute', inset: '18px', borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'overlay'}}></div>
             <div id="crashValue" ref={crashValueRef} data-text="0.00">0.00</div>
           </div>
           <div className="meta-row">

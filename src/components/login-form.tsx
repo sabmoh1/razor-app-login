@@ -43,8 +43,8 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
       password: "",
     },
   });
-  
-  const colors = {
+
+  const colorThemes = {
     green: {
       glow: 'text-glow-green',
       text: 'text-neon-green',
@@ -103,7 +103,7 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
     }
   };
 
-  const currentTheme = colors[theme];
+  const currentTheme = colorThemes[theme];
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -156,19 +156,9 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
       }
     });
   }
-
-  return (
-    <div className="w-full max-w-md font-orbitron">
-      <div className="text-center mb-8">
-        <h1 className={`text-4xl font-black ${currentTheme.text} ${currentTheme.glow} uppercase`}>
-          {title}
-        </h1>
-        <p className="text-neon-white/80 text-sm mt-2 tracking-widest">
-          Awaiting authentication credentials
-        </p>
-      </div>
-      
-      <div className={`border ${currentTheme.border} bg-black/50 p-6 rounded-lg backdrop-blur-sm`}>
+  
+  const renderDefaultInput = () => (
+    <div className={`border ${currentTheme.border} bg-black/50 p-6 rounded-lg backdrop-blur-sm`}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {error && (
@@ -230,9 +220,91 @@ export default function LoginForm({ theme = 'green', welcomePath = '/Razor_1x', 
           </form>
         </Form>
       </div>
+  );
+
+  const renderRedInput = () => (
+     <div className="bg-transparent p-0">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {error && (
+              <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md text-sm flex items-center gap-2 font-code">
+                <AlertCircle className="h-5 w-5" />
+                <span>{error}</span>
+              </div>
+            )}
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="relative group">
+                     <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 ${currentTheme.icon} transition-all duration-300 group-focus-within:text-neon-red`} />
+                    <FormControl>
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="> password"
+                        className={`font-code bg-black/50 border-2 border-neon-red/30 focus:border-neon-red text-neon-white pl-12 pr-24 h-14 text-base placeholder:text-neon-red/50 w-full rounded-full focus:outline-none transition-all duration-300 focus:shadow-[0_0_15px_rgba(255,0,60,0.8)]`}
+                        {...field}
+                      />
+                    </FormControl>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className={`h-9 w-9 rounded-full ${currentTheme.icon} ${currentTheme.buttonHoverBg} ${currentTheme.buttonHoverText}`}
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </Button>
+                       <Button 
+                        type="submit" 
+                        variant="ghost"
+                        size="icon"
+                        className={`h-10 w-10 rounded-full ${currentTheme.submitText} bg-neon-red/20 hover:bg-neon-red/30 hover:text-white disabled:opacity-50`}
+                        disabled={isPending}
+                        aria-label="Initiate Connection"
+                      >
+                        {isPending ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <ArrowRight className="h-6 w-6" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <FormMessage className="text-red-400 text-xs pt-1 font-code pl-4" />
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
+      </div>
+  );
+
+  return (
+    <div className="w-full max-w-md font-orbitron">
+      <div className="text-center mb-8">
+        <h1 className={`text-4xl font-black ${currentTheme.text} ${currentTheme.glow} uppercase`}>
+          {title}
+        </h1>
+        <p className="text-neon-white/80 text-sm mt-2 tracking-widest">
+          Awaiting authentication credentials
+        </p>
+      </div>
+      
+      {theme === 'red' ? renderRedInput() : renderDefaultInput()}
+
       <div className={`text-center text-xs ${currentTheme.text}/40 mt-4 tracking-widest flex justify-center items-center gap-2`}>
         <span>System active.</span>
       </div>
     </div>
   );
 }
+
+    
