@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Loader2, AlertCircle, ArrowRight, User, KeyRound } from "lucide-react";
+import { Loader2, AlertCircle, ArrowRight, User, KeyRound, Server, Scan, Link2, CheckCircle } from "lucide-react";
 import { database } from "@/lib/firebase";
 import { ref, get, update, remove } from "firebase/database";
 import { cn } from "@/lib/utils";
@@ -39,9 +39,19 @@ const platforms = [
     { name: "888STARS", color: "#FFD700" },
 ];
 
+const activationSteps = [
+    { text: "Fetching data...", icon: Server },
+    { text: "Analyzing vulnerabilities...", icon: Scan },
+    { text: "Connecting to ID: ", icon: User },
+    { text: "Connecting to platform: ", icon: Link2 },
+    { text: "SUCCESSFULLY CONNECTED", icon: CheckCircle }
+]
+
 export default function OnePercentBetLogin() {
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isActivating, setIsActivating] = useState(false);
+  const [activationStatus, setActivationStatus] = useState(0);
+  const [selectedPlatform, setSelectedPlatform] = useState(platforms[0]);
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -52,72 +62,119 @@ export default function OnePercentBetLogin() {
     },
   });
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isActivating && activationStatus < activationSteps.length -1) {
+        interval = setInterval(() => {
+            setActivationStatus(prev => {
+                if (prev < activationSteps.length - 1) {
+                    return prev + 1;
+                }
+                clearInterval(interval);
+                return prev;
+            });
+        }, 1500);
+    }
+    return () => clearInterval(interval);
+  }, [isActivating, activationStatus]);
+
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
-    startTransition(async () => {
-      try {
-        const codesRef = ref(database, 'passwords'); // Assuming codes are stored under 'passwords'
+    setIsActivating(true);
+    setActivationStatus(0);
+
+    try {
+        const codesRef = ref(database, 'passwords');
         const snapshot = await get(codesRef);
 
         if (snapshot.exists()) {
-          const allCodes = snapshot.val();
-          let isValid = false;
-          let validity = '1h';
-          let codeKey: string | null = null;
-          let codeData: any = null;
+            const allCodes = snapshot.val();
+            let isValid = false;
+            let validity = '1h';
+            let codeKey: string | null = null;
+            let codeData: any = null;
 
-          for (const key in allCodes) {
-            // Check if the code matches and if it is not assigned to a specific ID, OR if it is assigned to the provided ID
-            if (allCodes[key].password === values.activationCode && (!allCodes[key].userId || allCodes[key].userId === values.userId)) {
-              isValid = true;
-              validity = allCodes[key].validity || '1h';
-              codeKey = key;
-              codeData = allCodes[key];
-              break;
-            }
-          }
-          
-          if (isValid && codeKey && codeData) {
-            const codeRef = ref(database, `passwords/${codeKey}`);
-
-            const updates: any = {};
-            if (codeData.uses && codeData.uses > 1) {
-              updates.uses = codeData.uses - 1;
-            }
-            // If the code is used for the first time, assign the userId to it
-            if (!codeData.userId) {
-              updates.userId = values.userId;
+            for (const key in allCodes) {
+                if (allCodes[key].password === values.activationCode && (!allCodes[key].userId || allCodes[key].userId === values.userId)) {
+                    isValid = true;
+                    validity = allCodes[key].validity || '1h';
+                    codeKey = key;
+                    codeData = allCodes[key];
+                    break;
+                }
             }
 
-            if(Object.keys(updates).length > 0){
-                await update(codeRef, updates);
-            } else if (!codeData.uses || codeData.uses <= 1) {
-                 await remove(codeRef);
-            }
-            
-            sessionStorage.setItem('onepercentbet_session_validity', validity);
-            sessionStorage.setItem('onepercentbet_user_id', values.userId);
-            router.push('/onepercentbet/welcome');
+            if (isValid && codeKey && codeData) {
+                const codeRef = ref(database, `passwords/${codeKey}`);
+                const updates: any = {};
+                if (codeData.uses && codeData.uses > 1) {
+                    updates.uses = codeData.uses - 1;
+                }
+                if (!codeData.userId) {
+                    updates.userId = values.userId;
+                }
+                if (Object.keys(updates).length > 0) {
+                    await update(codeRef, updates);
+                } else if (!codeData.uses || codeData.uses <= 1) {
+                    await remove(codeRef);
+                }
+                
+                // Simulate activation steps
+                setTimeout(() => {
+                    sessionStorage.setItem('onepercentbet_session_validity', validity);
+                    sessionStorage.setItem('onepercentbet_user_id', values.userId);
+                    sessionStorage.setItem('onepercentbet_platform', selectedPlatform.name);
+                    router.push('/onepercentbet/welcome');
+                }, 1500 * activationSteps.length);
 
-          } else {
-            setError("Invalid User ID or Activation Code.");
-            form.reset();
-          }
+            } else {
+                setTimeout(() => {
+                    setError("Invalid User ID or Activation Code.");
+                    setIsActivating(false);
+                    form.reset();
+                }, 1000);
+            }
         } else {
-          setError("SYSTEM ERROR: Could not verify activation codes.");
-          form.reset();
+            setTimeout(() => {
+                 setError("SYSTEM ERROR: Could not verify activation codes.");
+                 setIsActivating(false);
+                 form.reset();
+            }, 1000);
         }
-      } catch (error: any) {
-        setError("SYSTEM ERROR: Could not connect to the server.");
-        console.error("Login error:", error);
-        form.reset();
-      }
-    });
+    } catch (error: any) {
+        setTimeout(() => {
+            setError("SYSTEM ERROR: Could not connect to the server.");
+            setIsActivating(false);
+            console.error("Login error:", error);
+            form.reset();
+        }, 1000);
+    }
   }
   
+  if (isActivating) {
+    const CurrentIcon = activationSteps[activationStatus].icon;
+    let currentText = activationSteps[activationStatus].text;
+
+    if (activationStatus === 2) currentText += form.getValues("userId");
+    if (activationStatus === 3) currentText += selectedPlatform.name;
+
+
+    return (
+        <div className="min-h-screen w-full bg-[#0D1117] text-white flex flex-col items-center justify-center p-4 font-rajdhani">
+             <div className="w-full max-w-sm text-center">
+                 <div className="flex justify-center mb-4">
+                     <CurrentIcon className={cn("h-8 w-8 text-blue-400", activationStatus < activationSteps.length -1 ? "animate-spin" : "")} />
+                 </div>
+                 <p className="text-lg text-gray-300 font-semibold animate-pulse">{currentText}</p>
+             </div>
+        </div>
+    )
+  }
+
   return (
     <>
-        <div className="min-h-screen w-full bg-[#0D1117] text-white flex flex-col items-center justify-center p-4 font-rajdhani">
+        <div className="min-h-screen w-full bg-[#0D1117] text-white flex flex-col items-center justify-center p-4 font-rajdhani overflow-x-hidden">
             <style jsx global>{`
                 body {
                     background-color: #0D1117;
@@ -128,15 +185,27 @@ export default function OnePercentBetLogin() {
                     <h1 className="font-bebas text-5xl tracking-wider text-gray-100">1%<span className="text-blue-400">BET</span></h1>
                     <p className="text-gray-400 text-sm">Activate Your Access</p>
                 </div>
-
-                <div className="flex justify-center items-center space-x-3 mb-8">
-                    {platforms.map(p => (
-                        <span key={p.name} className="text-xs font-bold" style={{color: p.color, textShadow: `0 0 8px ${p.color}60`}}>
-                            {p.name}
-                        </span>
-                    ))}
-                </div>
                 
+                <div className="mb-8">
+                    <div className="flex justify-center items-center space-x-3 mb-2">
+                        {platforms.map(p => (
+                           <button 
+                             key={p.name} 
+                             onClick={() => setSelectedPlatform(p)}
+                             className={cn("text-xs font-bold transition-all duration-300", selectedPlatform.name === p.name ? 'opacity-100' : 'opacity-50 hover:opacity-75')} 
+                             style={{color: p.color, textShadow: selectedPlatform.name === p.name ? `0 0 12px ${p.color}80` : 'none'}}
+                           >
+                                {p.name}
+                           </button>
+                        ))}
+                    </div>
+                     <div className="flex justify-center items-center space-x-3">
+                       {platforms.map(p => (
+                         <div key={`${p.name}-dot`} className="flex-1 h-1 transition-all duration-300" style={{backgroundColor: selectedPlatform.name === p.name ? p.color : '#374151'}}></div>
+                       ))}
+                    </div>
+                </div>
+
                 <div className="bg-[#161B22] border border-gray-800 rounded-lg p-6">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -192,9 +261,9 @@ export default function OnePercentBetLogin() {
                             <Button 
                                 type="submit" 
                                 className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-base font-bold flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95"
-                                disabled={isPending}
+                                disabled={isActivating}
                             >
-                                {isPending ? (
+                                {isActivating ? (
                                 <Loader2 className="h-6 w-6 animate-spin" />
                                 ) : (
                                 <>
@@ -214,3 +283,5 @@ export default function OnePercentBetLogin() {
     </>
   );
 }
+
+    

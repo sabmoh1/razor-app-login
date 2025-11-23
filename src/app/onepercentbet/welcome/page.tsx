@@ -6,17 +6,17 @@ import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { database } from "@/lib/firebase";
 import { ref, get } from "firebase/database";
-import { Wifi, WifiOff, Loader, AlertTriangle, User } from "lucide-react";
+import { Wifi, WifiOff, Loader, AlertTriangle, User, Power, Link2 } from "lucide-react";
 import { Button } from '@/components/ui/button';
+import { cn } from "@/lib/utils";
 
 function WelcomeContent() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
-  const [validity, setValidity] = useState<string | null>(null);
+  const [platform, setPlatform] = useState<string | null>(null);
   const [totalSeconds, setTotalSeconds] = useState(0);
   const [crashValue, setCrashValue] = useState<string>("0.00");
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<"disconnected" | "connected" | "connecting" | "error">("disconnected");
   
   const wsRef = useRef<WebSocket | null>(null);
@@ -56,7 +56,6 @@ function WelcomeContent() {
 
         wsRef.current.onopen = () => {
             setConnectionStatus("connected");
-            setIsConnected(true);
             if (reconnectTimeoutRef.current) {
                 clearTimeout(reconnectTimeoutRef.current);
                 reconnectTimeoutRef.current = null;
@@ -79,7 +78,7 @@ function WelcomeContent() {
                            setCrashValue(parsed.oncrash);
                            setIsLoading(false);
                            lastValueRef.current = parsed.oncrash;
-                        }, 500); // loading animation duration
+                        }, 800); // loading animation duration
                     }
                 }
             } catch (e) {
@@ -89,7 +88,6 @@ function WelcomeContent() {
 
         wsRef.current.onclose = () => {
             wsRef.current = null;
-            setIsConnected(false);
             setConnectionStatus("disconnected");
             if (sessionStorage.getItem('onepercentbet_session_validity')) { // only reconnect if session is still valid
                 if (!reconnectTimeoutRef.current) {
@@ -113,14 +111,15 @@ function WelcomeContent() {
   useEffect(() => {
     const storedUserId = sessionStorage.getItem('onepercentbet_user_id');
     const storedValidity = sessionStorage.getItem('onepercentbet_session_validity');
+    const storedPlatform = sessionStorage.getItem('onepercentbet_platform');
 
-    if (!storedUserId || !storedValidity) {
+    if (!storedUserId || !storedValidity || !storedPlatform) {
       router.push('/onepercentbet');
       return;
     }
 
     setUserId(storedUserId);
-    setValidity(storedValidity);
+    setPlatform(storedPlatform);
     const initialSeconds = parseValidityToSeconds(storedValidity);
     setTotalSeconds(initialSeconds);
     
@@ -144,6 +143,7 @@ function WelcomeContent() {
             clearInterval(timerIntervalRef.current!);
             sessionStorage.removeItem('onepercentbet_session_validity');
             sessionStorage.removeItem('onepercentbet_user_id');
+            sessionStorage.removeItem('onepercentbet_platform');
             router.push('/onepercentbet');
             return 0;
           }
@@ -183,32 +183,39 @@ function WelcomeContent() {
       <Head>
         <title>1%BET - Dashboard</title>
       </Head>
-      <div className="min-h-screen w-full bg-[#0D1117] text-white flex flex-col items-center justify-center p-4 font-rajdhani">
+      <div className="min-h-screen w-full bg-[#0D1117] text-white flex flex-col items-center justify-center p-4 font-rajdhani overflow-x-hidden">
          <style jsx global>{`
             body {
                 background-color: #0D1117;
             }
         `}</style>
-        <div className="w-full max-w-2xl mx-auto">
+        <div className="w-full max-w-3xl mx-auto">
             {/* Header */}
-            <header className="flex justify-between items-center mb-8 bg-[#161B22] p-4 rounded-lg border border-gray-800">
-                <div className="flex items-center gap-2 text-gray-300">
-                    <User size={18} />
-                    <span className="font-semibold">ID:</span>
-                    <span className="font-mono">{userId || '...'}</span>
+            <header className="flex flex-wrap justify-between items-center gap-4 mb-8 bg-[#161B22] p-4 rounded-lg border border-gray-800 shadow-lg">
+                <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-2 text-gray-300">
+                        <User size={18} />
+                        <span className="font-semibold">ID:</span>
+                        <span className="font-mono">{userId || '...'}</span>
+                    </div>
+                     <div className="flex items-center gap-2 text-gray-300">
+                        <Link2 size={18} />
+                        <span className="font-semibold">Platform:</span>
+                        <span className="font-mono">{platform || '...'}</span>
+                    </div>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="text-center">
                         <div className="text-xs text-gray-400">Time Left</div>
                         <div className="font-mono font-bold text-lg">{formatTime(totalSeconds)}</div>
                     </div>
-                     {!isConnected ? (
+                     {connectionStatus === 'disconnected' && totalSeconds > 0 ? (
                         <Button onClick={connectWebSocket} disabled={connectionStatus === 'connecting'}>
-                            {connectionStatus === 'connecting' ? <Loader className="animate-spin mr-2" size={16}/> : null}
+                            {connectionStatus === 'connecting' ? <Loader className="animate-spin mr-2" size={16}/> : <Power size={16} className="mr-2"/>}
                             Connect
                         </Button>
                     ) : (
-                         <div className="text-sm font-semibold">
+                         <div className="text-sm font-semibold px-3 py-2">
                            {getStatusIndicator()}
                         </div>
                     )}
@@ -216,15 +223,15 @@ function WelcomeContent() {
             </header>
 
             {/* Main Display */}
-            <main className="bg-gradient-to-br from-[#161B22] to-[#0D1117] p-8 rounded-xl shadow-2xl border border-gray-800 flex flex-col items-center justify-center aspect-video">
-                <h2 className="text-2xl font-bold text-gray-400 tracking-wider font-bebas mb-2">CRASHED AT</h2>
-                <div className="relative w-64 h-32 flex items-center justify-center">
+            <main className="bg-gradient-to-br from-[#161B22] to-[#0D1117] p-8 rounded-xl shadow-2xl border border-gray-800 flex flex-col items-center justify-center aspect-video w-full">
+                <h2 className="text-2xl font-bold text-gray-400 tracking-wider font-bebas mb-4">CRASHED AT</h2>
+                <div className="relative w-full h-32 flex items-center justify-center">
                     {isLoading ? (
                          <div className="flex items-center justify-center w-full h-full">
-                            <Loader className="text-blue-400 animate-spin" size={48} />
+                            <Loader className="text-blue-400 animate-spin" size={64} />
                         </div>
                     ) : (
-                        <div className="font-bebas text-8xl text-blue-400" style={{textShadow: '0 0 15px rgba(59, 130, 246, 0.6)'}}>
+                        <div className="font-bebas text-9xl text-blue-400" style={{textShadow: '0 0 20px rgba(59, 130, 246, 0.7)'}}>
                            {crashValue}
                         </div>
                     )}
@@ -241,8 +248,10 @@ function WelcomeContent() {
 
 export default function OnePercentWelcomePage() {
     return (
-        <Suspense fallback={<div className="bg-[#0D1117] min-h-screen flex items-center justify-center text-white">Loading...</div>}>
+        <Suspense fallback={<div className="bg-[#0D1117] min-h-screen flex items-center justify-center text-white"><Loader className="animate-spin" /></div>}>
             <WelcomeContent />
         </Suspense>
     )
 }
+
+    
