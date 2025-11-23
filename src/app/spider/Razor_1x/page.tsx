@@ -4,7 +4,7 @@
 import { useEffect, useRef, Suspense } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
-import { get } from "firebase/database";
+import { get, ref } from "firebase/database";
 import { database } from "@/lib/firebase";
 
 function WelcomeContent() {
@@ -134,7 +134,6 @@ function WelcomeContent() {
     
     const initializeWebSocket = async () => {
         try {
-            const { ref } = await import("firebase/database");
             const snapshot = await get(ref(database, 'websocket_url'));
             if (snapshot.exists()) {
                 const WS_URL = snapshot.val();
@@ -430,3 +429,5 @@ export default function SpiderWelcomePage() {
     </Suspense>
   );
 }
+
+    
