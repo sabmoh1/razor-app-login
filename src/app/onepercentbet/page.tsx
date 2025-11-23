@@ -116,99 +116,101 @@ export default function OnePercentBetLogin() {
   }
   
   return (
-    <div className="min-h-screen w-full bg-[#0D1117] text-white flex flex-col items-center justify-center p-4 font-rajdhani">
-        <style jsx global>{`
-            body {
-                background-color: #0D1117;
-            }
-        `}</style>
-        <div className="w-full max-w-sm">
-            <div className="text-center mb-6">
-                <h1 className="font-bebas text-5xl tracking-wider text-gray-100">1%<span className="text-blue-400">BET</span></h1>
-                <p className="text-gray-400 text-sm">Activate Your Access</p>
-            </div>
+    <>
+        <div className="min-h-screen w-full bg-[#0D1117] text-white flex flex-col items-center justify-center p-4 font-rajdhani">
+            <style jsx global>{`
+                body {
+                    background-color: #0D1117;
+                }
+            `}</style>
+            <div className="w-full max-w-sm">
+                <div className="text-center mb-6">
+                    <h1 className="font-bebas text-5xl tracking-wider text-gray-100">1%<span className="text-blue-400">BET</span></h1>
+                    <p className="text-gray-400 text-sm">Activate Your Access</p>
+                </div>
 
-            <div className="flex justify-center items-center space-x-3 mb-8">
-                {platforms.map(p => (
-                    <span key={p.name} className="text-xs font-bold" style={{color: p.color, text-shadow: `0 0 8px ${p.color}60`}}>
-                        {p.name}
-                    </span>
-                ))}
-            </div>
-            
-            <div className="bg-[#161B22] border border-gray-800 rounded-lg p-6">
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                         {error && (
-                            <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md text-sm flex items-center gap-2">
-                                <AlertCircle className="h-5 w-5" />
-                                <span>{error}</span>
-                            </div>
-                        )}
-
-                        <FormField
-                            control={form.control}
-                            name="userId"
-                            render={({ field }) => (
-                                <FormItem>
-                                <div className="relative">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
-                                    <FormControl>
-                                    <Input
-                                        type="text"
-                                        placeholder="User ID"
-                                        className="bg-[#0D1117] border-gray-700 h-12 pl-10 pr-4 text-base focus:border-blue-500 focus:ring-blue-500 focus:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-                                        {...field}
-                                    />
-                                    </FormControl>
+                <div className="flex justify-center items-center space-x-3 mb-8">
+                    {platforms.map(p => (
+                        <span key={p.name} className="text-xs font-bold" style={{color: p.color, textShadow: `0 0 8px ${p.color}60`}}>
+                            {p.name}
+                        </span>
+                    ))}
+                </div>
+                
+                <div className="bg-[#161B22] border border-gray-800 rounded-lg p-6">
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                            {error && (
+                                <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md text-sm flex items-center gap-2">
+                                    <AlertCircle className="h-5 w-5" />
+                                    <span>{error}</span>
                                 </div>
-                                <FormMessage className="text-red-400 text-xs pt-1 pl-2" />
-                                </FormItem>
                             )}
-                        />
 
-                        <FormField
-                            control={form.control}
-                            name="activationCode"
-                            render={({ field }) => (
-                                <FormItem>
-                                <div className="relative">
-                                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
-                                    <FormControl>
-                                    <Input
-                                        type="password"
-                                        placeholder="Activation Code"
-                                        className="bg-[#0D1117] border-gray-700 h-12 pl-10 pr-4 text-base focus:border-blue-500 focus:ring-blue-500 focus:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-                                        {...field}
-                                    />
-                                    </FormControl>
-                                </div>
-                                <FormMessage className="text-red-400 text-xs pt-1 pl-2" />
-                                </FormItem>
-                            )}
-                        />
-                        
-                        <Button 
-                            type="submit" 
-                            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-base font-bold flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95"
-                            disabled={isPending}
-                        >
-                            {isPending ? (
-                            <Loader2 className="h-6 w-6 animate-spin" />
-                            ) : (
-                            <>
-                                Activate
-                                <ArrowRight className="h-5 w-5" />
-                            </>
-                            )}
-                        </Button>
-                    </form>
-                </Form>
+                            <FormField
+                                control={form.control}
+                                name="userId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <div className="relative">
+                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                        <FormControl>
+                                        <Input
+                                            type="text"
+                                            placeholder="User ID"
+                                            className="bg-[#0D1117] border-gray-700 h-12 pl-10 pr-4 text-base focus:border-blue-500 focus:ring-blue-500 focus:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                                            {...field}
+                                        />
+                                        </FormControl>
+                                    </div>
+                                    <FormMessage className="text-red-400 text-xs pt-1 pl-2" />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="activationCode"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <div className="relative">
+                                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                        <FormControl>
+                                        <Input
+                                            type="password"
+                                            placeholder="Activation Code"
+                                            className="bg-[#0D1117] border-gray-700 h-12 pl-10 pr-4 text-base focus:border-blue-500 focus:ring-blue-500 focus:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                                            {...field}
+                                        />
+                                        </FormControl>
+                                    </div>
+                                    <FormMessage className="text-red-400 text-xs pt-1 pl-2" />
+                                    </FormItem>
+                                )}
+                            />
+                            
+                            <Button 
+                                type="submit" 
+                                className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-base font-bold flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95"
+                                disabled={isPending}
+                            >
+                                {isPending ? (
+                                <Loader2 className="h-6 w-6 animate-spin" />
+                                ) : (
+                                <>
+                                    Activate
+                                    <ArrowRight className="h-5 w-5" />
+                                </>
+                                )}
+                            </Button>
+                        </form>
+                    </Form>
+                </div>
+                <p className="text-center text-gray-600 text-xs mt-4">
+                    © 2024 1%BET. All rights reserved.
+                </p>
             </div>
-             <p className="text-center text-gray-600 text-xs mt-4">
-                © 2024 1%BET. All rights reserved.
-            </p>
         </div>
-    </div>
+    </>
   );
 }
