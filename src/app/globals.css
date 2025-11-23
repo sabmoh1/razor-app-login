@@ -88,4 +88,10 @@
   .font-code {
      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
+  .font-rajdhani {
+    font-family: 'Rajdhani', sans-serif;
+  }
+  .font-bebas {
+      font-family: 'Bebas Neue', sans-serif;
+  }
 }
