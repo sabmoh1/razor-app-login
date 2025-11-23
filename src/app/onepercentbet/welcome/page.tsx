@@ -115,7 +115,7 @@ function WelcomeContent() {
     const storedValidity = sessionStorage.getItem('onepercentbet_session_validity');
 
     if (!storedUserId || !storedValidity) {
-      router.push('/onepercentbet/login');
+      router.push('/onepercentbet');
       return;
     }
 
@@ -144,7 +144,7 @@ function WelcomeContent() {
             clearInterval(timerIntervalRef.current!);
             sessionStorage.removeItem('onepercentbet_session_validity');
             sessionStorage.removeItem('onepercentbet_user_id');
-            router.push('/onepercentbet/login');
+            router.push('/onepercentbet');
             return 0;
           }
           return prev - 1;
