@@ -62,7 +62,7 @@ export default function NasserbetsAdmin() {
         setAuthError(null);
         setIsAuthenticating(true);
         try {
-            const adminCodeRef = ref(database, 'admin_code');
+            const adminCodeRef = ref(database, 'admin/password');
             const snapshot = await get(adminCodeRef);
             if (snapshot.exists() && snapshot.val() === adminCode) {
                 setIsAdmin(true);
@@ -111,6 +111,7 @@ export default function NasserbetsAdmin() {
                             onChange={(e) => setAdminCode(e.target.value)}
                             placeholder="Enter Admin Code"
                             className="bg-gray-800 border-gray-700 h-12 pl-10 pr-4"
+                            onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
                         />
                     </div>
                     {authError && <p className="text-sm text-red-400 flex items-center gap-2"><AlertCircle size={16}/> {authError}</p>}
@@ -166,3 +167,4 @@ export default function NasserbetsAdmin() {
     );
 }
 
+    
