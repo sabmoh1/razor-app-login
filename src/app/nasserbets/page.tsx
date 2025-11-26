@@ -1,11 +1,49 @@
 
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import LoginForm from '@/components/login-form';
+import { database } from "@/lib/firebase";
+import { ref, onValue } from "firebase/database";
+
+type NasserbetsConfig = {
+  name: string;
+  theme_color: string;
+  expires: number;
+};
+
+const DEFAULT_CONFIG = {
+  name: "NASSERBETS",
+  theme_color: "#00d9a3", // Teal
+  themeGlow: 'text-glow-teal'
+};
 
 export default function NasserbetsHome() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [config, setConfig] = useState({ 
+    name: DEFAULT_CONFIG.name, 
+    themeColor: DEFAULT_CONFIG.theme_color, 
+    themeGlow: DEFAULT_CONFIG.themeGlow 
+  });
+
+  useEffect(() => {
+    const configRef = ref(database, 'nasserbets_config');
+    const unsubscribe = onValue(configRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data: NasserbetsConfig = snapshot.val();
+        if (data.expires > Date.now()) {
+          setConfig({ name: data.name, themeColor: data.theme_color, themeGlow: '' });
+        } else {
+          setConfig({ name: DEFAULT_CONFIG.name, themeColor: DEFAULT_CONFIG.theme_color, themeGlow: DEFAULT_CONFIG.themeGlow });
+        }
+      } else {
+        setConfig({ name: DEFAULT_CONFIG.name, themeColor: DEFAULT_CONFIG.theme_color, themeGlow: DEFAULT_CONFIG.themeGlow });
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -37,7 +75,7 @@ export default function NasserbetsHome() {
       ypos.forEach((y, ind) => {
         const text = letters.charAt(Math.floor(Math.random() * letters.length));
         const x = ind * 10;
-        ctx.fillStyle = 'rgba(0, 217, 163, '+ (0.18 + Math.random()*0.6) +')'; // TEAL
+        ctx.fillStyle = config.themeColor + (0.18 + Math.random()*0.6).toString(16).slice(2,4);
         ctx.fillText(text, x, y);
         if(y > H + Math.random()*700) {
           ypos[ind] = 0;
@@ -52,7 +90,7 @@ export default function NasserbetsHome() {
       window.removeEventListener('resize', matrixResize);
       clearInterval(matrixInterval);
     }
-  }, []);
+  }, [config.themeColor]);
 
   return (
     <>
@@ -60,9 +98,9 @@ export default function NasserbetsHome() {
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
         <LoginForm 
             welcomePath="/nasserbets/Razor_1x" 
-            title="NASSERBETS"
-            themeColor="var(--neon-teal)"
-            themeGlow="text-glow-teal"
+            title={config.name}
+            themeColor={config.themeColor}
+            themeGlow={config.themeGlow}
         />
       </main>
     </>

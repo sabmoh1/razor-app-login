@@ -1,21 +1,36 @@
 
 "use client";
 
-import { useEffect, useRef, Suspense } from 'react';
+import { useEffect, useRef, Suspense, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { database } from "@/lib/firebase";
-import { ref, get } from "firebase/database";
+import { ref, get, onValue } from "firebase/database";
+
+type NasserbetsConfig = {
+  name: string;
+  social_handle: string;
+  theme_color: string;
+  expires: number;
+};
+
+const DEFAULT_CONFIG = {
+  name: "NASSERBETS",
+  social_handle: "Instagram : nasserbets",
+  theme_color: "#00d9a3", // Teal
+};
+
 
 function WelcomeContent() {
   const router = useRouter();
+  const [config, setConfig] = useState<Omit<NasserbetsConfig, 'expires'>>(DEFAULT_CONFIG);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
   const statusDotRef = useRef<HTMLDivElement>(null);
   const statusTextRef = useRef<HTMLSpanElement>(null);
   const timerRef = useRef<HTMLDivElement>(null);
-  const usernameButtonRef = useRef<HTMLAnchorElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -38,6 +53,24 @@ function WelcomeContent() {
         return 60 * 60;
     }
   };
+
+  useEffect(() => {
+    const configRef = ref(database, 'nasserbets_config');
+    const unsubscribe = onValue(configRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data: NasserbetsConfig = snapshot.val();
+        if (data.expires > Date.now()) {
+          setConfig(data);
+        } else {
+          setConfig(DEFAULT_CONFIG);
+        }
+      } else {
+        setConfig(DEFAULT_CONFIG);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const validity = sessionStorage.getItem('razor_session_validity');
@@ -97,6 +130,7 @@ function WelcomeContent() {
     }
 
     // --- WebSocket Connection Logic ---
+    let totalSeconds = parseValidityToSeconds(validity);
     const connectWebSocket = (url: string) => {
         if (wsRef.current) {
             wsRef.current.close();
@@ -175,7 +209,7 @@ function WelcomeContent() {
                 ypos.forEach((y, ind) => {
                     const text = letters.charAt(Math.floor(Math.random() * letters.length));
                     const x = ind * 10;
-                    ctx.fillStyle = 'rgba(0, 217, 163, '+ (0.18 + Math.random()*0.6) +')'; // TEAL
+                    ctx.fillStyle = config.theme_color + (0.18 + Math.random()*0.6).toString(16).slice(2,4);
                     ctx.fillText(text, x, y);
                     if(y > H + Math.random()*700) {
                     ypos[ind] = 0;
@@ -197,7 +231,6 @@ function WelcomeContent() {
 
 
     // --- Timer script ---
-    let totalSeconds = parseValidityToSeconds(validity);
     
     const handleSessionEnd = () => {
       if (wsRef.current) {
@@ -246,21 +279,21 @@ function WelcomeContent() {
         wsRef.current = null;
       }
     };
-  }, [router]);
+  }, [router, config]);
 
   return (
     <>
       <Head>
-        <title>NASSERBETS — Teal Matrix</title>
+        <title>{config.name} — Matrix</title>
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
       <style jsx global>{`
           :root{
             --bg:#000;
-            --neon-teal: #00d9a3;
+            --neon-theme: ${config.theme_color};
             --neon-white:#e6fff8;
             --neon-gray:#666;
-            --accent:#00e5ff;
+            --accent:${config.theme_color};
           }
           *{box-sizing:border-box}
           html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -284,23 +317,23 @@ function WelcomeContent() {
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
           #crashValue, .brand h1, .status-dot.connected {
             text-shadow:
-              0 0 5px var(--neon-teal),
-              0 0 10px var(--neon-teal),
-              0 0 20px var(--neon-teal),
-              0 0 40px var(--neon-teal),
-              0 0 80px rgba(0, 217, 163, 0.5);
+              0 0 5px var(--neon-theme),
+              0 0 10px var(--neon-theme),
+              0 0 20px var(--neon-theme),
+              0 0 40px var(--neon-theme),
+              0 0 80px ${config.theme_color}80;
           }
           .brand h1{
-            font-size:2rem;margin:0;color:var(--neon-teal);letter-spacing:4px;font-weight:900;
+            font-size:2rem;margin:0;color:var(--neon-theme);letter-spacing:4px;font-weight:900;
           }
           .display-circle{
             width:420px;height:420px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;
             background: radial-gradient(ellipse at center, rgba(0,0,0,0.18), rgba(0,0,0,0.45));
-            border:1px solid rgba(0, 217, 163, 0.04);
+            border:1px solid ${config.theme_color}0a;
             overflow:hidden;
           }
           #crashValue{
-            font-size:6rem;font-weight:900;color:var(--neon-teal);
+            font-size:6rem;font-weight:900;color:var(--neon-theme);
             letter-spacing: 1px;transition:transform .18s ease, opacity .18s ease;
             text-align:center;white-space:nowrap;
             -webkit-font-smoothing:antialiased;
@@ -375,7 +408,7 @@ function WelcomeContent() {
             transition:all .28s ease;
           }
           .status-dot.connected{
-            background:var(--neon-teal);
+            background:var(--neon-theme);
           }
           footer{display:none}
           @media (max-width:900px){
@@ -400,9 +433,9 @@ function WelcomeContent() {
         <div className="panel">
           <div className="brand">
             <div className="logo-text">1XBET</div>
-            <h1 className="neon-label">NASSERBETS</h1>
+            <h1 className="neon-label">{config.name}</h1>
           </div>
-            <a id="username" ref={usernameButtonRef} target="_blank" rel="noopener noreferrer">Instagram : nasserbets</a>
+            <a id="username" target="_blank" rel="noopener noreferrer">{config.social_handle}</a>
           <div className="display-circle" aria-hidden="false">
             <div className="inner-ring" style={{position: 'absolute', inset: '18px', borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'overlay'}}></div>
             <div id="crashValue" ref={crashValueRef} data-text="0.00">0.00</div>
@@ -422,7 +455,7 @@ function WelcomeContent() {
 
 export default function NasserbetsWelcomePage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="bg-black min-h-screen flex items-center justify-center text-white">Loading...</div>}>
       <WelcomeContent />
     </Suspense>
   );
