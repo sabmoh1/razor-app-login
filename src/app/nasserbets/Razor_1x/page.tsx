@@ -281,6 +281,17 @@ function WelcomeContent() {
     };
   }, [router, config]);
 
+  const dynamicGlowStyle = {
+    color: config.theme_color,
+    textShadow: `
+      0 0 5px ${config.theme_color},
+      0 0 10px ${config.theme_color},
+      0 0 20px ${config.theme_color},
+      0 0 40px ${config.theme_color},
+      0 0 80px ${config.theme_color}80
+    `
+  };
+
   return (
     <>
       <Head>
@@ -315,7 +326,7 @@ function WelcomeContent() {
           }
           .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
-          #crashValue, .brand h1, .status-dot.connected {
+          #crashValue, .status-dot.connected {
             text-shadow:
               0 0 5px var(--neon-theme),
               0 0 10px var(--neon-theme),
@@ -324,7 +335,7 @@ function WelcomeContent() {
               0 0 80px ${config.theme_color}80;
           }
           .brand h1{
-            font-size:2rem;margin:0;color:var(--neon-theme);letter-spacing:4px;font-weight:900;
+            font-size:2rem;margin:0;letter-spacing:4px;font-weight:900;
           }
           .display-circle{
             width:420px;height:420px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;
@@ -433,7 +444,7 @@ function WelcomeContent() {
         <div className="panel">
           <div className="brand">
             <div className="logo-text">1XBET</div>
-            <h1 className="neon-label">{config.name}</h1>
+            <h1 className="neon-label" style={dynamicGlowStyle}>{config.name}</h1>
           </div>
             <a id="username" target="_blank" rel="noopener noreferrer">{config.social_handle}</a>
           <div className="display-circle" aria-hidden="false">

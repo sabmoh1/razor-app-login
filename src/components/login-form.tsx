@@ -30,6 +30,7 @@ export type LoginFormProps = {
   title?: string;
   themeColor: string;
   themeGlow: string;
+  useCustomGlow?: boolean;
 };
 
 export default function LoginForm({ 
@@ -37,6 +38,7 @@ export default function LoginForm({
     title = 'RAZOR TERMINAL',
     themeColor,
     themeGlow,
+    useCustomGlow = false,
 }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -52,12 +54,23 @@ export default function LoginForm({
 
   const formStyle = {
     '--theme-color': themeColor,
-    '--theme-color-op-10': themeColor.replace(')', ', 0.1)'),
-    '--theme-color-op-20': themeColor.replace(')', ', 0.2)'),
-    '--theme-color-op-30': themeColor.replace(')', ', 0.3)'),
-    '--theme-color-op-50': themeColor.replace(')', ', 0.5)'),
-    '--theme-color-op-80': themeColor.replace(')', ', 0.8)'),
+    '--theme-color-op-10': themeColor.startsWith('hsl') ? `hsla(var(--primary-hsl), 0.1)` : `${themeColor}1a`,
+    '--theme-color-op-20': themeColor.startsWith('hsl') ? `hsla(var(--primary-hsl), 0.2)` : `${themeColor}33`,
+    '--theme-color-op-30': themeColor.startsWith('hsl') ? `hsla(var(--primary-hsl), 0.3)` : `${themeColor}4d`,
+    '--theme-color-op-50': themeColor.startsWith('hsl') ? `hsla(var(--primary-hsl), 0.5)` : `${themeColor}80`,
+    '--theme-color-op-80': themeColor.startsWith('hsl') ? `hsla(var(--primary-hsl), 0.8)` : `${themeColor}cc`,
   } as React.CSSProperties;
+  
+  const dynamicGlowStyle = {
+      color: themeColor,
+      textShadow: `
+        0 0 5px ${themeColor},
+        0 0 10px ${themeColor},
+        0 0 20px ${themeColor},
+        0 0 40px ${themeColor},
+        0 0 80px ${themeColor}80
+      `
+  };
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -114,7 +127,10 @@ export default function LoginForm({
   return (
     <div className="w-full max-w-md font-orbitron" style={formStyle}>
       <div className="text-center mb-8">
-        <h1 className={`text-4xl font-black text-[var(--theme-color)] ${themeGlow} uppercase`}>
+        <h1 
+          className={`text-4xl font-black uppercase ${!useCustomGlow ? themeGlow : ''}`} 
+          style={useCustomGlow ? dynamicGlowStyle : {color: themeColor}}
+        >
           {title}
         </h1>
         <p className="text-neon-white/80 text-sm mt-2 tracking-widest">

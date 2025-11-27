@@ -23,7 +23,8 @@ export default function NasserbetsHome() {
   const [config, setConfig] = useState({ 
     name: DEFAULT_CONFIG.name, 
     themeColor: DEFAULT_CONFIG.theme_color, 
-    themeGlow: DEFAULT_CONFIG.themeGlow 
+    themeGlow: DEFAULT_CONFIG.themeGlow,
+    isCustom: false
   });
 
   useEffect(() => {
@@ -32,12 +33,12 @@ export default function NasserbetsHome() {
       if (snapshot.exists()) {
         const data: NasserbetsConfig = snapshot.val();
         if (data.expires > Date.now()) {
-          setConfig({ name: data.name, themeColor: data.theme_color, themeGlow: '' });
+          setConfig({ name: data.name, themeColor: data.theme_color, themeGlow: '', isCustom: true });
         } else {
-          setConfig({ name: DEFAULT_CONFIG.name, themeColor: DEFAULT_CONFIG.theme_color, themeGlow: DEFAULT_CONFIG.themeGlow });
+          setConfig({ name: DEFAULT_CONFIG.name, themeColor: DEFAULT_CONFIG.theme_color, themeGlow: DEFAULT_CONFIG.themeGlow, isCustom: false });
         }
       } else {
-        setConfig({ name: DEFAULT_CONFIG.name, themeColor: DEFAULT_CONFIG.theme_color, themeGlow: DEFAULT_CONFIG.themeGlow });
+        setConfig({ name: DEFAULT_CONFIG.name, themeColor: DEFAULT_CONFIG.theme_color, themeGlow: DEFAULT_CONFIG.themeGlow, isCustom: false });
       }
     });
 
@@ -101,6 +102,7 @@ export default function NasserbetsHome() {
             title={config.name}
             themeColor={config.themeColor}
             themeGlow={config.themeGlow}
+            useCustomGlow={config.isCustom}
         />
       </main>
     </>
