@@ -46,11 +46,14 @@ export default function NasserbetsAdmin() {
             const snapshot = await get(configRef);
             if (snapshot.exists()) {
                 const data: NasserbetsConfig = snapshot.val();
-                setConfig({
-                    name: data.name,
-                    social_handle: data.social_handle,
-                    theme_color: data.theme_color
-                });
+                // Only set config if it hasn't expired
+                if (data.expires > Date.now()) {
+                    setConfig({
+                        name: data.name,
+                        social_handle: data.social_handle,
+                        theme_color: data.theme_color
+                    });
+                }
             }
         };
         if(isAdmin) {
@@ -166,5 +169,3 @@ export default function NasserbetsAdmin() {
         </div>
     );
 }
-
-    
