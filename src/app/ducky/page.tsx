@@ -360,10 +360,8 @@ export default function DuckyLoginPage() {
           <div className="logo-container">
             <img src="https://i.ibb.co/NgJnjdc4/t-l-chargement-11-removebg-preview.png" className="logo" alt="Ducky DZ" />
           </div>
-          <div className="brand">
-            <h1 className="brand-title">DUCKY DZ</h1>
-            <p className="brand-subtitle">VIP ACCESS</p>
-          </div>
+          <h1 className="brand-title">DUCKY DZ</h1>
+          <p className="brand-subtitle">VIP ACCESS</p>
         </div>
 
         <div className="right-section">
@@ -420,3 +418,5 @@ export default function DuckyLoginPage() {
     </>
   );
 }
+
+    
