@@ -177,27 +177,41 @@ function WelcomeContent() {
         .loader-dots span:nth-of-type(2) { animation-delay: 0.2s; }
         .loader-dots span:nth-of-type(3) { animation-delay: 0.4s; }
         @keyframes blink { 0% { opacity: .2; } 20% { opacity: 1; } 100% { opacity: .2; } }
+        .logo-float {
+            animation: float 4s ease-in-out infinite;
+        }
+         @keyframes float {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          25% { transform: translateY(-10px) rotate(2deg); }
+          75% { transform: translateY(-10px) rotate(-2deg); }
+        }
+        .brand-title {
+          font-family: 'Poppins', sans-serif !important;
+          font-weight: 900 !important;
+        }
       `}</style>
       
       <div id="particles" className="fixed inset-0 z-0 overflow-hidden pointer-events-none"></div>
 
       <div className="relative z-10 flex flex-col min-h-screen items-center justify-center p-4 text-white">
-        <header className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center max-w-7xl mx-auto">
-          <div className="flex items-center gap-3 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
-            <User size={18} className="text-yellow-400" />
-            <span className="font-semibold text-sm">{userId}</span>
-          </div>
-          <button onClick={handleLogout} className="flex items-center gap-2 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition-colors">
-            <LogOut size={16} />
-            <span className="text-sm font-semibold">Logout</span>
-          </button>
-        </header>
 
         <main className="w-full max-w-2xl">
-          <div className="bg-black/20 backdrop-filter backdrop-blur-lg border border-yellow-500/20 rounded-3xl p-8 card-glow transition-shadow duration-300">
+          <div className="bg-black/20 backdrop-filter backdrop-blur-lg border border-yellow-500/20 rounded-3xl p-6 md:p-8 card-glow transition-shadow duration-300">
+            
+            <header className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
+                    <User size={18} className="text-yellow-400" />
+                    <span className="font-semibold text-sm">{userId}</span>
+                </div>
+                <button onClick={handleLogout} className="flex items-center gap-2 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition-colors">
+                    <LogOut size={16} />
+                    <span className="text-sm font-semibold">Logout</span>
+                </button>
+            </header>
+
             <div className="text-center mb-6">
-              <img src="https://i.ibb.co/NgJnjdc4/t-l-chargement-11-removebg-preview.png" alt="Ducky Logo" className="w-24 h-24 mx-auto mb-2 filter drop-shadow-[0_5px_15px_rgba(255,176,32,0.5)]" />
-              <h1 className="text-4xl font-black text-yellow-400 text-glow uppercase tracking-widest">DUCKY DZ</h1>
+              <img src="https://i.ibb.co/NgJnjdc4/t-l-chargement-11-removebg-preview.png" alt="Ducky Logo" className="w-24 h-24 mx-auto mb-2 filter drop-shadow-[0_5px_15px_rgba(255,176,32,0.5)] logo-float" />
+              <h1 className="text-4xl font-black text-yellow-400 text-glow uppercase tracking-widest brand-title">DUCKY DZ</h1>
             </div>
 
             <div className="aspect-video bg-black/30 rounded-xl flex flex-col items-center justify-center border border-white/10 p-6 mb-6">

@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { database } from '@/lib/firebase';
 import { ref, get, update, remove } from 'firebase/database';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Instagram, Send } from 'lucide-react';
 
 const formSchema = z.object({
   userId: z
@@ -84,6 +84,11 @@ export default function DuckyLoginPage() {
   useEffect(() => {
     const container = document.getElementById('particles');
     if (!container) return;
+
+    // Clear existing particles before creating new ones
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
 
     const createParticles = () => {
       const particleCount = 20;
@@ -185,8 +190,9 @@ export default function DuckyLoginPage() {
           75% { transform: translateY(-10px) rotate(-2deg); }
         }
         .brand-title {
+          font-family: 'Poppins', sans-serif !important;
           font-size: clamp(2rem, 8vw, 4rem);
-          font-weight: 900;
+          font-weight: 900 !important;
           background: linear-gradient(135deg, #FFB020 0%, #FFA726 50%, #FF9500 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -306,6 +312,46 @@ export default function DuckyLoginPage() {
         .play-btn:not(:disabled):hover::before {
             left: 100%;
         }
+        .social-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 176, 32, 0.2);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .social-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 0.9rem 1.5rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        .social-btn.instagram {
+            background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .social-btn.instagram:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(220, 39, 67, 0.4);
+        }
+        .social-btn.telegram {
+             background: linear-gradient(135deg, #37aee2 0%, #1e96c8 100%);
+             border: 1px solid rgba(255,255,255,0.2);
+        }
+        .social-btn.telegram:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(55, 174, 226, 0.4);
+        }
         
       `}</style>
       <div id="particles" className="bg-particles"></div>
@@ -357,6 +403,18 @@ export default function DuckyLoginPage() {
               </button>
             </form>
           </div>
+
+          <div className="social-card">
+              <a href="https://www.instagram.com/ducky_dz" target="_blank" rel="noopener noreferrer" className="social-btn instagram">
+                  <Instagram />
+                  <span>Instagram Account</span>
+              </a>
+              <a href="https://t.me/ducky_dz" target="_blank" rel="noopener noreferrer" className="social-btn telegram">
+                  <Send />
+                  <span>Telegram Channel</span>
+              </a>
+          </div>
+
         </div>
       </div>
     </>
