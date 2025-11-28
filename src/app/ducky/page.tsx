@@ -360,8 +360,6 @@ export default function DuckyLoginPage() {
           <div className="logo-container">
             <img src="https://i.ibb.co/NgJnjdc4/t-l-chargement-11-removebg-preview.png" className="logo" alt="Ducky DZ" />
           </div>
-          <h1 className="brand-title">DUCKY DZ</h1>
-          <p className="brand-subtitle">VIP ACCESS</p>
         </div>
 
         <div className="right-section">
@@ -403,13 +401,13 @@ export default function DuckyLoginPage() {
           </div>
 
           <div className="social-card">
-              <a href="https://www.instagram.com/ducky_dz" target="_blank" rel="noopener noreferrer" className="social-btn instagram">
+              <a href="https://www.instagram.com/ducky_off_dz" target="_blank" rel="noopener noreferrer" className="social-btn instagram">
                   <Instagram />
-                  <span>Instagram Account</span>
+                  <span>Instagram: @ducky_off_dz</span>
               </a>
-              <a href="https://t.me/ducky_dz" target="_blank" rel="noopener noreferrer" className="social-btn telegram">
+              <a href="https://t.me/duckyoffi" target="_blank" rel="noopener noreferrer" className="social-btn telegram">
                   <Send />
-                  <span>Telegram Channel</span>
+                  <span>Telegram: @duckyoffi</span>
               </a>
           </div>
 
