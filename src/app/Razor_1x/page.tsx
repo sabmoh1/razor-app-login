@@ -316,7 +316,10 @@ function WelcomeContent() {
           }
           .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
-          #crashValue, .brand h1, .status-dot.connected {
+          #crashValue {
+            text-shadow: 0 0 8px var(--neon-green);
+          }
+          .brand h1, .status-dot.connected {
             text-shadow:
               0 0 5px var(--neon-green),
               0 0 10px var(--neon-green),
@@ -333,7 +336,7 @@ function WelcomeContent() {
             overflow:hidden;
           }
           #crashValue{
-            font-size:6rem;font-weight:900;color:var(--neon-green);
+            font-size:6rem;font-weight:900;color:var(--neon-white);
             letter-spacing: 1px;transition:transform .18s ease, opacity .18s ease;
             text-align:center;white-space:nowrap;
             -webkit-font-smoothing:antialiased;

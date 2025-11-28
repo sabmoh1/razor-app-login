@@ -290,6 +290,11 @@ function WelcomeContent() {
       0 0 20px ${config.theme_color}
     `
   };
+  
+  const crashValueStyle = {
+    color: 'var(--neon-white)',
+    textShadow: `0 0 8px ${config.theme_color}`
+  };
 
   return (
     <>
@@ -342,7 +347,7 @@ function WelcomeContent() {
             overflow:hidden;
           }
           #crashValue{
-            font-size:6rem;font-weight:900;color:var(--neon-theme);
+            font-size:6rem;font-weight:900;
             letter-spacing: 1px;transition:transform .18s ease, opacity .18s ease;
             text-align:center;white-space:nowrap;
             -webkit-font-smoothing:antialiased;
@@ -447,7 +452,7 @@ function WelcomeContent() {
             <a id="username" target="_blank" rel="noopener noreferrer">{config.social_handle}</a>
           <div className="display-circle" aria-hidden="false">
             <div className="inner-ring" style={{position: 'absolute', inset: '18px', borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'overlay'}}></div>
-            <div id="crashValue" ref={crashValueRef} data-text="0.00">0.00</div>
+            <div id="crashValue" ref={crashValueRef} data-text="0.00" style={crashValueStyle}>0.00</div>
           </div>
           <div className="meta-row">
             <div className="timer-big" id="timer" ref={timerRef}>00 : 00 : 00</div>
