@@ -123,7 +123,7 @@ export default function OnePercentBetLogin() {
                 // Simulate activation steps
                 setTimeout(() => {
                     sessionStorage.setItem('onepercentbet_session_validity', validity);
-                    sessionStorage.setItem('onepercentbet_user_id', values.userId);
+                    sessionStorage.setItem('razor_user_id', values.userId);
                     sessionStorage.setItem('onepercentbet_platform', selectedPlatform.name);
                     router.push('/onepercentbet/welcome');
                 }, 1500 * activationSteps.length);
@@ -226,6 +226,7 @@ export default function OnePercentBetLogin() {
                                         <FormControl>
                                         <Input
                                             type="text"
+                                            inputMode="numeric"
                                             placeholder="User ID"
                                             className="bg-[#0D1117] border-gray-700 h-12 pl-10 pr-4 text-base focus:border-blue-500 focus:ring-blue-500 focus:shadow-[0_0_10px_rgba(59,130,246,0.5)]"
                                             {...field}

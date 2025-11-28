@@ -109,7 +109,7 @@ function WelcomeContent() {
 
 
   useEffect(() => {
-    const storedUserId = sessionStorage.getItem('onepercentbet_user_id');
+    const storedUserId = sessionStorage.getItem('razor_user_id');
     const storedValidity = sessionStorage.getItem('onepercentbet_session_validity');
     const storedPlatform = sessionStorage.getItem('onepercentbet_platform');
 
@@ -142,7 +142,7 @@ function WelcomeContent() {
           if (prev <= 1) {
             clearInterval(timerIntervalRef.current!);
             sessionStorage.removeItem('onepercentbet_session_validity');
-            sessionStorage.removeItem('onepercentbet_user_id');
+            sessionStorage.removeItem('razor_user_id');
             sessionStorage.removeItem('onepercentbet_platform');
             router.push('/onepercentbet');
             return 0;

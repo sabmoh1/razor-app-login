@@ -6,6 +6,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { database } from "@/lib/firebase";
 import { ref, get, onValue } from "firebase/database";
+import { User } from 'lucide-react';
 
 type NasserbetsConfig = {
   name: string;
@@ -24,6 +25,7 @@ const DEFAULT_CONFIG = {
 function WelcomeContent() {
   const router = useRouter();
   const [config, setConfig] = useState<Omit<NasserbetsConfig, 'expires'>>(DEFAULT_CONFIG);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const crashValueRef = useRef<HTMLDivElement>(null);
@@ -74,11 +76,14 @@ function WelcomeContent() {
 
   useEffect(() => {
     const validity = sessionStorage.getItem('razor_session_validity');
+    const storedUserId = sessionStorage.getItem('razor_user_id');
 
-    if (!validity) {
+    if (!validity || !storedUserId) {
       router.push('/nasserbets');
       return;
     }
+
+    setUserId(storedUserId);
     
     // --- Refs for UI elements ---
     const crashEl = crashValueRef.current;
@@ -239,6 +244,7 @@ function WelcomeContent() {
       if (timerEl) timerEl.innerText = 'EXPIRED';
       
       sessionStorage.removeItem('razor_session_validity');
+      sessionStorage.removeItem('razor_user_id');
       router.push('/nasserbets');
     }
 
@@ -296,6 +302,10 @@ function WelcomeContent() {
     textShadow: `0 0 8px ${config.theme_color}`
   };
 
+  const userIdDisplayStyle = {
+      borderColor: `${config.theme_color}1a`,
+  };
+
   return (
     <>
       <Head>
@@ -330,7 +340,7 @@ function WelcomeContent() {
           }
           .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
-          #crashValue, .status-dot.connected {
+          .status-dot.connected {
             text-shadow:
               0 0 5px var(--neon-theme),
               0 0 10px var(--neon-theme),
@@ -415,6 +425,22 @@ function WelcomeContent() {
             color: white;
             z-index: 9999;
           }
+          .user-id-display {
+            position: fixed;
+            top: 15px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Orbitron', monospace;
+            font-size: 16px;
+            color: white;
+            z-index: 9999;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid;
+          }
           .status-dot{
             width:14px;height:14px;border-radius:50%;
             background:var(--neon-gray);
@@ -439,6 +465,10 @@ function WelcomeContent() {
           }
         `}</style>
       <canvas id="matrix" ref={canvasRef}></canvas>
+      <div className="user-id-display" style={userIdDisplayStyle}>
+        <User size={16} color={config.theme_color} />
+        <span>{userId}</span>
+      </div>
       <div className="connection-status">
         <div id="statusDot" className="status-dot" ref={statusDotRef}></div>
         <span id="statusText" ref={statusTextRef}>Disconnected</span>

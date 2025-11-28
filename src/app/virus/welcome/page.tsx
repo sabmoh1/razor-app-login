@@ -1,14 +1,16 @@
 
 "use client";
 
-import { useEffect, useRef, Suspense } from 'react';
+import { useEffect, useRef, Suspense, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { database } from "@/lib/firebase";
 import { ref, get } from "firebase/database";
+import { User } from 'lucide-react';
 
 function WelcomeContent() {
   const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
@@ -41,11 +43,13 @@ function WelcomeContent() {
 
   useEffect(() => {
     const validity = sessionStorage.getItem('razor_session_validity');
+    const storedUserId = sessionStorage.getItem('razor_user_id');
 
-    if (!validity) {
+    if (!validity || !storedUserId) {
       router.push('/virus');
       return;
     }
+    setUserId(storedUserId);
     
     // --- Refs for UI elements ---
     const crashEl = crashValueRef.current;
@@ -210,6 +214,7 @@ function WelcomeContent() {
       if (timerEl) timerEl.innerText = 'EXPIRED';
       
       sessionStorage.removeItem('razor_session_validity');
+      sessionStorage.removeItem('razor_user_id');
       router.push('/virus');
     }
 
@@ -317,6 +322,7 @@ function WelcomeContent() {
           .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
           #crashValue {
+            color: var(--neon-white);
             text-shadow: 0 0 8px var(--neon-red);
           }
           .brand h1, .status-dot.connected {
@@ -336,7 +342,7 @@ function WelcomeContent() {
             overflow:hidden;
           }
           #crashValue{
-            font-size:6rem;font-weight:900;color:var(--neon-white);
+            font-size:6rem;font-weight:900;
             letter-spacing: 1px;transition:transform .18s ease, opacity .18s ease;
             text-align:center;white-space:nowrap;
             -webkit-font-smoothing:antialiased;
@@ -379,6 +385,22 @@ function WelcomeContent() {
             color: white;
             z-index: 9999;
           }
+           .user-id-display {
+            position: fixed;
+            top: 15px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Orbitron', monospace;
+            font-size: 16px;
+            color: white;
+            z-index: 9999;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,0,60,0.1);
+          }
           .status-dot{
             width:14px;height:14px;border-radius:50%;
             background:var(--neon-gray);
@@ -404,6 +426,10 @@ function WelcomeContent() {
           }
         `}</style>
       <canvas id="matrix" ref={canvasRef}></canvas>
+      <div className="user-id-display">
+        <User size={16} color="var(--neon-red)" />
+        <span>{userId}</span>
+      </div>
       <div className="connection-status">
         <div id="statusDot" className="status-dot" ref={statusDotRef}></div>
         <span id="statusText" ref={statusTextRef}>Disconnected</span>

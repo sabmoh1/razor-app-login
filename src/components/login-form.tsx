@@ -15,11 +15,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight, User } from "lucide-react";
 import { database } from "@/lib/firebase";
 import { ref, get, set, remove, update } from "firebase/database";
 
 const formSchema = z.object({
+  userId: z
+    .string()
+    .min(9, { message: "ID must be 9-11 digits." })
+    .max(11, { message: "ID must be 9-11 digits." })
+    .regex(/^[0-9]+$/, "ID must be numeric."),
   password: z
     .string()
     .min(1, { message: "Password is required." }),
@@ -48,6 +53,7 @@ export default function LoginForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      userId: "",
       password: "",
     },
   });
@@ -105,21 +111,22 @@ export default function LoginForm({
             } else {
               await remove(passwordRef);
             }
-
+            
+            sessionStorage.setItem('razor_user_id', values.userId);
             sessionStorage.setItem('razor_session_validity', validity);
             router.push(welcomePath);
           } else {
-            setError("ACCESS DENIED: Incorrect password");
-            form.reset({ password: "" });
+            setError("ACCESS DENIED: Incorrect credentials");
+            form.reset({ password: "", userId: values.userId });
           }
         } else {
           setError("ACCESS DENIED: No passwords found in database");
-          form.reset({ password: "" });
+          form.reset({ password: "", userId: "" });
         }
       } catch (error: any) {
         setError("SYSTEM ERROR: Could not connect to the server.");
         console.error("Login error:", error);
-        form.reset({ password: "" });
+        form.reset({ password: "", userId: "" });
       }
     });
   }
@@ -140,13 +147,36 @@ export default function LoginForm({
       
       <div className="bg-transparent p-0">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {error && (
               <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md text-sm flex items-center gap-2 font-code">
                 <AlertCircle className="h-5 w-5" />
                 <span>{error}</span>
               </div>
             )}
+            
+            <FormField
+              control={form.control}
+              name="userId"
+              render={({ field }) => (
+                <FormItem>
+                   <div className="relative group">
+                     <User className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--theme-color)] opacity-70 transition-all duration-300 group-focus-within:text-[var(--theme-color)]`} />
+                    <FormControl>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="> user id"
+                        className={`font-code bg-black/50 border-2 border-[var(--theme-color-op-30)] focus:border-[var(--theme-color)] text-neon-white pl-12 pr-12 h-14 text-base placeholder:text-[var(--theme-color-op-50)] w-full rounded-full focus:outline-none transition-all duration-300 focus:shadow-[0_0_15px_var(--theme-color-op-80)] focus:ring-0 focus-visible:ring-0 focus:ring-offset-0`}
+                        {...field}
+                      />
+                    </FormControl>
+                  </div>
+                  <FormMessage className="text-red-400 text-xs pt-1 font-code pl-4" />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="password"
