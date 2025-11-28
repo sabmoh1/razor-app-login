@@ -320,9 +320,8 @@ function WelcomeContent() {
             text-shadow:
               0 0 5px var(--neon-green),
               0 0 10px var(--neon-green),
-              0 0 20px var(--neon-green),
-              0 0 40px var(--neon-green),
-              0 0 80px rgba(0,255,106,0.5);
+              0 0 15px var(--neon-green),
+              0 0 20px var(--neon-green);
           }
           .brand h1{
             font-size:2rem;margin:0;color:var(--neon-green);letter-spacing:4px;font-weight:900;
@@ -437,7 +436,3 @@ export default function WelcomePage() {
     </Suspense>
   );
 }
-
-    
-
-    

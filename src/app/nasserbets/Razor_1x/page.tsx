@@ -286,9 +286,8 @@ function WelcomeContent() {
     textShadow: `
       0 0 5px ${config.theme_color},
       0 0 10px ${config.theme_color},
-      0 0 20px ${config.theme_color},
-      0 0 40px ${config.theme_color},
-      0 0 80px ${config.theme_color}80
+      0 0 15px ${config.theme_color},
+      0 0 20px ${config.theme_color}
     `
   };
 
@@ -330,9 +329,8 @@ function WelcomeContent() {
             text-shadow:
               0 0 5px var(--neon-theme),
               0 0 10px var(--neon-theme),
-              0 0 20px var(--neon-theme),
-              0 0 40px var(--neon-theme),
-              0 0 80px ${config.theme_color}80;
+              0 0 15px var(--neon-theme),
+              0 0 20px var(--neon-theme);
           }
           .brand h1{
             font-size:2rem;margin:0;letter-spacing:4px;font-weight:900;

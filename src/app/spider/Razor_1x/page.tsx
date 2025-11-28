@@ -285,9 +285,8 @@ function WelcomeContent() {
             text-shadow:
               0 0 5px var(--neon-red),
               0 0 10px var(--neon-red),
-              0 0 20px var(--neon-red),
-              0 0 40px var(--neon-red),
-              0 0 80px rgba(255,0,60,0.5);
+              0 0 15px var(--neon-red),
+              0 0 20px var(--neon-red);
           }
           .brand h1{
             font-size:2rem;margin:0;color:var(--neon-red);letter-spacing:4px;font-weight:900;
@@ -429,5 +428,3 @@ export default function SpiderWelcomePage() {
     </Suspense>
   );
 }
-
-    
