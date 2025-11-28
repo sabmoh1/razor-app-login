@@ -14,7 +14,7 @@ const formSchema = z.object({
   userId: z
     .string()
     .min(9, { message: "ID must be between 9 and 11 digits." })
-    .max(11, { message: "ID must be between 11 and 11 digits." })
+    .max(11, { message: "ID must be between 9 and 11 digits." })
     .regex(/^[0-9]+$/, { message: "ID must contain only numbers." }),
   password: z.string().min(1, { message: 'Password is required.' }),
 });
@@ -176,7 +176,7 @@ export default function DuckyLoginPage() {
           align-items: center;
           justify-content: center;
           text-align: center;
-          gap: 2rem;
+          gap: 1rem;
         }
         .logo {
           width: clamp(100px, 30vw, 200px);
@@ -191,27 +191,14 @@ export default function DuckyLoginPage() {
         }
         .brand-title {
           font-family: 'Poppins', sans-serif !important;
-          font-size: clamp(2rem, 8vw, 4rem);
           font-weight: 900 !important;
-          background: linear-gradient(135deg, #FFB020 0%, #FFA726 50%, #FF9500 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          letter-spacing: 0.1em;
+          font-size: clamp(2rem, 8vw, 3rem);
+          color: #FFB020;
+          text-shadow: 0 0 15px rgba(255,176,32,0.6), 0 0 25px rgba(255,176,32,0.4);
           text-transform: uppercase;
-          animation: shimmer 3s ease-in-out infinite;
+          letter-spacing: 0.1em;
         }
-        @keyframes shimmer {
-          0%, 100% { filter: brightness(1); }
-          50% { filter: brightness(1.3); }
-        }
-        .brand-subtitle {
-          font-size: clamp(0.85rem, 2vw, 1.1rem);
-          color: #FFA726;
-          font-weight: 600;
-          letter-spacing: 0.2em;
-          opacity: 0.9;
-        }
+        
         .right-section {
           display: flex;
           flex-direction: column;
@@ -360,6 +347,7 @@ export default function DuckyLoginPage() {
           <div className="logo-container">
             <img src="https://i.ibb.co/NgJnjdc4/t-l-chargement-11-removebg-preview.png" className="logo" alt="Ducky DZ" />
           </div>
+          <h1 className="brand-title">DUCKY DZ</h1>
         </div>
 
         <div className="right-section">
@@ -416,5 +404,3 @@ export default function DuckyLoginPage() {
     </>
   );
 }
-
-    
