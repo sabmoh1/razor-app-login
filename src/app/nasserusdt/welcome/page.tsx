@@ -21,6 +21,33 @@ function WelcomeContent() {
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastValueRef = useRef<string | null>(null);
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  useEffect(() => {
+    const container = document.getElementById('particles-background');
+    if (!container) return;
+    
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+    
+    const particleCount = 30;
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        const size = Math.random() * 80 + 20;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        
+        const duration = Math.random() * 30 + 20; // 20-50 seconds
+        particle.style.animation = `float ${duration}s ease-in-out infinite`;
+        // Start animation at a random point
+        particle.style.animationDelay = `${Math.random() * -duration}s`;
+        
+        container.appendChild(particle);
+    }
+  }, []);
 
   const parseValidityToSeconds = (validityStr: string | null): number => {
     if (!validityStr) return 0;
@@ -168,23 +195,12 @@ function WelcomeContent() {
             rel="stylesheet"
           />
       </Head>
+      <div id="particles-background" className="fixed inset-0 -z-10 overflow-hidden"></div>
       <style jsx global>{`
         body {
-          background: url("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZkZ3g5OG9jZWk0YjI4eG05cmozbWE0ejc4bXZkZzZtcW5scjBudCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9JgespA0x6l2x3S3M4/giphy.gif") no-repeat center center fixed;
-          background-size: cover;
+          background-color: #0a192f;
           font-family: "Cairo", sans-serif;
           color: white;
-        }
-
-        body::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.7);
-          z-index: -1;
         }
 
         .main-box {
@@ -223,6 +239,24 @@ function WelcomeContent() {
           0% { box-shadow: 0 0 40px rgba(0, 191, 255, 0.5); }
           50% { box-shadow: 0 0 60px rgba(0, 191, 255, 0.8); }
           100% { box-shadow: 0 0 40px rgba(0, 191, 255, 0.5); }
+        }
+        
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(0, 191, 255, 0.15);
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
         }
       `}</style>
       
@@ -279,7 +313,7 @@ function WelcomeContent() {
 
 export default function NasserusdtWelcomePage() {
     return (
-        <Suspense fallback={<div className="bg-black min-h-screen flex items-center justify-center text-white"><Loader className="animate-spin" size={48} /></div>}>
+        <Suspense fallback={<div className="bg-[#0a192f] min-h-screen flex items-center justify-center text-white"><Loader className="animate-spin" size={48} /></div>}>
             <WelcomeContent />
         </Suspense>
     )

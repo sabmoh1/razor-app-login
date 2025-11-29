@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -28,6 +28,33 @@ export default function NasserusdtLoginPage() {
       password: '',
     },
   });
+
+  useEffect(() => {
+    const container = document.getElementById('particles-background');
+    if (!container) return;
+
+    // Clear existing particles before creating new ones
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+    
+    const particleCount = 30;
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        const size = Math.random() * 80 + 20;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        
+        const duration = Math.random() * 30 + 20;
+        particle.style.animation = `float ${duration}s ease-in-out infinite`;
+        particle.style.animationDelay = `${Math.random() * -duration}s`;
+        
+        container.appendChild(particle);
+    }
+  }, []);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -87,31 +114,15 @@ export default function NasserusdtLoginPage() {
             rel="stylesheet"
           />
       </Head>
+      <div id="particles-background" className="fixed inset-0 -z-10 overflow-hidden"></div>
       <style jsx global>{`
         body {
-          background: url("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZkZ3g5OG9jZWk0YjI4eG05cmozbWE0ejc4bXZkZzZtcW5scjBudCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9JgespA0x6l2x3S3M4/giphy.gif") no-repeat center center fixed;
-          background-size: cover;
+          background-color: #0a192f;
           font-family: "Cairo", sans-serif;
-          height: 100vh;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          overflow: hidden;
-        }
-
-        body::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.6);
-          z-index: -1;
         }
 
         .login-box {
-          background: rgba(0, 0, 0, 0.85);
+          background: rgba(10, 25, 47, 0.85);
           box-shadow: 0 0 30px #00BFFF, 0 10px 40px rgba(0, 191, 255, 0.3);
           backdrop-filter: blur(10px);
           border: 1px solid rgba(0, 191, 255, 0.2);
@@ -139,16 +150,12 @@ export default function NasserusdtLoginPage() {
           transform: rotate(45deg);
           animation: shine 3s infinite;
         }
-
-        @keyframes shine {
-          0% {
-            transform: translateX(-100%) translateY(-100%) rotate(45deg);
-          }
-          100% {
-            transform: translateX(100%) translateY(100%) rotate(45deg);
-          }
-        }
         
+        .logo {
+          display: flex;
+          justify-content: center;
+        }
+
         .logo img {
           width: 120px;
           height: 120px;
@@ -184,9 +191,36 @@ export default function NasserusdtLoginPage() {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        @keyframes shine {
+          0% {
+            transform: translateX(-100%) translateY(-100%) rotate(45deg);
+          }
+          100% {
+            transform: translateX(100%) translateY(100%) rotate(45deg);
+          }
+        }
+        
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(0, 191, 255, 0.15);
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
+        }
       `}</style>
       <div className="login-container relative w-full max-w-sm p-5">
-        <div className="login-box relative overflow-hidden rounded-3xl bg-black/80 p-9 text-center backdrop-blur-md transition-all duration-300">
+        <div className="login-box relative overflow-hidden rounded-3xl p-9 text-center transition-all duration-300">
           <div className="logo relative mb-8">
              <img src="https://i.ibb.co/GvqLP66v/ROUND-NASSER.jpg" alt="NasserUSDT Logo"/>
           </div>
