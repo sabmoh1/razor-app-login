@@ -152,38 +152,52 @@ function WelcomeContent() {
 
   const getStatusIndicator = () => {
     switch(connectionStatus) {
-      case 'connected': return <div className="flex items-center gap-2 text-green-400"><Wifi size={16} /><span>Connected</span></div>;
-      case 'connecting': return <div className="flex items-center gap-2 text-yellow-400"><Loader size={16} className="animate-spin" /><span>Connecting...</span></div>;
-      case 'error': return <div className="flex items-center gap-2 text-red-500"><WifiOff size={16} /><span>Error</span></div>;
-      default: return <div className="flex items-center gap-2 text-gray-500"><WifiOff size={16} /><span>Disconnected</span></div>;
+      case 'connected': return <div className="flex items-center gap-2 text-green-400"><Wifi size={16} /><span>متصل</span></div>;
+      case 'connecting': return <div className="flex items-center gap-2 text-yellow-400"><Loader size={16} className="animate-spin" /><span>جاري الاتصال...</span></div>;
+      case 'error': return <div className="flex items-center gap-2 text-red-500"><WifiOff size={16} /><span>خطأ</span></div>;
+      default: return <div className="flex items-center gap-2 text-gray-500"><WifiOff size={16} /><span>غير متصل</span></div>;
     }
   }
 
   return (
     <>
-      <Head><title>NASSERUSDT | VIP Access</title></Head>
+      <Head>
+          <title>NasserUSDT - VIP Access</title>
+           <link
+            href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap"
+            rel="stylesheet"
+          />
+      </Head>
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
-        
-        :root {
-            --nasser-bg: #0D1F23;
-            --nasser-dark: #040D0F;
-            --nasser-primary: #4FC3F7;
-            --nasser-accent: #81D4FA;
-            --nasser-light: #E1F5FE;
+        body {
+          background: url("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmtscjZ6M3JtMTZ2b2x3d2lldmNsd2VjejVqcDBkN2ZtYm53bWJ6eSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VbL2nL2r0r0m4/giphy.gif") no-repeat center center fixed;
+          background-size: cover;
+          font-family: "Cairo", sans-serif;
+          color: white;
         }
 
-        .nasserusdt-body {
-          background: linear-gradient(135deg, var(--nasser-dark) 0%, var(--nasser-bg) 100%);
-          font-family: 'Poppins', sans-serif;
+        body::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.6);
+          z-index: -1;
         }
-        
-        .text-glow-cyan { text-shadow: 0 0 20px rgba(79,195,247,0.7); }
-        .card-glow { 
-            background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0));
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(129, 212, 250, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); 
+
+        .main-box {
+          background: rgba(0, 0, 0, 0.85);
+          box-shadow: 0 0 30px #ff4d4d, 0 10px 40px rgba(255, 77, 77, 0.3);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 77, 77, 0.2);
+          animation: fadeInUp 0.8s ease-out;
+        }
+
+        .text-glow {
+           color: #ff4d4d;
+           text-shadow: 0 0 20px rgba(255, 77, 77, 0.7);
         }
 
         .loader-dots span {
@@ -195,37 +209,39 @@ function WelcomeContent() {
         .loader-dots span:nth-of-type(2) { animation-delay: 0.2s; }
         .loader-dots span:nth-of-type(3) { animation-delay: 0.4s; }
         @keyframes blink { 0% { opacity: .2; } 20% { opacity: 1; } 100% { opacity: .2; } }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
       
-      <div className="nasserusdt-body relative z-10 flex flex-col min-h-screen items-center justify-center p-4 text-white">
+      <div className="flex min-h-screen flex-col items-center justify-center p-4">
 
-        <main className="w-full max-w-2xl">
-          <div className="card-glow rounded-3xl p-6 md:p-8 transition-shadow duration-300">
+        <main className="main-box w-full max-w-2xl rounded-3xl p-6 md:p-8">
             
-            <header className="flex justify-between items-center mb-6 border-b border-cyan-400/20 pb-4">
+            <header className="flex flex-wrap justify-between items-center mb-6 border-b border-red-500/30 pb-4 gap-4">
                 <div className="flex items-center gap-3">
-                    <User size={18} className="text-nasser-primary" />
+                    <User size={18} className="text-[#ff4d4d]" />
                     <span className="font-semibold text-sm">{userId}</span>
                 </div>
-                <button onClick={handleLogout} className="flex items-center gap-2 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition-colors">
+                <button onClick={handleLogout} className="flex items-center gap-2 bg-red-500/20 backdrop-blur-sm px-4 py-2 rounded-full border border-red-500/50 text-red-300 hover:bg-red-500/40 transition-colors">
                     <LogOut size={16} />
-                    <span className="text-sm font-semibold">Logout</span>
+                    <span className="text-sm font-semibold">تسجيل الخروج</span>
                 </button>
             </header>
 
             <div className="text-center mb-6">
-                <img src="https://i.ibb.co/b3p3pWw/shark-logo.png" alt="NasserUSDT Logo" className="w-24 h-24 mx-auto mb-2 filter drop-shadow-[0_5px_15px_rgba(79,195,247,0.4)]" />
-                <h1 className="text-3xl font-black text-white uppercase tracking-widest" style={{ textShadow: '0 0 15px rgba(79,195,247,0.5)'}}>NASSERUSDT</h1>
+                <h1 className="text-glow text-3xl font-bold uppercase tracking-widest">NasserUSDT</h1>
             </div>
 
-            <div className="aspect-video bg-black/30 rounded-xl flex flex-col items-center justify-center border border-white/10 p-6 mb-6">
-              <h2 className="text-lg font-bold text-gray-400 tracking-wider mb-2">PREDICTION</h2>
+            <div className="aspect-video bg-black/30 rounded-xl flex flex-col items-center justify-center border border-red-500/20 p-6 mb-6">
+              <h2 className="text-lg font-bold text-gray-400 tracking-wider mb-2">التوقع</h2>
               {isLoading ? (
-                  <div className="text-5xl font-bold text-nasser-primary text-glow-cyan loader-dots">
+                  <div className="text-5xl font-bold text-glow loader-dots">
                       <span>.</span><span>.</span><span>.</span>
                   </div>
               ) : (
-                  <div className="text-8xl font-black text-nasser-primary text-glow-cyan">
+                  <div className="text-8xl font-black text-glow">
                       {crashValue}
                   </div>
               )}
@@ -233,21 +249,20 @@ function WelcomeContent() {
 
             <div className="flex justify-between items-center bg-black/20 p-4 rounded-xl border border-white/10">
                 <div className="flex items-center gap-3">
-                    <Clock size={20} className="text-nasser-primary" />
+                    <Clock size={20} className="text-[#ff4d4d]" />
                     <div>
-                        <div className="text-xs text-gray-400">Time Left</div>
+                        <div className="text-xs text-gray-400">الوقت المتبقي</div>
                         <div className="font-mono font-bold text-lg">{formatTime(totalSeconds)}</div>
                     </div>
                 </div>
                 <div className="text-sm font-semibold">
                     {connectionStatus === 'disconnected' && totalSeconds > 0 ? (
                         <button onClick={connectWebSocket} disabled={connectionStatus === 'connecting'} className="flex items-center gap-2 text-yellow-400">
-                            <Power size={16} /><span>Connect</span>
+                            <Power size={16} /><span>اتصال</span>
                         </button>
                     ) : getStatusIndicator()}
                 </div>
             </div>
-          </div>
         </main>
       </div>
     </>
@@ -256,7 +271,7 @@ function WelcomeContent() {
 
 export default function NasserusdtWelcomePage() {
     return (
-        <Suspense fallback={<div className="bg-[#040D0F] min-h-screen flex items-center justify-center text-white"><Loader className="animate-spin" size={48} /></div>}>
+        <Suspense fallback={<div className="bg-black min-h-screen flex items-center justify-center text-white"><Loader className="animate-spin" size={48} /></div>}>
             <WelcomeContent />
         </Suspense>
     )

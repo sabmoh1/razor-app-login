@@ -8,21 +8,23 @@ import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { database } from '@/lib/firebase';
 import { ref, get, update, remove } from 'firebase/database';
-import { Loader2, User, KeyRound, ArrowRightCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import Head from 'next/head';
 
 const formSchema = z.object({
   userId: z
     .string()
-    .min(9, { message: "ID must be between 9 and 11 digits." })
-    .max(11, { message: "ID must be between 9 and 11 digits." })
-    .regex(/^[0-9]+$/, { message: "ID must contain only numbers." }),
-  password: z.string().min(1, { message: 'Activation code is required.' }),
+    .min(1, { message: "الرجاء إدخال جميع البيانات." }),
+  password: z.string().min(1, { message: "الرجاء إدخال جميع البيانات." }),
+  game: z.string({ required_error: "يرجى اختيار لعبة واحدة على الأقل." }),
 });
 
 export default function NasserusdtLoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [selectedGame, setSelectedGame] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -31,6 +33,17 @@ export default function NasserusdtLoginPage() {
       password: '',
     },
   });
+  
+  const handleCheckboxChange = (game: string) => {
+      if (selectedGame === game) {
+          setSelectedGame(null);
+          form.setValue('game', '');
+
+      } else {
+          setSelectedGame(game);
+          form.setValue('game', game);
+      }
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -67,14 +80,14 @@ export default function NasserusdtLoginPage() {
           sessionStorage.setItem('razor_session_validity', validity);
           router.push('/nasserusdt/welcome');
         } else {
-          setAuthError("Invalid credentials. Please try again.");
+          setAuthError("بيانات الاعتماد غير صحيحة. يرجى المحاولة مرة أخرى.");
           form.reset({ userId: values.userId, password: '' });
         }
       } else {
-        setAuthError("System error: Could not verify credentials.");
+        setAuthError("خطأ في النظام: لا يمكن التحقق من بيانات الاعتماد.");
       }
     } catch (error) {
-      setAuthError("Network error. Please check your connection.");
+      setAuthError("خطأ في الشبكة. يرجى التحقق من اتصالك.");
       console.error("Login error:", error);
     } finally {
       setIsSubmitting(false);
@@ -83,128 +96,179 @@ export default function NasserusdtLoginPage() {
 
   return (
     <>
+      <Head>
+          <title>Login - NasserUSDT</title>
+          <link
+            href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap"
+            rel="stylesheet"
+          />
+      </Head>
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
+        body {
+          background: url("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmtscjZ6M3JtMTZ2b2x3d2lldmNsd2VjejVqcDBkN2ZtYm53bWJ6eSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VbL2nL2r0r0m4/giphy.gif") no-repeat center center fixed;
+          background-size: cover;
+          font-family: "Cairo", sans-serif;
+          height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          overflow: hidden;
+        }
+
+        body::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.6);
+          z-index: -1;
+        }
+
+        .login-box {
+          background: rgba(0, 0, 0, 0.85);
+          box-shadow: 0 0 30px #ff4d4d, 0 10px 40px rgba(255, 77, 77, 0.3);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 77, 77, 0.2);
+          animation: fadeInUp 0.8s ease-out;
+        }
+
+        .login-box:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 0 40px #ff4d4d, 0 15px 50px rgba(255, 77, 77, 0.4);
+        }
+
+        .login-box::before {
+          content: "";
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: linear-gradient(
+            45deg,
+            transparent,
+            rgba(255, 77, 77, 0.1),
+            transparent
+          );
+          transform: rotate(45deg);
+          animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+          0% {
+            transform: translateX(-100%) translateY(-100%) rotate(45deg);
+          }
+          100% {
+            transform: translateX(100%) translateY(100%) rotate(45deg);
+          }
+        }
         
-        :root {
-            --nasser-bg: #0D1F23;
-            --nasser-dark: #040D0F;
-            --nasser-primary: #4FC3F7;
-            --nasser-accent: #81D4FA;
-            --nasser-light: #E1F5FE;
+        .logo h2 {
+          color: #ff4d4d;
+          text-shadow: 0 0 20px rgba(255, 77, 77, 0.7);
         }
 
-        .nasserusdt-body {
-          background: linear-gradient(135deg, var(--nasser-dark) 0%, var(--nasser-bg) 100%);
-          font-family: 'Poppins', sans-serif;
+        .logo h2::after {
+          background: linear-gradient(90deg, transparent, #ff4d4d, transparent);
         }
 
-        .shark-logo {
-          animation: float 6s ease-in-out infinite, pulse-shadow 3s ease-in-out infinite;
+        .input-group input {
+          border: 2px solid rgba(255, 77, 77, 0.3);
+          background: rgba(255, 255, 255, 0.95);
         }
 
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
+        .input-group input:focus {
+          border-color: #ff4d4d;
+          background: white;
+          box-shadow: 0 0 15px rgba(255, 77, 77, 0.3);
+        }
+        
+        .checkbox-label {
+           background: rgba(255, 77, 77, 0.1);
+        }
+        .checkbox-label:hover {
+            background: rgba(255, 77, 77, 0.2);
+        }
+        .checkbox-label input[type="checkbox"] {
+            accent-color: #ff4d4d;
+            background-color: #222;
+            border: 2px solid #ff4d4d;
+        }
+        .checkbox-label input[type="checkbox"]:checked {
+            background-color: #ff4d4d;
+            border-color: #ff4d4d;
+            box-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
         }
 
-        @keyframes pulse-shadow {
-            0%, 100% { filter: drop-shadow(0 25px 25px rgba(79, 195, 247, 0.2)); }
-            50% { filter: drop-shadow(0 25px 40px rgba(79, 195, 247, 0.4)); }
+        .login-btn {
+            background: linear-gradient(135deg, #ff4d4d, #cc0000);
+            box-shadow: 0 5px 15px rgba(255, 77, 77, 0.4);
         }
 
-        .form-container {
-            background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0));
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(129, 212, 250, 0.2);
+        .login-btn:hover {
+            box-shadow: 0 8px 25px rgba(255, 77, 77, 0.6);
+            background: linear-gradient(135deg, #ff6666, #ff0000);
         }
 
-        .input-field {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(129, 212, 250, 0.3);
-            transition: all 0.3s ease;
-        }
-        .input-field:focus {
-            outline: none;
-            border-color: var(--nasser-primary);
-            box-shadow: 0 0 15px rgba(79, 195, 247, 0.3);
+        .login-btn::before {
+             background: linear-gradient(
+              90deg,
+              transparent,
+              rgba(255, 255, 255, 0.2),
+              transparent
+            );
         }
 
-        .submit-btn {
-            background: linear-gradient(135deg, var(--nasser-primary) 0%, var(--nasser-accent) 100%);
-            box-shadow: 0 8px 20px rgba(79, 195, 247, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .submit-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(79, 195, 247, 0.5);
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+      <div className="login-container relative w-full max-w-sm p-5">
+        <div className="login-box relative overflow-hidden rounded-3xl bg-black/80 p-9 text-center backdrop-blur-md transition-all duration-300">
+          <div className="logo relative mb-8">
+            <h2 className="relative inline-block text-3xl font-bold tracking-wider">NasserUSDT</h2>
+            <div className="logo-after absolute bottom-[-10px] left-1/2 h-1 w-16 -translate-x-1/2"></div>
+          </div>
 
-      <div className="nasserusdt-body min-h-screen flex flex-col items-center justify-center p-4 text-white overflow-hidden">
-        <div className="w-full max-w-md mx-auto">
-          
-          <div className="text-center mb-8">
-            <div className="relative w-48 h-48 mx-auto mb-4">
-                <div className="absolute inset-0 bg-cyan-400/20 rounded-full blur-2xl"></div>
-                <img 
-                    src="https://i.ibb.co/b3p3pWw/shark-logo.png" 
-                    alt="NasserUSDT Shark Logo"
-                    className="w-full h-full object-contain shark-logo" 
-                />
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="input-group relative mb-6" style={{ animation: 'fadeInUp 0.8s ease-out 0.2s both' }}>
+              <input
+                type="text"
+                {...form.register('userId')}
+                placeholder="ID"
+                className="w-full rounded-2xl border-2 p-4 text-center font-cairo text-base text-gray-800 outline-none transition-all duration-300 placeholder:text-gray-500"
+              />
             </div>
-            <h1 className="text-4xl font-black uppercase" style={{ textShadow: '0 0 15px rgba(79,195,247,0.5)'}}>NASSERUSDT</h1>
-            <p className="text-sm text-nasser-accent opacity-80 tracking-widest">FOURNISSEUR BOT 1XBET</p>
-          </div>
 
-          <div className="form-container p-8 rounded-2xl">
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-nasser-primary" />
-                  <input
-                    type="text"
-                    {...form.register('userId')}
-                    className="input-field w-full h-14 pl-12 pr-4 rounded-xl text-white placeholder:text-gray-400"
-                    placeholder="User ID"
-                    maxLength={11}
-                    inputMode="numeric"
-                    autoComplete="off"
-                  />
-                </div>
-                {form.formState.errors.userId && <p className="text-red-400 text-xs mt-2 ml-2">{form.formState.errors.userId.message}</p>}
-              </div>
+            <div className="input-group relative mb-6" style={{ animation: 'fadeInUp 0.8s ease-out 0.4s both' }}>
+              <input
+                type="password"
+                {...form.register('password')}
+                placeholder="KEY"
+                className="w-full rounded-2xl border-2 p-4 text-center font-cairo text-base text-gray-800 outline-none transition-all duration-300 placeholder:text-gray-500"
+              />
+            </div>
+            
+             <div className="checkbox-group mb-8 flex flex-wrap justify-center gap-5" style={{ animation: 'fadeInUp 0.8s ease-out 0.6s both' }}>
+                <label className="checkbox-label flex cursor-pointer select-none items-center gap-3 rounded-xl p-3 text-white transition-all duration-300">
+                    <input type="checkbox" checked={selectedGame === 'crash'} onChange={() => handleCheckboxChange('crash')} className="h-5 w-5 cursor-pointer appearance-none rounded-md border-2 relative transition-all duration-300"/>
+                    <span className="text-base font-semibold">Crash</span>
+                </label>
+                <label className="checkbox-label flex cursor-pointer select-none items-center gap-3 rounded-xl p-3 text-white transition-all duration-300">
+                    <input type="checkbox" checked={selectedGame === 'apple'} onChange={() => handleCheckboxChange('apple')} className="h-5 w-5 cursor-pointer appearance-none rounded-md border-2 relative transition-all duration-300"/>
+                    <span className="text-base font-semibold">Apple</span>
+                </label>
+            </div>
+            {form.formState.errors.game && <p className="mb-4 text-sm text-red-400">{form.formState.errors.game.message}</p>}
+            {authError && <p className="mb-4 text-sm text-red-400">{authError}</p>}
 
-              <div>
-                <div className="relative">
-                  <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-nasser-primary" />
-                  <input
-                    type="password"
-                    {...form.register('password')}
-                    className="input-field w-full h-14 pl-12 pr-4 rounded-xl text-white placeholder:text-gray-400"
-                    placeholder="Activation Code"
-                    autoComplete="off"
-                  />
-                </div>
-                {form.formState.errors.password && <p className="text-red-400 text-xs mt-2 ml-2">{form.formState.errors.password.message}</p>}
-              </div>
-              
-              {authError && <p className="text-red-400 text-sm text-center">{authError}</p>}
-              
-              <button type="submit" className="submit-btn w-full h-14 rounded-xl text-black font-bold text-lg flex items-center justify-center gap-2" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  <>
-                    <span>ACTIVATE</span>
-                    <ArrowRightCircle />
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-
+            <button type="submit" className="login-btn relative w-full overflow-hidden rounded-2xl border-none p-4 text-xl font-bold text-white transition-all duration-300" disabled={isSubmitting} style={{ animation: 'fadeInUp 0.8s ease-out 0.8s both' }}>
+              {isSubmitting ? <Loader2 className="mx-auto animate-spin" /> : 'Login'}
+            </button>
+          </form>
         </div>
       </div>
     </>
