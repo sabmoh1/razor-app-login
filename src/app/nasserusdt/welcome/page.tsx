@@ -30,19 +30,23 @@ function WelcomeContent() {
         container.removeChild(container.firstChild);
     }
     
-    const particleCount = 30;
+    const particleCount = 30; // Increased density
+    const imageUrl = "https://i.ibb.co/GvqLP66v/ROUND-NASSER.jpg";
+
     for (let i = 0; i < particleCount; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
+
         const size = Math.random() * 80 + 20;
         particle.style.width = `${size}px`;
         particle.style.height = `${size}px`;
+        particle.style.backgroundImage = `url(${imageUrl})`;
+
         particle.style.left = `${Math.random() * 100}%`;
         particle.style.top = `${Math.random() * 100}%`;
         
-        const duration = Math.random() * 30 + 20; // 20-50 seconds
+        const duration = Math.random() * 30 + 20; 
         particle.style.animation = `float ${duration}s ease-in-out infinite`;
-        // Start animation at a random point
         particle.style.animationDelay = `${Math.random() * -duration}s`;
         
         container.appendChild(particle);
@@ -179,10 +183,10 @@ function WelcomeContent() {
 
   const getStatusIndicator = () => {
     switch(connectionStatus) {
-      case 'connected': return <div className="flex items-center gap-2 text-cyan-300"><Wifi size={16} /><span>متصل</span></div>;
-      case 'connecting': return <div className="flex items-center gap-2 text-yellow-300"><Loader size={16} className="animate-spin" /><span>جاري الاتصال...</span></div>;
-      case 'error': return <div className="flex items-center gap-2 text-red-400"><WifiOff size={16} /><span>خطأ</span></div>;
-      default: return <div className="flex items-center gap-2 text-gray-400"><WifiOff size={16} /><span>غير متصل</span></div>;
+      case 'connected': return <div className="flex items-center gap-2 text-cyan-300"><Wifi size={16} /><span>Connected</span></div>;
+      case 'connecting': return <div className="flex items-center gap-2 text-yellow-300"><Loader size={16} className="animate-spin" /><span>Connecting...</span></div>;
+      case 'error': return <div className="flex items-center gap-2 text-red-400"><WifiOff size={16} /><span>Error</span></div>;
+      default: return <div className="flex items-center gap-2 text-gray-400"><WifiOff size={16} /><span>Disconnected</span></div>;
     }
   }
 
@@ -191,7 +195,7 @@ function WelcomeContent() {
       <Head>
           <title>NasserUSDT - VIP Access</title>
            <link
-            href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap"
             rel="stylesheet"
           />
       </Head>
@@ -199,7 +203,7 @@ function WelcomeContent() {
       <style jsx global>{`
         body {
           background-color: #0a192f;
-          font-family: "Cairo", sans-serif;
+          font-family: "Poppins", sans-serif;
           color: white;
         }
 
@@ -244,17 +248,18 @@ function WelcomeContent() {
         .particle {
             position: absolute;
             border-radius: 50%;
-            background: rgba(0, 191, 255, 0.15);
+            background-size: cover;
+            opacity: 0.15;
             pointer-events: none;
         }
 
         @keyframes float {
             0% {
                 transform: translateY(100vh) scale(1);
-                opacity: 1;
+                opacity: 0.15;
             }
             100% {
-                transform: translateY(-100px) scale(0);
+                transform: translateY(-100px) scale(0.5);
                 opacity: 0;
             }
         }
@@ -279,7 +284,7 @@ function WelcomeContent() {
                       <span>.</span><span>.</span><span>.</span>
                   </div>
               ) : (
-                  <div className="text-9xl font-black text-glow" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                  <div className="text-8xl font-black text-glow">
                       {crashValue}
                   </div>
               )}
@@ -289,21 +294,21 @@ function WelcomeContent() {
                 <div className="flex items-center gap-3">
                     <Clock size={20} className="text-cyan-300" />
                     <div>
-                        <div className="text-xs text-gray-400">الوقت المتبقي</div>
+                        <div className="text-xs text-gray-400">Time Left</div>
                         <div className="font-mono font-bold text-lg">{formatTime(totalSeconds)}</div>
                     </div>
                 </div>
                 <div className="text-sm font-semibold">
                     {connectionStatus === 'disconnected' && totalSeconds > 0 ? (
                         <button onClick={connectWebSocket} disabled={connectionStatus === 'connecting'} className="flex items-center gap-2 text-yellow-300">
-                            <Power size={16} /><span>اتصال</span>
+                            <Power size={16} /><span>Connect</span>
                         </button>
                     ) : getStatusIndicator()}
                 </div>
             </div>
              <button onClick={handleLogout} className="w-full mt-6 flex items-center justify-center gap-2 bg-red-500/20 backdrop-blur-sm px-4 py-3 rounded-full border border-red-500/50 text-red-300 hover:bg-red-500/40 transition-colors">
                 <LogOut size={16} />
-                <span className="text-sm font-semibold">تسجيل الخروج</span>
+                <span className="text-sm font-semibold">Logout</span>
             </button>
         </main>
       </div>

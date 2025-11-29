@@ -12,8 +12,8 @@ import { Loader2 } from 'lucide-react';
 import Head from 'next/head';
 
 const formSchema = z.object({
-  userId: z.string().min(1, { message: "الرجاء إدخال جميع البيانات." }),
-  password: z.string().min(1, { message: "الرجاء إدخال جميع البيانات." }),
+  userId: z.string().min(1, { message: "Please enter all fields." }),
+  password: z.string().min(1, { message: "Please enter all fields." }),
 });
 
 export default function NasserusdtLoginPage() {
@@ -38,13 +38,18 @@ export default function NasserusdtLoginPage() {
         container.removeChild(container.firstChild);
     }
     
-    const particleCount = 30;
+    const particleCount = 30; // Increased density
+    const imageUrl = "https://i.ibb.co/GvqLP66v/ROUND-NASSER.jpg";
+
     for (let i = 0; i < particleCount; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
+        
         const size = Math.random() * 80 + 20;
         particle.style.width = `${size}px`;
         particle.style.height = `${size}px`;
+        particle.style.backgroundImage = `url(${imageUrl})`;
+
         particle.style.left = `${Math.random() * 100}%`;
         particle.style.top = `${Math.random() * 100}%`;
         
@@ -91,14 +96,14 @@ export default function NasserusdtLoginPage() {
           sessionStorage.setItem('razor_session_validity', validity);
           router.push('/nasserusdt/welcome');
         } else {
-          setAuthError("بيانات الاعتماد غير صحيحة. يرجى المحاولة مرة أخرى.");
+          setAuthError("Invalid credentials. Please try again.");
           form.reset({ userId: values.userId, password: '' });
         }
       } else {
-        setAuthError("خطأ في النظام: لا يمكن التحقق من بيانات الاعتماد.");
+        setAuthError("System error: Could not verify credentials.");
       }
     } catch (error) {
-      setAuthError("خطأ في الشبكة. يرجى التحقق من اتصالك.");
+      setAuthError("Network error. Please check your connection.");
       console.error("Login error:", error);
     } finally {
       setIsSubmitting(false);
@@ -118,7 +123,7 @@ export default function NasserusdtLoginPage() {
       <style jsx global>{`
         body {
           background-color: #0a192f;
-          font-family: "Cairo", sans-serif;
+          font-family: "Poppins", sans-serif;
         }
 
         .login-box {
@@ -204,54 +209,57 @@ export default function NasserusdtLoginPage() {
         .particle {
             position: absolute;
             border-radius: 50%;
-            background: rgba(0, 191, 255, 0.15);
+            background-size: cover;
+            opacity: 0.15;
             pointer-events: none;
         }
 
         @keyframes float {
             0% {
                 transform: translateY(100vh) scale(1);
-                opacity: 1;
+                opacity: 0.15;
             }
             100% {
-                transform: translateY(-100px) scale(0);
+                transform: translateY(-100px) scale(0.5);
                 opacity: 0;
             }
         }
       `}</style>
-      <div className="login-container relative w-full max-w-sm p-5">
-        <div className="login-box relative overflow-hidden rounded-3xl p-9 text-center transition-all duration-300">
-          <div className="logo relative mb-8">
-             <img src="https://i.ibb.co/GvqLP66v/ROUND-NASSER.jpg" alt="NasserUSDT Logo"/>
+      <div className="flex items-center justify-center min-h-screen w-full">
+        <div className="login-container relative w-full max-w-sm p-5">
+          <div className="login-box relative overflow-hidden rounded-3xl p-9 text-center transition-all duration-300">
+            <div className="logo relative mb-8">
+               <img src="https://i.ibb.co/GvqLP66v/ROUND-NASSER.jpg" alt="NasserUSDT Logo"/>
+            </div>
+
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <div className="input-group relative mb-6" style={{ animation: 'fadeInUp 0.8s ease-out 0.2s both' }}>
+                <input
+                  type="text"
+                  {...form.register('userId')}
+                  placeholder="ID"
+                  className="w-full rounded-2xl border-2 p-4 text-center font-cairo text-base text-gray-800 outline-none transition-all duration-300 placeholder:text-gray-500"
+                />
+              </div>
+
+              <div className="input-group relative mb-6" style={{ animation: 'fadeInUp 0.8s ease-out 0.4s both' }}>
+                <input
+                  type="password"
+                  {...form.register('password')}
+                  placeholder="KEY"
+                  className="w-full rounded-2xl border-2 p-4 text-center font-cairo text-base text-gray-800 outline-none transition-all duration-300 placeholder:text-gray-500"
+                />
+              </div>
+              
+              {form.formState.errors.userId && <p className="mb-4 text-sm text-red-400">{form.formState.errors.userId.message}</p>}
+              {form.formState.errors.password && <p className="mb-4 text-sm text-red-400">{form.formState.errors.password.message}</p>}
+              {authError && <p className="mb-4 text-sm text-red-400">{authError}</p>}
+
+              <button type="submit" className="login-btn relative w-full overflow-hidden rounded-2xl border-none p-4 text-xl font-bold text-white transition-all duration-300" disabled={isSubmitting} style={{ animation: 'fadeInUp 0.8s ease-out 0.8s both' }}>
+                {isSubmitting ? <Loader2 className="mx-auto animate-spin" /> : 'Login'}
+              </button>
+            </form>
           </div>
-
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="input-group relative mb-6" style={{ animation: 'fadeInUp 0.8s ease-out 0.2s both' }}>
-              <input
-                type="text"
-                {...form.register('userId')}
-                placeholder="ID"
-                className="w-full rounded-2xl border-2 p-4 text-center font-cairo text-base text-gray-800 outline-none transition-all duration-300 placeholder:text-gray-500"
-              />
-            </div>
-
-            <div className="input-group relative mb-6" style={{ animation: 'fadeInUp 0.8s ease-out 0.4s both' }}>
-              <input
-                type="password"
-                {...form.register('password')}
-                placeholder="KEY"
-                className="w-full rounded-2xl border-2 p-4 text-center font-cairo text-base text-gray-800 outline-none transition-all duration-300 placeholder:text-gray-500"
-              />
-            </div>
-            
-            {form.formState.errors.userId && <p className="mb-4 text-sm text-red-400">{form.formState.errors.userId.message}</p>}
-            {form.formState.errors.password && <p className="mb-4 text-sm text-red-400">{form.formState.errors.password.message}</p>}
-            {authError && <p className="mb-4 text-sm text-red-400">{authError}</p>}
-
-            <button type="submit" className="login-btn relative w-full overflow-hidden rounded-2xl border-none p-4 text-xl font-bold text-white transition-all duration-300" disabled={isSubmitting} style={{ animation: 'fadeInUp 0.8s ease-out 0.8s both' }}>
-              {isSubmitting ? <Loader2 className="mx-auto animate-spin" /> : 'Login'}
-            </button>
-          </form>
         </div>
       </div>
     </>
