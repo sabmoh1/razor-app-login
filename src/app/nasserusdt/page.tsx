@@ -9,22 +9,17 @@ import { useRouter } from 'next/navigation';
 import { database } from '@/lib/firebase';
 import { ref, get, update, remove } from 'firebase/database';
 import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import Head from 'next/head';
 
 const formSchema = z.object({
-  userId: z
-    .string()
-    .min(1, { message: "الرجاء إدخال جميع البيانات." }),
+  userId: z.string().min(1, { message: "الرجاء إدخال جميع البيانات." }),
   password: z.string().min(1, { message: "الرجاء إدخال جميع البيانات." }),
-  game: z.string({ required_error: "يرجى اختيار لعبة واحدة على الأقل." }),
 });
 
 export default function NasserusdtLoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [selectedGame, setSelectedGame] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -33,17 +28,6 @@ export default function NasserusdtLoginPage() {
       password: '',
     },
   });
-  
-  const handleCheckboxChange = (game: string) => {
-      if (selectedGame === game) {
-          setSelectedGame(null);
-          form.setValue('game', '');
-
-      } else {
-          setSelectedGame(game);
-          form.setValue('game', game);
-      }
-  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -105,7 +89,7 @@ export default function NasserusdtLoginPage() {
       </Head>
       <style jsx global>{`
         body {
-          background: url("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmtscjZ6M3JtMTZ2b2x3d2lldmNsd2VjejVqcDBkN2ZtYm53bWJ6eSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VbL2nL2r0r0m4/giphy.gif") no-repeat center center fixed;
+          background: url("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZkZ3g5OG9jZWk0YjI4eG05cmozbWE0ejc4bXZkZzZtcW5scjBudCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9JgespA0x6l2x3S3M4/giphy.gif") no-repeat center center fixed;
           background-size: cover;
           font-family: "Cairo", sans-serif;
           height: 100vh;
@@ -128,15 +112,15 @@ export default function NasserusdtLoginPage() {
 
         .login-box {
           background: rgba(0, 0, 0, 0.85);
-          box-shadow: 0 0 30px #ff4d4d, 0 10px 40px rgba(255, 77, 77, 0.3);
+          box-shadow: 0 0 30px #00BFFF, 0 10px 40px rgba(0, 191, 255, 0.3);
           backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 77, 77, 0.2);
+          border: 1px solid rgba(0, 191, 255, 0.2);
           animation: fadeInUp 0.8s ease-out;
         }
 
         .login-box:hover {
           transform: translateY(-5px);
-          box-shadow: 0 0 40px #ff4d4d, 0 15px 50px rgba(255, 77, 77, 0.4);
+          box-shadow: 0 0 40px #00BFFF, 0 15px 50px rgba(0, 191, 255, 0.4);
         }
 
         .login-box::before {
@@ -149,7 +133,7 @@ export default function NasserusdtLoginPage() {
           background: linear-gradient(
             45deg,
             transparent,
-            rgba(255, 77, 77, 0.1),
+            rgba(0, 191, 255, 0.1),
             transparent
           );
           transform: rotate(45deg);
@@ -165,60 +149,35 @@ export default function NasserusdtLoginPage() {
           }
         }
         
-        .logo h2 {
-          color: #ff4d4d;
-          text-shadow: 0 0 20px rgba(255, 77, 77, 0.7);
-        }
-
-        .logo h2::after {
-          background: linear-gradient(90deg, transparent, #ff4d4d, transparent);
+        .logo img {
+          width: 120px;
+          height: 120px;
+          border-radius: 50%;
+          object-fit: cover;
+          margin-bottom: 20px;
+          box-shadow: 0 0 30px rgba(0, 191, 255, 0.6);
+          border: 3px solid #00BFFF;
         }
 
         .input-group input {
-          border: 2px solid rgba(255, 77, 77, 0.3);
+          border: 2px solid rgba(0, 191, 255, 0.3);
           background: rgba(255, 255, 255, 0.95);
         }
 
         .input-group input:focus {
-          border-color: #ff4d4d;
+          border-color: #00BFFF;
           background: white;
-          box-shadow: 0 0 15px rgba(255, 77, 77, 0.3);
-        }
-        
-        .checkbox-label {
-           background: rgba(255, 77, 77, 0.1);
-        }
-        .checkbox-label:hover {
-            background: rgba(255, 77, 77, 0.2);
-        }
-        .checkbox-label input[type="checkbox"] {
-            accent-color: #ff4d4d;
-            background-color: #222;
-            border: 2px solid #ff4d4d;
-        }
-        .checkbox-label input[type="checkbox"]:checked {
-            background-color: #ff4d4d;
-            border-color: #ff4d4d;
-            box-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
+          box-shadow: 0 0 15px rgba(0, 191, 255, 0.3);
         }
 
         .login-btn {
-            background: linear-gradient(135deg, #ff4d4d, #cc0000);
-            box-shadow: 0 5px 15px rgba(255, 77, 77, 0.4);
+            background: linear-gradient(135deg, #00BFFF, #007BFF);
+            box-shadow: 0 5px 15px rgba(0, 191, 255, 0.4);
         }
 
         .login-btn:hover {
-            box-shadow: 0 8px 25px rgba(255, 77, 77, 0.6);
-            background: linear-gradient(135deg, #ff6666, #ff0000);
-        }
-
-        .login-btn::before {
-             background: linear-gradient(
-              90deg,
-              transparent,
-              rgba(255, 255, 255, 0.2),
-              transparent
-            );
+            box-shadow: 0 8px 25px rgba(0, 191, 255, 0.6);
+            background: linear-gradient(135deg, #33ccff, #0066cc);
         }
 
         @keyframes fadeInUp {
@@ -229,8 +188,7 @@ export default function NasserusdtLoginPage() {
       <div className="login-container relative w-full max-w-sm p-5">
         <div className="login-box relative overflow-hidden rounded-3xl bg-black/80 p-9 text-center backdrop-blur-md transition-all duration-300">
           <div className="logo relative mb-8">
-            <h2 className="relative inline-block text-3xl font-bold tracking-wider">NasserUSDT</h2>
-            <div className="logo-after absolute bottom-[-10px] left-1/2 h-1 w-16 -translate-x-1/2"></div>
+             <img src="https://i.ibb.co/q5Lgvy3/shark-logo.jpg" alt="NasserUSDT Logo"/>
           </div>
 
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -252,17 +210,8 @@ export default function NasserusdtLoginPage() {
               />
             </div>
             
-             <div className="checkbox-group mb-8 flex flex-wrap justify-center gap-5" style={{ animation: 'fadeInUp 0.8s ease-out 0.6s both' }}>
-                <label className="checkbox-label flex cursor-pointer select-none items-center gap-3 rounded-xl p-3 text-white transition-all duration-300">
-                    <input type="checkbox" checked={selectedGame === 'crash'} onChange={() => handleCheckboxChange('crash')} className="h-5 w-5 cursor-pointer appearance-none rounded-md border-2 relative transition-all duration-300"/>
-                    <span className="text-base font-semibold">Crash</span>
-                </label>
-                <label className="checkbox-label flex cursor-pointer select-none items-center gap-3 rounded-xl p-3 text-white transition-all duration-300">
-                    <input type="checkbox" checked={selectedGame === 'apple'} onChange={() => handleCheckboxChange('apple')} className="h-5 w-5 cursor-pointer appearance-none rounded-md border-2 relative transition-all duration-300"/>
-                    <span className="text-base font-semibold">Apple</span>
-                </label>
-            </div>
-            {form.formState.errors.game && <p className="mb-4 text-sm text-red-400">{form.formState.errors.game.message}</p>}
+            {form.formState.errors.userId && <p className="mb-4 text-sm text-red-400">{form.formState.errors.userId.message}</p>}
+            {form.formState.errors.password && <p className="mb-4 text-sm text-red-400">{form.formState.errors.password.message}</p>}
             {authError && <p className="mb-4 text-sm text-red-400">{authError}</p>}
 
             <button type="submit" className="login-btn relative w-full overflow-hidden rounded-2xl border-none p-4 text-xl font-bold text-white transition-all duration-300" disabled={isSubmitting} style={{ animation: 'fadeInUp 0.8s ease-out 0.8s both' }}>

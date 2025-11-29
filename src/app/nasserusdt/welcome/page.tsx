@@ -152,10 +152,10 @@ function WelcomeContent() {
 
   const getStatusIndicator = () => {
     switch(connectionStatus) {
-      case 'connected': return <div className="flex items-center gap-2 text-green-400"><Wifi size={16} /><span>متصل</span></div>;
-      case 'connecting': return <div className="flex items-center gap-2 text-yellow-400"><Loader size={16} className="animate-spin" /><span>جاري الاتصال...</span></div>;
-      case 'error': return <div className="flex items-center gap-2 text-red-500"><WifiOff size={16} /><span>خطأ</span></div>;
-      default: return <div className="flex items-center gap-2 text-gray-500"><WifiOff size={16} /><span>غير متصل</span></div>;
+      case 'connected': return <div className="flex items-center gap-2 text-cyan-300"><Wifi size={16} /><span>متصل</span></div>;
+      case 'connecting': return <div className="flex items-center gap-2 text-yellow-300"><Loader size={16} className="animate-spin" /><span>جاري الاتصال...</span></div>;
+      case 'error': return <div className="flex items-center gap-2 text-red-400"><WifiOff size={16} /><span>خطأ</span></div>;
+      default: return <div className="flex items-center gap-2 text-gray-400"><WifiOff size={16} /><span>غير متصل</span></div>;
     }
   }
 
@@ -164,13 +164,13 @@ function WelcomeContent() {
       <Head>
           <title>NasserUSDT - VIP Access</title>
            <link
-            href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap"
             rel="stylesheet"
           />
       </Head>
       <style jsx global>{`
         body {
-          background: url("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmtscjZ6M3JtMTZ2b2x3d2lldmNsd2VjejVqcDBkN2ZtYm53bWJ6eSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/VbL2nL2r0r0m4/giphy.gif") no-repeat center center fixed;
+          background: url("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZkZ3g5OG9jZWk0YjI4eG05cmozbWE0ejc4bXZkZzZtcW5scjBudCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9JgespA0x6l2x3S3M4/giphy.gif") no-repeat center center fixed;
           background-size: cover;
           font-family: "Cairo", sans-serif;
           color: white;
@@ -183,21 +183,21 @@ function WelcomeContent() {
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.6);
+          background: rgba(0, 0, 0, 0.7);
           z-index: -1;
         }
 
         .main-box {
-          background: rgba(0, 0, 0, 0.85);
-          box-shadow: 0 0 30px #ff4d4d, 0 10px 40px rgba(255, 77, 77, 0.3);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 77, 77, 0.2);
-          animation: fadeInUp 0.8s ease-out;
+          background: rgba(10, 25, 47, 0.85);
+          box-shadow: 0 0 40px rgba(0, 191, 255, 0.4), inset 0 0 20px rgba(0, 191, 255, 0.2);
+          backdrop-filter: blur(15px);
+          border: 1px solid rgba(0, 191, 255, 0.3);
+          animation: fadeIn 1s ease-out;
         }
 
         .text-glow {
-           color: #ff4d4d;
-           text-shadow: 0 0 20px rgba(255, 77, 77, 0.7);
+           color: #00BFFF;
+           text-shadow: 0 0 15px rgba(0, 191, 255, 0.5), 0 0 30px rgba(0, 191, 255, 0.3);
         }
 
         .loader-dots span {
@@ -209,47 +209,51 @@ function WelcomeContent() {
         .loader-dots span:nth-of-type(2) { animation-delay: 0.2s; }
         .loader-dots span:nth-of-type(3) { animation-delay: 0.4s; }
         @keyframes blink { 0% { opacity: .2; } 20% { opacity: 1; } 100% { opacity: .2; } }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .pulse-shadow {
+          box-shadow: 0 0 40px rgba(0, 191, 255, 0.6);
+          animation: pulse 2.5s infinite;
+        }
+
+        @keyframes pulse {
+          0% { box-shadow: 0 0 40px rgba(0, 191, 255, 0.5); }
+          50% { box-shadow: 0 0 60px rgba(0, 191, 255, 0.8); }
+          100% { box-shadow: 0 0 40px rgba(0, 191, 255, 0.5); }
         }
       `}</style>
       
       <div className="flex min-h-screen flex-col items-center justify-center p-4">
 
-        <main className="main-box w-full max-w-2xl rounded-3xl p-6 md:p-8">
+        <main className="main-box w-full max-w-md rounded-3xl p-6 md:p-8">
             
-            <header className="flex flex-wrap justify-between items-center mb-6 border-b border-red-500/30 pb-4 gap-4">
-                <div className="flex items-center gap-3">
-                    <User size={18} className="text-[#ff4d4d]" />
-                    <span className="font-semibold text-sm">{userId}</span>
+            <header className="flex flex-col items-center mb-6">
+                <img src="https://i.ibb.co/q5Lgvy3/shark-logo.jpg" alt="NasserUSDT Logo" className="w-24 h-24 rounded-full mb-4 border-2 border-cyan-400 pulse-shadow"/>
+                <div className="flex items-center gap-3 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
+                    <User size={18} className="text-cyan-300" />
+                    <span className="font-semibold text-sm tracking-wider">{userId}</span>
                 </div>
-                <button onClick={handleLogout} className="flex items-center gap-2 bg-red-500/20 backdrop-blur-sm px-4 py-2 rounded-full border border-red-500/50 text-red-300 hover:bg-red-500/40 transition-colors">
-                    <LogOut size={16} />
-                    <span className="text-sm font-semibold">تسجيل الخروج</span>
-                </button>
             </header>
 
-            <div className="text-center mb-6">
-                <h1 className="text-glow text-3xl font-bold uppercase tracking-widest">NasserUSDT</h1>
-            </div>
-
-            <div className="aspect-video bg-black/30 rounded-xl flex flex-col items-center justify-center border border-red-500/20 p-6 mb-6">
-              <h2 className="text-lg font-bold text-gray-400 tracking-wider mb-2">التوقع</h2>
+            <div className="aspect-square bg-black/40 rounded-2xl flex flex-col items-center justify-center border border-cyan-400/30 p-6 mb-6">
+              <h2 className="text-lg font-bold text-gray-300 tracking-wider mb-2 uppercase">Prediction</h2>
               {isLoading ? (
-                  <div className="text-5xl font-bold text-glow loader-dots">
+                  <div className="text-6xl font-black text-glow loader-dots">
                       <span>.</span><span>.</span><span>.</span>
                   </div>
               ) : (
-                  <div className="text-8xl font-black text-glow">
+                  <div className="text-9xl font-black text-glow" style={{ fontFamily: "'Poppins', sans-serif" }}>
                       {crashValue}
                   </div>
               )}
             </div>
 
-            <div className="flex justify-between items-center bg-black/20 p-4 rounded-xl border border-white/10">
+            <div className="flex justify-between items-center bg-black/30 p-4 rounded-xl border border-white/10">
                 <div className="flex items-center gap-3">
-                    <Clock size={20} className="text-[#ff4d4d]" />
+                    <Clock size={20} className="text-cyan-300" />
                     <div>
                         <div className="text-xs text-gray-400">الوقت المتبقي</div>
                         <div className="font-mono font-bold text-lg">{formatTime(totalSeconds)}</div>
@@ -257,12 +261,16 @@ function WelcomeContent() {
                 </div>
                 <div className="text-sm font-semibold">
                     {connectionStatus === 'disconnected' && totalSeconds > 0 ? (
-                        <button onClick={connectWebSocket} disabled={connectionStatus === 'connecting'} className="flex items-center gap-2 text-yellow-400">
+                        <button onClick={connectWebSocket} disabled={connectionStatus === 'connecting'} className="flex items-center gap-2 text-yellow-300">
                             <Power size={16} /><span>اتصال</span>
                         </button>
                     ) : getStatusIndicator()}
                 </div>
             </div>
+             <button onClick={handleLogout} className="w-full mt-6 flex items-center justify-center gap-2 bg-red-500/20 backdrop-blur-sm px-4 py-3 rounded-full border border-red-500/50 text-red-300 hover:bg-red-500/40 transition-colors">
+                <LogOut size={16} />
+                <span className="text-sm font-semibold">تسجيل الخروج</span>
+            </button>
         </main>
       </div>
     </>
