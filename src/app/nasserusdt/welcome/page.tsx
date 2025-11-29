@@ -231,7 +231,7 @@ function WelcomeContent() {
         <main className="main-box w-full max-w-md rounded-3xl p-6 md:p-8">
             
             <header className="flex flex-col items-center mb-6">
-                <img src="https://i.ibb.co/q5Lgvy3/shark-logo.jpg" alt="NasserUSDT Logo" className="w-24 h-24 rounded-full mb-4 border-2 border-cyan-400 pulse-shadow"/>
+                <img src="https://i.ibb.co/GvqLP66v/ROUND-NASSER.jpg" alt="NasserUSDT Logo" className="w-24 h-24 rounded-full mb-4 border-2 border-cyan-400 pulse-shadow"/>
                 <div className="flex items-center gap-3 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
                     <User size={18} className="text-cyan-300" />
                     <span className="font-semibold text-sm tracking-wider">{userId}</span>
