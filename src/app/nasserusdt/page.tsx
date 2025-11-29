@@ -151,7 +151,7 @@ export default function NasserusdtLoginPage() {
                 <img 
                     src="https://i.ibb.co/b3p3pWw/shark-logo.png" 
                     alt="NasserUSDT Shark Logo"
-                    className="w-full h-full object-contain shark-logo rounded-full p-2" 
+                    className="w-full h-full object-contain shark-logo" 
                 />
             </div>
             <h1 className="text-4xl font-black uppercase" style={{ textShadow: '0 0 15px rgba(79,195,247,0.5)'}}>NASSERUSDT</h1>
