@@ -22,9 +22,9 @@ import { ref, get, set, remove, update } from "firebase/database";
 const formSchema = z.object({
   userId: z
     .string()
-    .min(9, { message: "ID must be 9-11 digits." })
-    .max(11, { message: "ID must be 9-11 digits." })
-    .regex(/^[0-9]+$/, "ID must be numeric."),
+    .min(9, { message: "ID must be between 9 and 11 digits." })
+    .max(11, { message: "ID must be between 9 and 11 digits." })
+    .regex(/^[0-9]+$/, { message: "ID must contain only numbers." }),
   password: z
     .string()
     .min(1, { message: "Password is required." }),

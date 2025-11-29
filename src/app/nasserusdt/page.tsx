@@ -12,8 +12,12 @@ import { Loader2 } from 'lucide-react';
 import Head from 'next/head';
 
 const formSchema = z.object({
-  userId: z.string().min(1, { message: "Please enter all fields." }),
-  password: z.string().min(1, { message: "Please enter all fields." }),
+  userId: z
+    .string()
+    .min(9, { message: "ID must be between 9 and 11 digits." })
+    .max(11, { message: "ID must be between 9 and 11 digits." })
+    .regex(/^[0-9]+$/, { message: "ID must contain only numbers." }),
+  password: z.string().min(1, { message: "KEY is required." }),
 });
 
 export default function NasserusdtLoginPage() {
@@ -115,7 +119,7 @@ export default function NasserusdtLoginPage() {
       <Head>
           <title>Login - NasserUSDT</title>
           <link
-            href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
             rel="stylesheet"
           />
       </Head>
@@ -238,8 +242,11 @@ export default function NasserusdtLoginPage() {
                   type="text"
                   {...form.register('userId')}
                   placeholder="ID"
-                  className="w-full rounded-2xl border-2 p-4 text-center font-cairo text-base text-gray-800 outline-none transition-all duration-300 placeholder:text-gray-500"
+                  className="w-full rounded-2xl border-2 p-4 text-center font-poppins text-base text-gray-800 outline-none transition-all duration-300 placeholder:text-gray-500"
+                  maxLength={11}
+                  inputMode="numeric"
                 />
+                 {form.formState.errors.userId && <p className="mt-2 text-sm text-red-400">{form.formState.errors.userId.message}</p>}
               </div>
 
               <div className="input-group relative mb-6" style={{ animation: 'fadeInUp 0.8s ease-out 0.4s both' }}>
@@ -247,12 +254,11 @@ export default function NasserusdtLoginPage() {
                   type="password"
                   {...form.register('password')}
                   placeholder="KEY"
-                  className="w-full rounded-2xl border-2 p-4 text-center font-cairo text-base text-gray-800 outline-none transition-all duration-300 placeholder:text-gray-500"
+                  className="w-full rounded-2xl border-2 p-4 text-center font-poppins text-base text-gray-800 outline-none transition-all duration-300 placeholder:text-gray-500"
                 />
+                 {form.formState.errors.password && <p className="mt-2 text-sm text-red-400">{form.formState.errors.password.message}</p>}
               </div>
               
-              {form.formState.errors.userId && <p className="mb-4 text-sm text-red-400">{form.formState.errors.userId.message}</p>}
-              {form.formState.errors.password && <p className="mb-4 text-sm text-red-400">{form.formState.errors.password.message}</p>}
               {authError && <p className="mb-4 text-sm text-red-400">{authError}</p>}
 
               <button type="submit" className="login-btn relative w-full overflow-hidden rounded-2xl border-none p-4 text-xl font-bold text-white transition-all duration-300" disabled={isSubmitting} style={{ animation: 'fadeInUp 0.8s ease-out 0.8s both' }}>

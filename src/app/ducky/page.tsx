@@ -9,6 +9,8 @@ import * as z from 'zod';
 import { database } from '@/lib/firebase';
 import { ref, get, update, remove } from 'firebase/database';
 import { Loader2, Instagram, Send } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 
 const formSchema = z.object({
   userId: z
@@ -16,7 +18,7 @@ const formSchema = z.object({
     .min(9, { message: "ID must be between 9 and 11 digits." })
     .max(11, { message: "ID must be between 9 and 11 digits." })
     .regex(/^[0-9]+$/, { message: "ID must contain only numbers." }),
-  password: z.string().min(1, { message: 'Password is required.' }),
+  password: z.string().min(1, { message: 'Activation Code is required.' }),
 });
 
 export default function DuckyLoginPage() {
@@ -352,40 +354,60 @@ export default function DuckyLoginPage() {
 
         <div className="right-section">
           <div className="form-card">
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="input-group">
-                <div className="input-wrapper">
-                  <i className="fas fa-user input-icon"></i>
-                  <input
-                    type="text"
-                    {...form.register('userId')}
-                    className="input-field"
-                    placeholder="User ID"
-                    maxLength={11}
-                    inputMode="numeric"
-                    autoComplete="off"
-                  />
-                </div>
-                {form.formState.errors.userId && <div className="error-message">{form.formState.errors.userId.message}</div>}
-              </div>
-              <div className="input-group">
-                <div className="input-wrapper">
-                  <i className="fas fa-key input-icon"></i>
-                  <input
-                    type="password"
-                    {...form.register('password')}
-                    className="input-field"
-                    placeholder="Activation Code"
-                    autoComplete="off"
-                  />
-                </div>
-                {form.formState.errors.password && <div className="error-message">{form.formState.errors.password.message}</div>}
-              </div>
-              {authError && <div className="error-message" style={{ display: 'block', textAlign: 'center', marginBottom: '1rem' }}>{authError}</div>}
-              <button id="play-btn" type="submit" className="play-btn" disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="animate-spin" /> : <><i className="fas fa-play"></i><span>Activate</span></>}
-              </button>
-            </form>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="userId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="input-wrapper">
+                        <i className="fas fa-user input-icon"></i>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            {...field}
+                            className="input-field"
+                            placeholder="User ID"
+                            maxLength={11}
+                            inputMode="numeric"
+                            autoComplete="off"
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage className="error-message" />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="input-wrapper">
+                         <i className="fas fa-key input-icon"></i>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            {...field}
+                            className="input-field"
+                            placeholder="Activation Code"
+                            autoComplete="off"
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage className="error-message" />
+                    </FormItem>
+                  )}
+                />
+                
+                {authError && <div className="error-message" style={{ display: 'block', textAlign: 'center', marginBottom: '1rem' }}>{authError}</div>}
+                
+                <button id="play-btn" type="submit" className="play-btn" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="animate-spin" /> : <><i className="fas fa-play"></i><span>Activate</span></>}
+                </button>
+              </form>
+            </Form>
           </div>
 
           <div className="social-card">
