@@ -132,7 +132,7 @@ export default function NasserusdtLoginPage() {
         <Head>
           <title>Loading... - NasserUSDT</title>
         </Head>
-        <div className="flex items-center justify-center min-h-screen bg-[#0a192f]">
+        <div className="flex items-center justify-center min-h-screen bg-black">
           <img src="https://i.postimg.cc/W3Z2C3ZW/loading.gif" alt="Loading..." />
         </div>
       </>
