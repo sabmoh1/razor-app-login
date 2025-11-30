@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef } from 'react';
-import { X, Send, Paperclip, Loader2 } from 'lucide-react';
+import { X, Send, Paperclip, Loader2, Headset } from 'lucide-react';
 import axios from 'axios';
 
 interface SupportChatProps {
@@ -46,11 +46,15 @@ export default function SupportChat({ isOpen, onClose }: SupportChatProps) {
     if (file) {
       formData.append('photo', file);
     }
+    
+    // Get user ID from session storage if available
+    const userId = sessionStorage.getItem('razor_user_id');
 
     try {
       await axios.post('/api/support', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'x-user-id': userId || 'Unknown User'
         },
       });
       setSuccess("Your message has been sent successfully!");
@@ -133,7 +137,7 @@ export default function SupportChat({ isOpen, onClose }: SupportChatProps) {
                         disabled={isSending}
                     >
                         <Paperclip size={18} />
-                        <span>{file ? file.name : "Attach Image"}</span>
+                        <span className="truncate max-w-[200px]">{file ? file.name : "Attach Image"}</span>
                     </button>
                     <input
                         type="file"
