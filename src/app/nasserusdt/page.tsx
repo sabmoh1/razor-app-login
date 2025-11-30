@@ -10,6 +10,7 @@ import { database } from '@/lib/firebase';
 import { ref, get, update, remove } from 'firebase/database';
 import { Loader2, Headset } from 'lucide-react';
 import Head from 'next/head';
+import SupportChat from '@/components/SupportChat';
 
 const formSchema = z.object({
   userId: z
@@ -25,6 +26,7 @@ export default function NasserusdtLoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,12 +51,11 @@ export default function NasserusdtLoginPage() {
     const container = document.getElementById('particles-background');
     if (!container) return;
 
-    // Clear existing particles before creating new ones
     while (container.firstChild) {
         container.removeChild(container.firstChild);
     }
     
-    const particleCount = 30; // Increased density
+    const particleCount = 30;
     const imageUrl = "https://i.ibb.co/GvqLP66v/ROUND-NASSER.jpg";
 
     for (let i = 0; i < particleCount; i++) {
@@ -234,8 +235,10 @@ export default function NasserusdtLoginPage() {
           justify-content: center;
           box-shadow: 0 5px 20px rgba(0, 191, 255, 0.5);
           color: white;
+          cursor: pointer;
           text-decoration: none;
           transition: all 0.3s ease;
+          z-index: 1000;
         }
 
         .support-fab:hover {
@@ -316,10 +319,10 @@ export default function NasserusdtLoginPage() {
           </div>
         </div>
       </div>
-      <a href="https://t.me/nasserusdtt" target="_blank" rel="noopener noreferrer" className="support-fab">
+      <button onClick={() => setIsChatOpen(true)} className="support-fab">
           <Headset size={28} />
-      </a>
+      </button>
+      <SupportChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </>
   );
 }
-
