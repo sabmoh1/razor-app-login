@@ -1,81 +1,30 @@
 
 import { NextResponse } from 'next/server';
-import axios from 'axios';
-import FormData from 'form-data';
-
-const BOT_TOKEN = '7695139336:AAGFDIXrQSc3t2Q4ZDCoJ4JAk-0L-7AUUVU';
-// Correct Chat ID for the support group
-const CHAT_ID = '-4333010530'; 
-
-const TELEGRAM_API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-async function streamToBuffer(stream: ReadableStream): Promise<Buffer> {
-    const chunks: Uint8Array[] = [];
-    const reader = stream.getReader();
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-    }
-    return Buffer.concat(chunks);
-}
-
+import { database } from '@/lib/firebase';
+import { ref, push, serverTimestamp } from "firebase/database";
 
 export async function POST(request: Request) {
   try {
-    const data = await request.formData();
-    const message = data.get('message') as string;
-    const photo = data.get('photo') as File | null;
-    
-    const userId = request.headers.get('x-user-id') || 'Unknown User';
+    const { telegramUser, message } = await request.json();
 
-    const caption = `New Support Message\n\nUser ID: ${userId}\n\nMessage:\n${message || '(No message content)'}`;
-
-    if (photo) {
-      const photoBuffer = await streamToBuffer(photo.stream());
-
-      // Sending a photo
-      const photoForm = new FormData();
-      photoForm.append('chat_id', CHAT_ID);
-      photoForm.append('photo', photoBuffer, {
-        filename: photo.name,
-        contentType: photo.type,
-      });
-      photoForm.append('caption', caption);
-      
-      const response = await axios.post(`${TELEGRAM_API_URL}/sendPhoto`, photoForm, {
-        headers: photoForm.getHeaders(),
-      });
-
-      if (response.data.ok) {
-        return NextResponse.json({ success: true, message: 'Message and photo sent.' });
-      } else {
-        throw new Error(`Telegram API Error: ${response.data.description}`);
-      }
-
-    } else if (message) {
-      // Sending a text message
-      const response = await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
-        chat_id: CHAT_ID,
-        text: caption,
-        parse_mode: 'Markdown',
-      });
-      
-      if (response.data.ok) {
-        return NextResponse.json({ success: true, message: 'Message sent.' });
-      } else {
-        throw new Error(`Telegram API Error: ${response.data.description}`);
-      }
-    } else {
-        return NextResponse.json({ success: false, message: 'No content to send.' }, { status: 400 });
+    if (!telegramUser || !message) {
+      return NextResponse.json({ success: false, message: 'Telegram username and message are required.' }, { status: 400 });
     }
 
+    const supportMessagesRef = ref(database, 'nasserusdt_support');
+    
+    await push(supportMessagesRef, {
+      telegramUser,
+      message,
+      createdAt: serverTimestamp(),
+    });
+
+    return NextResponse.json({ success: true, message: 'Message saved.' });
+
   } catch (error) {
-    console.error('Error sending to Telegram:', error);
+    console.error('Error saving support message:', error);
     let errorMessage = 'An internal server error occurred.';
-    if (axios.isAxiosError(error) && error.response) {
-        errorMessage = `Failed to send message: ${error.response.data.description || error.message}`;
-    } else if (error instanceof Error) {
+    if (error instanceof Error) {
         errorMessage = error.message;
     }
     return NextResponse.json({ success: false, message: errorMessage }, { status: 500 });
