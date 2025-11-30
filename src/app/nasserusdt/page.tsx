@@ -8,7 +8,7 @@ import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { database } from '@/lib/firebase';
 import { ref, get, update, remove } from 'firebase/database';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Headset } from 'lucide-react';
 import Head from 'next/head';
 
 const formSchema = z.object({
@@ -195,6 +195,20 @@ export default function NasserusdtLoginPage() {
             box-shadow: 0 8px 25px rgba(0, 191, 255, 0.6);
             background: linear-gradient(135deg, #33ccff, #0066cc);
         }
+        
+        .support-btn {
+            background: transparent;
+            border: 2px solid rgba(0, 191, 255, 0.5);
+            color: rgba(0, 191, 255, 0.8);
+        }
+        
+        .support-btn:hover {
+            background: rgba(0, 191, 255, 0.1);
+            border-color: #00BFFF;
+            color: #00BFFF;
+            box-shadow: 0 0 15px rgba(0, 191, 255, 0.4);
+        }
+
 
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(30px); }
@@ -236,12 +250,12 @@ export default function NasserusdtLoginPage() {
                <img src="https://i.ibb.co/GvqLP66v/ROUND-NASSER.jpg" alt="NasserUSDT Logo"/>
             </div>
 
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="input-group relative mb-6" style={{ animation: 'fadeInUp 0.8s ease-out 0.2s both' }}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="input-group relative" style={{ animation: 'fadeInUp 0.8s ease-out 0.2s both' }}>
                 <input
                   type="text"
                   {...form.register('userId')}
-                  placeholder="ID"
+                  placeholder="User ID"
                   className="w-full rounded-2xl border-2 p-4 text-center font-poppins text-base text-gray-800 outline-none transition-all duration-300 placeholder:text-gray-500"
                   maxLength={11}
                   inputMode="numeric"
@@ -249,7 +263,7 @@ export default function NasserusdtLoginPage() {
                  {form.formState.errors.userId && <p className="mt-2 text-sm text-red-400">{form.formState.errors.userId.message}</p>}
               </div>
 
-              <div className="input-group relative mb-6" style={{ animation: 'fadeInUp 0.8s ease-out 0.4s both' }}>
+              <div className="input-group relative" style={{ animation: 'fadeInUp 0.8s ease-out 0.4s both' }}>
                 <input
                   type="password"
                   {...form.register('password')}
@@ -265,6 +279,10 @@ export default function NasserusdtLoginPage() {
                 {isSubmitting ? <Loader2 className="mx-auto animate-spin" /> : 'Login'}
               </button>
             </form>
+             <a href="https://t.me/your_support_channel" target="_blank" rel="noopener noreferrer" className="support-btn mt-4 relative flex items-center justify-center w-full overflow-hidden rounded-2xl border-none p-3 text-lg font-bold transition-all duration-300" style={{ animation: 'fadeInUp 0.8s ease-out 1.0s both' }}>
+                  <Headset className="mr-2 h-5 w-5" />
+                  Support
+              </a>
           </div>
         </div>
       </div>
