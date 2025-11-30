@@ -4,8 +4,8 @@ import axios from 'axios';
 import FormData from 'form-data';
 
 const BOT_TOKEN = '7695139336:AAGFDIXrQSc3t2Q4ZDCoJ4JAk-0L-7AUUVU';
-// Important: Replace this with the actual Chat ID of the support group/person
-const CHAT_ID = '-4333010530'; // This is a placeholder, you must get the correct one
+// Correct Chat ID for the support group
+const CHAT_ID = '-4333010530'; 
 
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
