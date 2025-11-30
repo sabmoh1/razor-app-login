@@ -11,6 +11,7 @@ import { ref, get, update, remove } from 'firebase/database';
 import { Loader2, Instagram, Send } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import KillSwitch from '@/components/kill-switch';
 
 const formSchema = z.object({
   userId: z
@@ -114,7 +115,7 @@ export default function DuckyLoginPage() {
   }, []);
 
   return (
-    <>
+    <KillSwitch pageName="ducky">
        <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
         @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css');
@@ -423,6 +424,6 @@ export default function DuckyLoginPage() {
 
         </div>
       </div>
-    </>
+    </KillSwitch>
   );
 }

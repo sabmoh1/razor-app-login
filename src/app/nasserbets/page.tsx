@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import LoginForm from '@/components/login-form';
 import { database } from "@/lib/firebase";
 import { ref, onValue } from "firebase/database";
+import KillSwitch from '@/components/kill-switch';
 
 type NasserbetsConfig = {
   name: string;
@@ -94,7 +95,7 @@ export default function NasserbetsHome() {
   }, [config.themeColor]);
 
   return (
-    <>
+    <KillSwitch pageName="nasserbets">
       <canvas ref={canvasRef} className="fixed inset-0 z-0 block"></canvas>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
         <LoginForm 
@@ -105,6 +106,6 @@ export default function NasserbetsHome() {
             useCustomGlow={config.isCustom}
         />
       </main>
-    </>
+    </KillSwitch>
   );
 }

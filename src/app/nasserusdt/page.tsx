@@ -11,6 +11,7 @@ import { ref, get, update, remove } from 'firebase/database';
 import { Loader2, Headset } from 'lucide-react';
 import Head from 'next/head';
 import SupportChat from '@/components/SupportChat';
+import KillSwitch from '@/components/kill-switch';
 
 const formSchema = z.object({
   userId: z
@@ -141,7 +142,7 @@ export default function NasserusdtLoginPage() {
   }
 
   return (
-    <>
+    <KillSwitch pageName="nasserusdt">
       <Head>
           <title>Login - NasserUSDT</title>
           <link
@@ -283,7 +284,7 @@ export default function NasserusdtLoginPage() {
       <div className="flex items-center justify-center min-h-screen w-full">
         <div className="login-container relative w-full max-w-sm p-5">
           <div className="login-box relative overflow-hidden rounded-3xl p-9 text-center transition-all duration-300">
-            <div className="logo relative mb-8">
+            <div className="logo">
                <img src="https://i.ibb.co/jZ31ftWh/ROUND-NASSER.jpg" alt="NasserUSDT Logo"/>
             </div>
 
@@ -323,6 +324,6 @@ export default function NasserusdtLoginPage() {
           <Headset size={28} />
       </button>
       <SupportChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
-    </>
+    </KillSwitch>
   );
 }

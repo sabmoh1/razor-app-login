@@ -10,6 +10,7 @@ import { database } from "@/lib/firebase";
 import { ref, get, update, remove } from "firebase/database";
 import Head from "next/head";
 import { Loader2 } from "lucide-react";
+import KillSwitch from "@/components/kill-switch";
 
 const formSchema = z.object({
   userId: z
@@ -97,7 +98,7 @@ export default function VirusLoginPage() {
   }
 
   return (
-    <>
+    <KillSwitch pageName="virus">
       <Head>
         <title>VIRUS &mdash; Login</title>
       </Head>
@@ -352,6 +353,6 @@ export default function VirusLoginPage() {
           </form>
         </div>
       </div>
-    </>
+    </KillSwitch>
   );
 }

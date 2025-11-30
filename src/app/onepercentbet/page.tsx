@@ -19,6 +19,7 @@ import { Loader2, AlertCircle, ArrowRight, User, KeyRound, Server, Scan, Link2, 
 import { database } from "@/lib/firebase";
 import { ref, get, update, remove } from "firebase/database";
 import { cn } from "@/lib/utils";
+import KillSwitch from "@/components/kill-switch";
 
 const formSchema = z.object({
   userId: z
@@ -173,7 +174,7 @@ export default function OnePercentBetLogin() {
   }
 
   return (
-    <>
+    <KillSwitch pageName="onepercentbet">
         <div className="min-h-screen w-full bg-[#0D1117] text-white flex flex-col items-center justify-center p-4 font-rajdhani overflow-x-hidden">
             <style jsx global>{`
                 body {
@@ -281,8 +282,6 @@ export default function OnePercentBetLogin() {
                 </p>
             </div>
         </div>
-    </>
+    </KillSwitch>
   );
 }
-
-    

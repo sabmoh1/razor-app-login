@@ -3,6 +3,7 @@
 
 import { useEffect, useRef } from 'react';
 import LoginForm from '@/components/login-form';
+import KillSwitch from '@/components/kill-switch';
 
 export default function SpiderHome() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -55,7 +56,7 @@ export default function SpiderHome() {
   }, []);
 
   return (
-    <>
+    <KillSwitch pageName="spider">
       <canvas ref={canvasRef} className="fixed inset-0 z-0 block"></canvas>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
         <LoginForm 
@@ -65,6 +66,6 @@ export default function SpiderHome() {
             themeGlow="text-glow-red"
         />
       </main>
-    </>
+    </KillSwitch>
   );
 }
