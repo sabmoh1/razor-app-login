@@ -3,13 +3,14 @@
 
 import { useState, useEffect } from "react";
 import { database } from "@/lib/firebase";
-import { ref, get, onValue } from "firebase/database";
+import { ref, onValue, remove } from "firebase/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Lock, AlertCircle, MessageSquare, Clock, User } from "lucide-react";
+import { Loader2, Lock, AlertCircle, MessageSquare, Clock, User, Trash2 } from "lucide-react";
 import { format } from 'date-fns';
 
 type SupportMessage = {
+    id: string;
     telegramUser: string;
     message: string;
     createdAt: number;
@@ -36,6 +37,8 @@ export default function NasserusdtAdmin() {
                     id: key
                 })).sort((a, b) => b.createdAt - a.createdAt);
                 setMessages(messageList);
+            } else {
+                setMessages([]);
             }
             setIsLoading(false);
         });
@@ -58,6 +61,19 @@ export default function NasserusdtAdmin() {
             setAuthError("Error verifying admin code.");
         } finally {
             setIsAuthenticating(false);
+        }
+    };
+    
+    const handleDeleteMessage = async (messageId: string) => {
+        if (!window.confirm("Are you sure you want to delete this message?")) {
+            return;
+        }
+        try {
+            const messageRef = ref(database, `nasserusdt_support/${messageId}`);
+            await remove(messageRef);
+        } catch (error) {
+            console.error("Error deleting message:", error);
+            alert("Failed to delete message.");
         }
     };
 
@@ -103,8 +119,8 @@ export default function NasserusdtAdmin() {
                             <Loader2 className="h-12 w-12 text-cyan-400 animate-spin"/>
                         </div>
                     ) : messages.length > 0 ? (
-                        messages.map((msg, index) => (
-                            <div key={index} className="bg-black/30 border border-cyan-500/20 rounded-lg p-4 shadow-lg animate-[fadeIn_0.5s_ease-out]">
+                        messages.map((msg) => (
+                            <div key={msg.id} className="relative bg-black/30 border border-cyan-500/20 rounded-lg p-4 shadow-lg animate-[fadeIn_0.5s_ease-out]">
                                 <div className="flex justify-between items-start mb-3 border-b border-cyan-500/10 pb-3">
                                     <div className="flex items-center gap-2 text-cyan-300 font-semibold">
                                         <User size={16} />
@@ -119,6 +135,13 @@ export default function NasserusdtAdmin() {
                                     <MessageSquare size={18} className="text-cyan-400/70 mt-1 flex-shrink-0" />
                                     <p className="text-gray-200 whitespace-pre-wrap">{msg.message}</p>
                                 </div>
+                                <button 
+                                    onClick={() => handleDeleteMessage(msg.id)} 
+                                    className="absolute top-2 right-2 p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors"
+                                    aria-label="Delete message"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
                             </div>
                         ))
                     ) : (
