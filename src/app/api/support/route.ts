@@ -9,6 +9,18 @@ const CHAT_ID = '-4333010530'; // This is a placeholder, you must get the correc
 
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
+async function streamToBuffer(stream: ReadableStream): Promise<Buffer> {
+    const chunks: Uint8Array[] = [];
+    const reader = stream.getReader();
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+    }
+    return Buffer.concat(chunks);
+}
+
+
 export async function POST(request: Request) {
   try {
     const data = await request.formData();
@@ -20,10 +32,12 @@ export async function POST(request: Request) {
     const caption = `New Support Message\n\nUser ID: ${userId}\n\nMessage:\n${message || '(No message content)'}`;
 
     if (photo) {
+      const photoBuffer = await streamToBuffer(photo.stream());
+
       // Sending a photo
       const photoForm = new FormData();
       photoForm.append('chat_id', CHAT_ID);
-      photoForm.append('photo', photo.stream(), {
+      photoForm.append('photo', photoBuffer, {
         filename: photo.name,
         contentType: photo.type,
       });
