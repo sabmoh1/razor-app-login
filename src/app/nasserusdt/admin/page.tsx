@@ -34,7 +34,7 @@ export default function NasserusdtAdmin() {
                 const messageList: SupportMessage[] = Object.keys(data).map(key => ({
                     ...data[key],
                     id: key
-                })).sort((a, b) => a.createdAt - b.createdAt);
+                })).sort((a, b) => b.createdAt - a.createdAt);
                 setMessages(messageList);
             }
             setIsLoading(false);
@@ -47,7 +47,7 @@ export default function NasserusdtAdmin() {
         setAuthError(null);
         setIsAuthenticating(true);
         try {
-            const adminCodeRef = ref(database, 'admin/nasserusdt_password');
+            const adminCodeRef = ref(database, 'admin/password');
             const snapshot = await get(adminCodeRef);
             if (snapshot.exists() && snapshot.val() === adminCode) {
                 setIsAdmin(true);
