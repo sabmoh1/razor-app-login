@@ -24,6 +24,7 @@ export default function NasserusdtLoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -34,6 +35,17 @@ export default function NasserusdtLoginPage() {
   });
 
   useEffect(() => {
+    const loadingTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 4000);
+
+    return () => clearTimeout(loadingTimeout);
+  }, []);
+
+
+  useEffect(() => {
+    if (isLoading) return;
+
     const container = document.getElementById('particles-background');
     if (!container) return;
 
@@ -63,7 +75,7 @@ export default function NasserusdtLoginPage() {
         
         container.appendChild(particle);
     }
-  }, []);
+  }, [isLoading]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -112,6 +124,19 @@ export default function NasserusdtLoginPage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (isLoading) {
+    return (
+      <>
+        <Head>
+          <title>Loading... - NasserUSDT</title>
+        </Head>
+        <div className="flex items-center justify-center min-h-screen bg-[#0a192f]">
+          <img src="https://i.postimg.cc/W3Z2C3ZW/loading.gif" alt="Loading..." />
+        </div>
+      </>
+    );
   }
 
   return (
@@ -196,17 +221,26 @@ export default function NasserusdtLoginPage() {
             background: linear-gradient(135deg, #33ccff, #0066cc);
         }
         
-        .support-btn {
-            background: transparent;
-            border: 2px solid rgba(0, 191, 255, 0.5);
-            color: rgba(0, 191, 255, 0.8);
+        .support-fab {
+          position: fixed;
+          bottom: 25px;
+          right: 25px;
+          width: 60px;
+          height: 60px;
+          background: linear-gradient(135deg, #00BFFF, #007BFF);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 5px 20px rgba(0, 191, 255, 0.5);
+          color: white;
+          text-decoration: none;
+          transition: all 0.3s ease;
         }
-        
-        .support-btn:hover {
-            background: rgba(0, 191, 255, 0.1);
-            border-color: #00BFFF;
-            color: #00BFFF;
-            box-shadow: 0 0 15px rgba(0, 191, 255, 0.4);
+
+        .support-fab:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 30px rgba(0, 191, 255, 0.7);
         }
 
 
@@ -279,13 +313,13 @@ export default function NasserusdtLoginPage() {
                 {isSubmitting ? <Loader2 className="mx-auto animate-spin" /> : 'Login'}
               </button>
             </form>
-             <a href="https://t.me/your_support_channel" target="_blank" rel="noopener noreferrer" className="support-btn mt-4 relative flex items-center justify-center w-full overflow-hidden rounded-2xl border-none p-3 text-lg font-bold transition-all duration-300" style={{ animation: 'fadeInUp 0.8s ease-out 1.0s both' }}>
-                  <Headset className="mr-2 h-5 w-5" />
-                  Support
-              </a>
           </div>
         </div>
       </div>
+      <a href="https://t.me/nasserusdtt" target="_blank" rel="noopener noreferrer" className="support-fab">
+          <Headset size={28} />
+      </a>
     </>
   );
 }
+
