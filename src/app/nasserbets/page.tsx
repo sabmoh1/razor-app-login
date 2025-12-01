@@ -77,7 +77,15 @@ export default function NasserbetsHome() {
       ypos.forEach((y, ind) => {
         const text = letters.charAt(Math.floor(Math.random() * letters.length));
         const x = ind * 10;
-        ctx.fillStyle = config.themeColor + (0.18 + Math.random()*0.6).toString(16).slice(2,4);
+        
+        // Convert hex to rgba for the fillStyle
+        const hex = config.themeColor.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        const alpha = 0.18 + Math.random() * 0.6;
+        
+        ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
         ctx.fillText(text, x, y);
         if(y > H + Math.random()*700) {
           ypos[ind] = 0;

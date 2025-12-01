@@ -8,7 +8,7 @@ import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { database } from '@/lib/firebase';
 import { ref, get, update, remove } from 'firebase/database';
-import { Loader2, Headset } from 'lucide-react';
+import { Loader2, Headset, AtSign } from 'lucide-react';
 import Head from 'next/head';
 import SupportChat from '@/components/SupportChat';
 import KillSwitch from '@/components/kill-switch';
