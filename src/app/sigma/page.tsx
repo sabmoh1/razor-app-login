@@ -12,7 +12,7 @@ export default function SigmaHome() {
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{
             backgroundImage: "url('https://cdn.dribbble.com/userupload/20787734/file/original-6a95ade3f7286f5da2b16669f6ff93c3.gif')",
-            filter: 'hue-rotate(150deg) brightness(0.9)',
+            filter: 'hue-rotate(190deg) brightness(0.9)',
           }}
         ></div>
         <div className="absolute inset-0 w-full h-full bg-black/60"></div>
