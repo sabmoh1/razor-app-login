@@ -249,7 +249,7 @@ function WelcomeContent() {
           }
           .wrap{position:relative;z-index:3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
           .header-controls {
-            position: fixed;
+            position: absolute;
             top: 15px;
             width: 100%;
             display: flex;
