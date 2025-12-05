@@ -288,7 +288,7 @@ function WelcomeContent() {
             --accent:#fff;
           }
           *{box-sizing:border-box}
-          html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow:hidden}
+          html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
           body, .font-orbitron, .timer-big, .last-box .value, .last-box .label, #crashValue {
              font-family: 'Orbitron', sans-serif !important;
              font-weight: 900 !important;
