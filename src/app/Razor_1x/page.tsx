@@ -268,7 +268,7 @@ function WelcomeContent() {
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
           #crashValue {
             color: var(--neon-primary);
-            text-shadow: 0 0 2px var(--neon-primary);
+            text-shadow: 0 0 2px var(--neon-primary), 0 0 3px var(--neon-primary), 0 0 5px var(--neon-primary);
           }
           .brand h1, .status-dot.connected {
             text-shadow:
