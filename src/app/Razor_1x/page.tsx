@@ -181,7 +181,7 @@ function WelcomeContent() {
                 ypos.forEach((y, ind) => {
                     const text = letters.charAt(Math.floor(Math.random() * letters.length));
                     const x = ind * 10;
-                    ctx.fillStyle = 'rgba(0,255,120,'+ (0.18 + Math.random()*0.6) +')';
+                    ctx.fillStyle = 'rgba(255,255,255,'+ (0.12 + Math.random()*0.4) +')';
                     ctx.fillText(text, x, y);
                     if(y > H + Math.random()*700) {
                     ypos[ind] = 0;
@@ -291,16 +291,16 @@ function WelcomeContent() {
   return (
     <>
       <Head>
-        <title>RAZOR — Neon Matrix</title>
+        <title>RAZOR — Terminal</title>
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
       <style jsx global>{`
           :root{
             --bg:#000;
-            --neon-green:#00ff6a;
+            --neon-primary:#fff;
             --neon-white:#e6fff8;
             --neon-gray:#666;
-            --accent:#00ffd1;
+            --accent:#fff;
           }
           *{box-sizing:border-box}
           html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -313,33 +313,42 @@ function WelcomeContent() {
             font-weight: 900 !important;
           }
           canvas#matrix{position:fixed;inset:0;z-index:0;display:block}
-          .wrap{position:relative;z-index:3;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+          .wrap{position:relative;z-index:3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+          .header-controls {
+            position: absolute;
+            top: 15px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 9999;
+          }
           .panel{
             width:min(920px,94%);max-width:920px;margin:0 auto;
             background: transparent;
             border-radius:14px;padding:28px;
             display:flex;flex-direction:column;gap:18px;align-items:center;overflow:visible;
+            margin-top: 60px; /* Adjust for header controls */
           }
           .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
           #crashValue {
-            color: var(--neon-white);
-            text-shadow: 0 0 8px var(--neon-green);
+            color: var(--neon-primary);
+            text-shadow: 0 0 4px var(--neon-primary);
           }
           .brand h1, .status-dot.connected {
             text-shadow:
-              0 0 5px var(--neon-green),
-              0 0 10px var(--neon-green),
-              0 0 15px var(--neon-green),
-              0 0 20px var(--neon-green);
+              0 0 2px var(--neon-primary),
+              0 0 5px var(--neon-primary),
+              0 0 8px var(--neon-primary);
           }
           .brand h1{
-            font-size:2rem;margin:0;color:var(--neon-green);letter-spacing:4px;font-weight:900;
+            font-size:2rem;margin:0;color:var(--neon-primary);letter-spacing:4px;font-weight:900;
           }
           .display-circle{
             width:420px;height:420px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;
             background: radial-gradient(ellipse at center, rgba(0,0,0,0.18), rgba(0,0,0,0.45));
-            border:1px solid rgba(0,255,120,0.04);
+            border:1px solid rgba(255,255,255,0.04);
             overflow:hidden;
           }
           #crashValue{
@@ -400,32 +409,24 @@ function WelcomeContent() {
           .last-box .label{font-size:0.82rem;color:rgba(230,255,248,0.6)}
           .last-box .value{font-weight:700;color:var(--neon-white);font-size:1.05rem}
           .connection-status {
-            position: fixed;
-            top: 15px;
-            right: 20px;
             display: flex;
             align-items: center;
             gap: 8px;
             font-family: 'Orbitron', monospace;
             font-size: 16px;
             color: white;
-            z-index: 9999;
           }
            .user-id-display {
-            position: fixed;
-            top: 15px;
-            left: 20px;
             display: flex;
             align-items: center;
             gap: 8px;
             font-family: 'Orbitron', monospace;
             font-size: 16px;
             color: white;
-            z-index: 9999;
             background: rgba(0,0,0,0.3);
             padding: 5px 10px;
             border-radius: 8px;
-            border: 1px solid rgba(0,255,120,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
           }
           .status-dot{
             width:14px;height:14px;border-radius:50%;
@@ -434,7 +435,7 @@ function WelcomeContent() {
             transition:all .28s ease;
           }
           .status-dot.connected{
-            background:var(--neon-green);
+            background:var(--neon-primary);
           }
           footer{display:none}
           @media (max-width:900px){
@@ -452,19 +453,22 @@ function WelcomeContent() {
           }
         `}</style>
       <canvas id="matrix" ref={canvasRef}></canvas>
-       <div className="user-id-display">
-        <User size={16} color="var(--neon-green)" />
-        <span>{userId}</span>
-      </div>
-      <div className="connection-status">
-        <div id="statusDot" className="status-dot" ref={statusDotRef}></div>
-        <span id="statusText" ref={statusTextRef}>Disconnected</span>
-      </div>
+       <div className="header-controls">
+         <div className="user-id-display">
+          <User size={16} color="var(--neon-primary)" />
+          <span>{userId}</span>
+        </div>
+        <div className="connection-status">
+          <div id="statusDot" className="status-dot" ref={statusDotRef}></div>
+          <span id="statusText" ref={statusTextRef}>Disconnected</span>
+        </div>
+       </div>
+
       <div className="wrap">
         <div className="panel">
           <div className="brand">
             <div className="logo-text">1XBET</div>
-            <h1 className="neon-label">RAZOR</h1>
+            <h1 className="neon-label" style={{color: 'var(--neon-primary)', textShadow: '0 0 2px #fff, 0 0 5px #fff, 0 0 8px #fff'}}>RAZOR</h1>
           </div>
             <a id="username" ref={usernameButtonRef} target="_blank" rel="noopener noreferrer">Telegram : @Razor_1x</a>
           <div className="display-circle" aria-hidden="false">
@@ -491,3 +495,4 @@ export default function WelcomePage() {
     </Suspense>
   );
 }
+
