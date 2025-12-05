@@ -11,6 +11,7 @@ import { User } from 'lucide-react';
 function WelcomeContent() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
   const statusDotRef = useRef<HTMLDivElement>(null);
@@ -180,6 +181,52 @@ function WelcomeContent() {
     }, 1000);
     updateTimer();
 
+    // Matrix background
+    const canvas = canvasRef.current;
+    let matrixInterval: NodeJS.Timeout;
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            let W = canvas.width = window.innerWidth;
+            let H = canvas.height = window.innerHeight;
+            let cols = Math.floor(W / 10) + 1;
+            let ypos = Array(cols).fill(0);
+            const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
+
+            const matrixResize = () => {
+                W = canvas.width = window.innerWidth;
+                H = canvas.height = window.innerHeight;
+                cols = Math.floor(W / 10) + 1;
+                ypos = Array(cols).fill(0);
+            };
+            window.addEventListener('resize', matrixResize);
+
+            const drawMatrix = () => {
+                ctx.fillStyle = 'rgba(0,0,0,0.22)';
+                ctx.fillRect(0,0,W,H);
+                ctx.font = '12px monospace';
+                ypos.forEach((y, ind) => {
+                    const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                    const x = ind * 10;
+                    ctx.fillStyle = 'rgba(255, 255, 255,'+ (0.18 + Math.random()*0.6) +')';
+                    ctx.fillText(text, x, y);
+                    if(y > H + Math.random()*700) {
+                        ypos[ind] = 0;
+                    } else {
+                        ypos[ind] = y + 12 + Math.random()*8;
+                    }
+                });
+            };
+            matrixInterval = setInterval(drawMatrix, 40);
+
+            (window as any).__matrixCleanup = () => {
+                window.removeEventListener('resize', matrixResize);
+                clearInterval(matrixInterval);
+            };
+        }
+    }
+
+
     if (usernameButton) {
         const handleUsernameClick = (event: MouseEvent) => {
             event.stopPropagation();
@@ -217,6 +264,9 @@ function WelcomeContent() {
         wsRef.current.close();
         wsRef.current = null;
       }
+      if ((window as any).__matrixCleanup) {
+          (window as any).__matrixCleanup();
+      }
       if ((window as any).__usernameCleanup) {
           (window as any).__usernameCleanup();
       }
@@ -238,7 +288,7 @@ function WelcomeContent() {
             --accent:#fff;
           }
           *{box-sizing:border-box}
-          html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+          html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow:hidden}
           body, .font-orbitron, .timer-big, .last-box .value, .last-box .label, #crashValue {
              font-family: 'Orbitron', sans-serif !important;
              font-weight: 900 !important;
@@ -247,6 +297,7 @@ function WelcomeContent() {
             font-family: 'Orbitron', sans-serif !important;
             font-weight: 900 !important;
           }
+          canvas#matrix{position:fixed;inset:0;z-index:0;display:block}
           .wrap{position:relative;z-index:3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
           .header-controls {
             position: absolute;
@@ -268,13 +319,13 @@ function WelcomeContent() {
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
           #crashValue {
             color: var(--neon-primary);
-            text-shadow: 0 0 2px var(--neon-primary), 0 0 3px var(--neon-primary), 0 0 5px var(--neon-primary);
+            text-shadow: 0 0 2px rgba(255,255,255,0.7), 0 0 3px rgba(255,255,255,0.7), 0 0 5px rgba(255,255,255,0.7);
           }
           .brand h1, .status-dot.connected {
             text-shadow:
-              0 0 2px var(--neon-primary),
-              0 0 5px var(--neon-primary),
-              0 0 8px var(--neon-primary);
+              0 0 2px rgba(255,255,255,0.7),
+              0 0 5px rgba(255,255,255,0.7),
+              0 0 8px rgba(255,255,255,0.7);
           }
           .brand h1{
             font-size:2rem;margin:0;color:var(--neon-primary);letter-spacing:4px;font-weight:900;
@@ -323,16 +374,8 @@ function WelcomeContent() {
           #username.active { /* Add styles for active state if needed */ }
         `}</style>
 
-      <div className="fixed inset-0 -z-10">
-        <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{
-            backgroundImage: "url('https://cdn.dribbble.com/userupload/20787734/file/original-6a95ade3f7286f5da2b16669f6ff93c3.gif')",
-            filter: 'grayscale(1) brightness(3)',
-          }}
-        ></div>
-        <div className="absolute inset-0 w-full h-full bg-black/60"></div>
-      </div>
+      <canvas id="matrix" ref={canvasRef}></canvas>
+
        <div className="header-controls">
          <div className="user-id-display">
           <User size={16} color="var(--neon-primary)" />
