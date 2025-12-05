@@ -12,7 +12,7 @@ export default function Home() {
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{
             backgroundImage: "url('https://cdn.dribbble.com/userupload/20787734/file/original-6a95ade3f7286f5da2b16669f6ff93c3.gif')",
-            filter: 'grayscale(1) brightness(2.5)',
+            filter: 'grayscale(1) brightness(3)',
           }}
         ></div>
         <div className="absolute inset-0 w-full h-full bg-black/60"></div>
@@ -32,4 +32,3 @@ export default function Home() {
     </KillSwitch>
   );
 }
-

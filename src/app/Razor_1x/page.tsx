@@ -11,7 +11,6 @@ import { User } from 'lucide-react';
 function WelcomeContent() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
   const statusDotRef = useRef<HTMLDivElement>(null);
@@ -52,7 +51,6 @@ function WelcomeContent() {
 
     setUserId(storedUserId);
     
-    // --- Refs for UI elements ---
     const crashEl = crashValueRef.current;
     const lastRawEl = lastRawRef.current;
     const statusDot = statusDotRef.current;
@@ -60,7 +58,6 @@ function WelcomeContent() {
     const timerEl = timerRef.current;
     const usernameButton = usernameButtonRef.current;
 
-    // --- Utility functions for UI ---
     function doGlitchThenSet(newVal: any){
       if (!crashEl || !lastRawEl) return;
       crashEl.classList.add('glitch');
@@ -102,7 +99,7 @@ function WelcomeContent() {
       }
     }
 
-    // --- WebSocket Connection Logic ---
+    let totalSeconds = parseValidityToSeconds(validity);
     const connectWebSocket = (url: string) => {
         if (wsRef.current) {
             wsRef.current.close();
@@ -125,7 +122,6 @@ function WelcomeContent() {
         wsRef.current.onclose = () => { 
             wsRef.current = null;
             setStatusIndicator(false); 
-            // Only try to reconnect if the session is still valid
             if (totalSeconds > 0) {
                 if (!reconnectTimeoutRef.current) {
                     reconnectTimeoutRef.current = setTimeout(initializeWebSocket, 1200);
@@ -135,7 +131,7 @@ function WelcomeContent() {
 
         wsRef.current.onerror = () => { 
             setStatusIndicator(false); 
-            wsRef.current?.close(); // This will trigger onclose and the reconnect logic
+            wsRef.current?.close();
         };
     }
     
@@ -153,60 +149,6 @@ function WelcomeContent() {
             setStatusIndicator(false);
         }
     }
-
-    // --- Matrix background script ---
-    const canvas = canvasRef.current;
-    let matrixInterval: NodeJS.Timeout;
-    if (canvas) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            let W = canvas.width = window.innerWidth;
-            let H = canvas.height = window.innerHeight;
-            let cols = Math.floor(W / 10) + 1;
-            let ypos = Array(cols).fill(0);
-            const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
-
-            const matrixResize = () => {
-                W = canvas.width = window.innerWidth;
-                H = canvas.height = window.innerHeight;
-                cols = Math.floor(W / 10) + 1;
-                ypos = Array(cols).fill(0);
-            };
-            window.addEventListener('resize', matrixResize);
-
-            const drawMatrix = () => {
-                ctx.fillStyle = 'rgba(0,0,0,0.22)';
-                ctx.fillRect(0,0,W,H);
-                ctx.font = '12px monospace';
-                ypos.forEach((y, ind) => {
-                    const text = letters.charAt(Math.floor(Math.random() * letters.length));
-                    const x = ind * 10;
-                    ctx.fillStyle = 'rgba(255,255,255,'+ (0.12 + Math.random()*0.4) +')';
-                    ctx.fillText(text, x, y);
-                    if(y > H + Math.random()*700) {
-                    ypos[ind] = 0;
-                    } else {
-                    ypos[ind] = y + 12 + Math.random()*8;
-                    }
-                });
-            };
-            matrixInterval = setInterval(drawMatrix, 40);
-
-            // Cleanup for matrix
-            // Note: Other cleanup is in the main return
-            const mainCleanup = () => {
-                window.removeEventListener('resize', matrixResize);
-                clearInterval(matrixInterval);
-            };
-            // This is a bit unusual, but we need to return it from the outer useEffect
-            // We'll call it in the main cleanup function
-            (window as any).__matrixCleanup = mainCleanup;
-        }
-    }
-
-
-    // --- Timer script ---
-    let totalSeconds = parseValidityToSeconds(validity);
     
     const handleSessionEnd = () => {
       if (wsRef.current) {
@@ -238,7 +180,6 @@ function WelcomeContent() {
     }, 1000);
     updateTimer();
 
-    // --- username button script ---
     if (usernameButton) {
         const handleUsernameClick = (event: MouseEvent) => {
             event.stopPropagation();
@@ -257,7 +198,6 @@ function WelcomeContent() {
         document.addEventListener("click", handleDocumentClick);
         usernameButton.addEventListener("mousedown", handleUsernameMouseDown);
 
-        // This is a bit unusual, but we need to return it from the outer useEffect
         (window as any).__usernameCleanup = () => {
             usernameButton.removeEventListener("click", handleUsernameClick);
             document.removeEventListener("click", handleDocumentClick);
@@ -265,20 +205,15 @@ function WelcomeContent() {
         }
     }
 
-    // --- Initial connection ---
     initializeWebSocket();
 
-    // --- Main Cleanup function ---
     return () => {
-      if ((window as any).__matrixCleanup) {
-          (window as any).__matrixCleanup();
-      }
       clearInterval(timerInterval);
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
       if (wsRef.current) {
-        wsRef.current.onclose = null; // Prevent reconnect logic on manual close
+        wsRef.current.onclose = null; 
         wsRef.current.close();
         wsRef.current = null;
       }
@@ -312,10 +247,9 @@ function WelcomeContent() {
             font-family: 'Orbitron', sans-serif !important;
             font-weight: 900 !important;
           }
-          canvas#matrix{position:fixed;inset:0;z-index:0;display:block}
           .wrap{position:relative;z-index:3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
           .header-controls {
-            position: absolute;
+            position: fixed;
             top: 15px;
             width: 100%;
             display: flex;
@@ -328,13 +262,13 @@ function WelcomeContent() {
             background: transparent;
             border-radius:14px;padding:28px;
             display:flex;flex-direction:column;gap:18px;align-items:center;overflow:visible;
-            margin-top: 60px; /* Adjust for header controls */
+            margin-top: 60px;
           }
           .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
           #crashValue {
             color: var(--neon-primary);
-            text-shadow: 0 0 4px var(--neon-primary);
+            text-shadow: 0 0 2px var(--neon-primary);
           }
           .brand h1, .status-dot.connected {
             text-shadow:
@@ -362,81 +296,22 @@ function WelcomeContent() {
             animation: glitch-taz-taz 0.5s linear;
           }
           @keyframes glitch-taz-taz {
-            0% {
-              clip-path: inset(3% 0 94% 0);
-              transform: translate(-10px, -5px);
-              opacity: 0.8;
-            }
-            20% {
-              clip-path: inset(80% 0 3% 0);
-              transform: translate(10px, 5px);
-            }
-            40% {
-              clip-path: inset(45% 0 45% 0);
-              transform: translate(-5px, 0);
-              opacity: 0.7;
-            }
-            60% {
-              clip-path: inset(90% 0 5% 0);
-              transform: translate(5px, 0);
-            }
-            80% {
-              clip-path: inset(5% 0 88% 0);
-              transform: translate(-10px, -5px);
-              opacity: 0.9;
-            }
-            100% {
-              clip-path: inset(0 0 0 0);
-              transform: translate(0, 0);
-              opacity: 1;
-            }
+            0% { clip-path: inset(3% 0 94% 0); transform: translate(-10px, -5px); opacity: 0.8; }
+            20% { clip-path: inset(80% 0 3% 0); transform: translate(10px, 5px); }
+            40% { clip-path: inset(45% 0 45% 0); transform: translate(-5px, 0); opacity: 0.7; }
+            60% { clip-path: inset(90% 0 5% 0); transform: translate(5px, 0); }
+            80% { clip-path: inset(5% 0 88% 0); transform: translate(-10px, -5px); opacity: 0.9; }
+            100% { clip-path: inset(0 0 0 0); transform: translate(0, 0); opacity: 1; }
           }
-          .meta-row{
-            display:flex;gap:18px;align-items:center;
-            justify-content:center;
-            width:100%;
-            flex-wrap:wrap;
-          }
-          .timer-big{
-            font-weight:800;color:var(--neon-white);
-            background:transparent;padding:8px 12px;border-radius:10px;
-            font-size:1.05rem;letter-spacing:0.6px;text-align:center;
-            border:1px solid rgba(255,255,255,0.02);
-          }
-          .last-box{
-            background:transparent;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);min-width:140px;text-align:center
-          }
+          .meta-row{display:flex;gap:18px;align-items:center;justify-content:center;width:100%;flex-wrap:wrap;}
+          .timer-big{font-weight:800;color:var(--neon-white);background:transparent;padding:8px 12px;border-radius:10px;font-size:1.05rem;letter-spacing:0.6px;text-align:center;border:1px solid rgba(255,255,255,0.02);}
+          .last-box{background:transparent;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);min-width:140px;text-align:center}
           .last-box .label{font-size:0.82rem;color:rgba(230,255,248,0.6)}
           .last-box .value{font-weight:700;color:var(--neon-white);font-size:1.05rem}
-          .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Orbitron', monospace;
-            font-size: 16px;
-            color: white;
-          }
-           .user-id-display {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Orbitron', monospace;
-            font-size: 16px;
-            color: white;
-            background: rgba(0,0,0,0.3);
-            padding: 5px 10px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-          }
-          .status-dot{
-            width:14px;height:14px;border-radius:50%;
-            background:var(--neon-gray);
-            box-shadow:0 0 6px rgba(0,0,0,0.6) inset;
-            transition:all .28s ease;
-          }
-          .status-dot.connected{
-            background:var(--neon-primary);
-          }
+          .connection-status { display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 16px; color: white; }
+          .user-id-display { display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 16px; color: white; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+          .status-dot{width:14px;height:14px;border-radius:50%;background:var(--neon-gray);box-shadow:0 0 6px rgba(0,0,0,0.6) inset;transition:all .28s ease;}
+          .status-dot.connected{background:var(--neon-primary);}
           footer{display:none}
           @media (max-width:900px){
             .panel{padding:18px}
@@ -444,15 +319,20 @@ function WelcomeContent() {
             #crashValue{font-size:4rem}
             .meta-row{gap:10px}
           }
-          #username {
-            text-decoration: none;
-            color: var(--neon-white);
-          }
-          #username.active {
-             /* Add styles for active state if needed */
-          }
+          #username { text-decoration: none; color: var(--neon-white); }
+          #username.active { /* Add styles for active state if needed */ }
         `}</style>
-      <canvas id="matrix" ref={canvasRef}></canvas>
+
+      <div className="fixed inset-0 -z-10">
+        <div 
+          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          style={{
+            backgroundImage: "url('https://cdn.dribbble.com/userupload/20787734/file/original-6a95ade3f7286f5da2b16669f6ff93c3.gif')",
+            filter: 'grayscale(1) brightness(3)',
+          }}
+        ></div>
+        <div className="absolute inset-0 w-full h-full bg-black/60"></div>
+      </div>
        <div className="header-controls">
          <div className="user-id-display">
           <User size={16} color="var(--neon-primary)" />
@@ -468,7 +348,7 @@ function WelcomeContent() {
         <div className="panel">
           <div className="brand">
             <div className="logo-text">1XBET</div>
-            <h1 className="neon-label" style={{color: 'var(--neon-primary)', textShadow: '0 0 2px #fff, 0 0 5px #fff, 0 0 8px #fff'}}>RAZOR</h1>
+            <h1 className="neon-label" style={{color: 'var(--neon-primary)', textShadow: '0 0 2px #fff, 0 0 3px #fff, 0 0 5px #fff'}}>RAZOR</h1>
           </div>
             <a id="username" ref={usernameButtonRef} target="_blank" rel="noopener noreferrer">Telegram : @Razor_1x</a>
           <div className="display-circle" aria-hidden="false">
@@ -495,4 +375,3 @@ export default function WelcomePage() {
     </Suspense>
   );
 }
-
