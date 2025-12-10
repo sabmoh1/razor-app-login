@@ -38,10 +38,10 @@ export default function KillSwitch({ pageName, children }: KillSwitchProps) {
             <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
                 <ServerCrash className="h-24 w-24 text-red-500" />
                 <h1 className="text-4xl font-bold mt-8 text-red-500 text-center" style={{textShadow: '0 0 10px rgba(239, 68, 68, 0.5)'}}>
-                    {pageName.toUpperCase()} SYSTEM OFFLINE
+                    RAZOR SYSTEM OFFLINE
                 </h1>
                 <p className="mt-4 text-lg text-gray-400 text-center">
-                   The server is down or {pageName.charAt(0).toUpperCase() + pageName.slice(1)} is performing maintenance.
+                   The server is down or Razor is performing maintenance.
                 </p>
             </div>
         );
