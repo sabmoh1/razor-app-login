@@ -59,18 +59,18 @@ const BroadcastOverlay = ({ onComplete }: { onComplete: () => void }) => {
 const GalleryRow = ({ row, onRowClick }: { row: RowData; onRowClick: () => void }) => {
   return (
     <div className="relative group cursor-pointer" onClick={onRowClick}>
-      <div className="absolute -left-12 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-300/70 group-hover:text-blue-300 transition-colors">
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-300/70 group-hover:text-blue-300 transition-colors">
         {row.rate}x
       </div>
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-5 gap-2 pl-12">
         {row.seq.split('').map((char, index) => (
-          <div key={index} className="aspect-square bg-black/20 rounded-lg flex items-center justify-center border border-white/5 group-hover:border-blue-500/30 transition-all duration-300">
+          <div key={index} className="flex items-center justify-center">
             <Image
               src={char === '+' ? GOOD_APPLE_URL : (char === '-' ? BAD_APPLE_URL : WOOD_URL)}
               alt="Apple or Wood"
-              width={64}
-              height={64}
-              className={cn("transition-all duration-500 ease-in-out w-10 h-10 md:w-12 md:h-12", char === 'w' ? 'opacity-80' : 'opacity-100' )}
+              width={72}
+              height={72}
+              className={cn("transition-all duration-500 ease-in-out w-16 h-16 md:w-20 md:h-20", char === 'w' ? 'opacity-80' : 'opacity-100' )}
               unoptimized
             />
           </div>
@@ -182,19 +182,25 @@ function WelcomeB16() {
           backdrop-filter: blur(2px);
           z-index: -1;
         }
+        .neon-button {
+            transition: all 0.3s ease;
+        }
+        .neon-button:hover {
+            box-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue), 0 0 30px var(--neon-blue);
+        }
       `}</style>
       <main className="min-h-screen w-full flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl bg-black/50 backdrop-blur-lg border border-blue-500/20 rounded-2xl p-6 shadow-2xl shadow-blue-500/10 space-y-6">
+        <div className="w-full max-w-lg space-y-6">
             <header className="text-center">
                 <h1 className="text-4xl font-bold text-blue-400 text-glow-blue">B16 VIP</h1>
             </header>
 
-            <div className="text-center bg-black/30 p-3 rounded-lg border border-white/10">
+            <div className="text-center bg-black/50 backdrop-blur-md p-4 rounded-2xl border border-blue-500/20">
               <p className="text-sm text-gray-400">Attempts Left</p>
-              <p className="text-3xl font-bold text-white">{attemptsLeft}</p>
+              <p className="text-4xl font-bold text-white">{attemptsLeft}</p>
             </div>
 
-            <div id="galleryContainer" className="space-y-2">
+            <div id="galleryContainer" className="space-y-4">
                 {rows.slice().reverse().map((row, index) => {
                   const originalIndex = rows.length - 1 - index;
                   return (
@@ -224,14 +230,16 @@ function WelcomeB16() {
 
             <div className="flex justify-center gap-4 pt-4">
                 <button 
-                  className="px-6 py-3 bg-gray-700/50 border border-gray-600 text-white font-semibold rounded-lg hover:bg-gray-600/50 transition-colors disabled:opacity-50" 
+                  className="px-8 py-3 bg-gray-700/50 border border-gray-600 text-white font-semibold rounded-full hover:bg-gray-600/70 transition-all duration-300 transform active:scale-95 disabled:opacity-50 neon-button"
+                  style={{'--neon-blue': '#888'}}
                   onClick={handleReset}
                   disabled={isBroadcasting}
                 >
                   Reset
                 </button>
                 <button 
-                  className="px-8 py-3 bg-blue-600 border border-blue-500 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-10 py-3 bg-blue-600/80 border border-blue-500 text-white font-bold rounded-full hover:bg-blue-700/90 transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed neon-button"
+                  style={{'--neon-blue': 'hsl(210, 100%, 50%)'}}
                   onClick={handleStart}
                   disabled={isBroadcasting || (hasStarted && attemptsLeft <= 0)}
                 >
