@@ -59,7 +59,7 @@ const BroadcastOverlay = ({ onComplete }: { onComplete: () => void }) => {
 const GalleryRow = ({ row, onRowClick }: { row: RowData; onRowClick: () => void }) => {
   return (
     <div className="relative group cursor-pointer" onClick={onRowClick}>
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-300/70 group-hover:text-blue-300 transition-colors">
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-300/70 group-hover:text-blue-300 transition-colors">
         {row.rate}x
       </div>
       <div className="grid grid-cols-5 gap-2 pl-12">
@@ -68,9 +68,9 @@ const GalleryRow = ({ row, onRowClick }: { row: RowData; onRowClick: () => void 
             <Image
               src={char === '+' ? GOOD_APPLE_URL : (char === '-' ? BAD_APPLE_URL : WOOD_URL)}
               alt="Apple or Wood"
-              width={72}
-              height={72}
-              className={cn("transition-all duration-500 ease-in-out w-16 h-16 md:w-20 md:h-20", char === 'w' ? 'opacity-80' : 'opacity-100' )}
+              width={64}
+              height={64}
+              className={cn("transition-all duration-500 ease-in-out w-14 h-14 md:w-16 md:h-16", char === 'w' ? 'opacity-80' : 'opacity-100' )}
               unoptimized
             />
           </div>
@@ -184,9 +184,13 @@ function WelcomeB16() {
         }
         .neon-button {
             transition: all 0.3s ease;
+            box-shadow: 0 0 5px var(--neon-blue-shadow);
         }
         .neon-button:hover {
             box-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue), 0 0 30px var(--neon-blue);
+        }
+        .neon-button:active {
+            transform: translateY(2px);
         }
       `}</style>
       <main className="min-h-screen w-full flex items-center justify-center p-4">
@@ -195,9 +199,9 @@ function WelcomeB16() {
                 <h1 className="text-4xl font-bold text-blue-400 text-glow-blue">B16 VIP</h1>
             </header>
 
-            <div className="text-center bg-black/50 backdrop-blur-md p-4 rounded-2xl border border-blue-500/20">
-              <p className="text-sm text-gray-400">Attempts Left</p>
-              <p className="text-4xl font-bold text-white">{attemptsLeft}</p>
+            <div className="text-center bg-black/50 backdrop-blur-md p-2 rounded-2xl border border-blue-500/20">
+              <p className="text-xs text-gray-400">Attempts Left</p>
+              <p className="text-2xl font-bold text-white">{attemptsLeft}</p>
             </div>
 
             <div id="galleryContainer" className="space-y-4">
@@ -231,7 +235,7 @@ function WelcomeB16() {
             <div className="flex justify-center gap-4 pt-4">
                 <button 
                   className="px-8 py-3 bg-gray-700/50 border border-gray-600 text-white font-semibold rounded-full hover:bg-gray-600/70 transition-all duration-300 transform active:scale-95 disabled:opacity-50 neon-button"
-                  style={{'--neon-blue': '#888'}}
+                  style={{'--neon-blue': '#888', '--neon-blue-shadow': 'rgba(136,136,136,0.5)'} as React.CSSProperties}
                   onClick={handleReset}
                   disabled={isBroadcasting}
                 >
@@ -239,7 +243,7 @@ function WelcomeB16() {
                 </button>
                 <button 
                   className="px-10 py-3 bg-blue-600/80 border border-blue-500 text-white font-bold rounded-full hover:bg-blue-700/90 transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed neon-button"
-                  style={{'--neon-blue': 'hsl(210, 100%, 50%)'}}
+                  style={{'--neon-blue': 'hsl(210, 100%, 50%)', '--neon-blue-shadow': 'rgba(59, 130, 246, 0.5)'} as React.CSSProperties}
                   onClick={handleStart}
                   disabled={isBroadcasting || (hasStarted && attemptsLeft <= 0)}
                 >
