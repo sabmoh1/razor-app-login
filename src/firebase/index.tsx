@@ -20,6 +20,7 @@ let firebaseApp: FirebaseApp;
 let auth: Auth;
 let firestore: Firestore;
 
+// This check prevents re-initialization on hot reloads
 if (typeof window !== "undefined") {
     if (!getApps().length) {
         firebaseApp = initializeApp(firebaseConfig);

@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
 import { collection, getDocs, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useFirestore } from '@/firebase/index.tsx';
 
 import type { Row, ApiKey } from '@/lib/b16/types';
 import { platforms, initialRows } from '@/lib/b16/data';
