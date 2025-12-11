@@ -37,6 +37,7 @@ export type LoginFormProps = {
   themeGlow: string;
   useCustomGlow?: boolean;
   validityType?: 'time' | 'attempts';
+  customValidation?: (passwordData: any) => string | null;
 };
 
 const parseValidityToAttempts = (validity: string | null): number => {
@@ -55,6 +56,7 @@ export default function LoginForm({
     themeGlow,
     useCustomGlow = false,
     validityType = 'time',
+    customValidation,
 }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -120,12 +122,28 @@ export default function LoginForm({
 
           if (isValid && passwordKey && passwordData) {
             
+            if (customValidation) {
+              const validationError = customValidation(passwordData);
+              if (validationError) {
+                setError(validationError);
+                form.reset({ password: "", userId: values.userId });
+                return; 
+              }
+            }
+            
             sessionStorage.setItem('razor_user_id', values.userId);
             if (validityType === 'attempts') {
                 sessionStorage.setItem('razor_session_attempts', String(validityValue));
                 sessionStorage.setItem('razor_key_id', passwordKey);
             } else {
                 sessionStorage.setItem('razor_session_validity', String(validityValue));
+                 if (passwordData.uses && passwordData.uses > 1) {
+                    const passwordRef = ref(database, `passwords/${passwordKey}`);
+                    await update(passwordRef, { uses: passwordData.uses - 1 });
+                } else {
+                    const passwordRef = ref(database, `passwords/${passwordKey}`);
+                    await remove(passwordRef);
+                }
             }
             router.push(welcomePath);
           } else {
@@ -147,12 +165,14 @@ export default function LoginForm({
   return (
     <div className="w-full max-w-md font-orbitron" style={formStyle}>
       <div className="text-center mb-8">
-        <h1 
-          className={`text-4xl font-black uppercase ${!useCustomGlow ? themeGlow : ''}`} 
-          style={useCustomGlow ? dynamicGlowStyle : {color: themeColor}}
-        >
-          {title}
-        </h1>
+        {title && (
+          <h1 
+            className={`text-4xl font-black uppercase ${!useCustomGlow ? themeGlow : ''}`} 
+            style={useCustomGlow ? dynamicGlowStyle : {color: themeColor}}
+          >
+            {title}
+          </h1>
+        )}
         <p className="text-neon-white/80 text-sm mt-2 tracking-widest">
           Awaiting authentication credentials
         </p>
