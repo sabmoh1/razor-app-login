@@ -80,7 +80,7 @@ export default function B16Home() {
         return;
       }
 
-      // **CRITICAL FIX**: Correctly read 'attemps' or 'attempts' from the database record
+      // CRITICAL FIX: Correctly read 'attemps' or 'attempts' from the database record
       // The user's database has a typo 'attemps' sometimes.
       const attempts = passwordData.attemps || passwordData.attempts || '0';
       
