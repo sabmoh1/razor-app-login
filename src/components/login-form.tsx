@@ -36,7 +36,17 @@ export type LoginFormProps = {
   themeColor: string;
   themeGlow: string;
   useCustomGlow?: boolean;
+  validityType?: 'time' | 'attempts';
 };
+
+const parseValidityToAttempts = (validity: string | null): number => {
+    if (!validity) return 1;
+    // Extracts the number part, e.g., from "11m" to 11
+    const value = parseInt(validity);
+    if (isNaN(value) || value < 1) return 1;
+    return value;
+};
+
 
 export default function LoginForm({ 
     welcomePath = '/Razor_1x', 
@@ -44,6 +54,7 @@ export default function LoginForm({
     themeColor,
     themeGlow,
     useCustomGlow = false,
+    validityType = 'time',
 }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -72,8 +83,8 @@ export default function LoginForm({
       textShadow: `
         0 0 5px ${themeColor},
         0 0 10px ${themeColor},
+        0 0 15px ${themeColor},
         0 0 20px ${themeColor},
-        0 0 40px ${themeColor},
         0 0 80px ${themeColor}80
       `
   };
@@ -89,31 +100,33 @@ export default function LoginForm({
         if (snapshot.exists()) {
           const allPasswords = snapshot.val();
           let isValid = false;
-          let validity = '1h';
+          let validityValue: string | number = '1h'; // Default for time
           let passwordKey: string | null = null;
           let passwordData: any = null;
 
           for (const key in allPasswords) {
             if (allPasswords[key].password === values.password) {
               isValid = true;
-              validity = allPasswords[key].validity || '1h';
               passwordKey = key;
               passwordData = allPasswords[key];
+              if (validityType === 'attempts') {
+                  validityValue = parseValidityToAttempts(passwordData.validity);
+              } else {
+                  validityValue = passwordData.validity || '1h';
+              }
               break;
             }
           }
 
           if (isValid && passwordKey && passwordData) {
-            const passwordRef = ref(database, `passwords/${passwordKey}`);
-
-            if (passwordData.uses && passwordData.uses > 1) {
-              await update(passwordRef, { uses: passwordData.uses - 1 });
-            } else {
-              await remove(passwordRef);
-            }
             
             sessionStorage.setItem('razor_user_id', values.userId);
-            sessionStorage.setItem('razor_session_validity', validity);
+            if (validityType === 'attempts') {
+                sessionStorage.setItem('razor_session_attempts', String(validityValue));
+                sessionStorage.setItem('razor_key_id', passwordKey);
+            } else {
+                sessionStorage.setItem('razor_session_validity', String(validityValue));
+            }
             router.push(welcomePath);
           } else {
             setError("ACCESS DENIED: Incorrect credentials");

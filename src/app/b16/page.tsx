@@ -3,6 +3,15 @@
 import LoginForm from '@/components/login-form';
 import KillSwitch from '@/components/kill-switch';
 
+function parseValidityToAttempts(validity: string | null): number {
+    if (!validity) return 1; // Default to 1 attempt if not specified
+    const value = parseInt(validity.slice(0, -1));
+    if (isNaN(value)) return 1;
+    // The unit (m, h, d) doesn't matter, we just use the number
+    return value;
+}
+
+
 export default function B16Home() {
   return (
     <KillSwitch pageName="b16">
@@ -18,10 +27,11 @@ export default function B16Home() {
       </div>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
         <LoginForm 
-            welcomePath="/b16/Razor_1x" 
+            welcomePath="/b16/welcome" 
             title="B16 TERMINAL"
             themeColor="var(--neon-blue)"
             themeGlow="text-glow-blue"
+            validityType="attempts"
         />
       </main>
     </KillSwitch>
