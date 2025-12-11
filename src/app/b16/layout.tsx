@@ -16,14 +16,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className="dark">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Audiowide&family=Poppins:wght@300;400;600&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body className="font-body antialiased relative z-10 bg-black">
         <FirebaseProvider>
           {children}
