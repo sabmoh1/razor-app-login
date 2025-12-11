@@ -146,40 +146,16 @@ function WelcomeB16() {
     }
 
     setIsBroadcasting(true);
-
-    const keyRef = ref(database, `passwords/${keyId}`);
-
-    try {
-        await runTransaction(keyRef, (currentData) => {
-            if (currentData) {
-                if (currentData.uses && currentData.uses > 1) {
-                    currentData.uses -= 1;
-                    return currentData;
-                } else {
-                    return null; // Set to null to be removed by Firebase
-                }
-            }
-            return currentData; // No change if data is null
-        });
-
-        const newAttempts = attemptsLeft - 1;
-        setAttemptsLeft(newAttempts);
-        sessionStorage.setItem('razor_session_attempts', String(newAttempts));
-        
-        // The broadcast overlay will handle the rest
-        
-    } catch (error) {
-        console.error("Transaction failed: ", error);
-        alert("An error occurred. Please try again.");
-        setIsBroadcasting(false); // Stop broadcast on error
-    }
+    // This is a local decrement for the current session.
+    // The database `uses` field is handled at login.
+    setAttemptsLeft(attemptsLeft - 1); 
   };
   
   const onBroadcastComplete = useCallback(() => {
       setIsBroadcasting(false);
       setInitialLoad(false);
       randomizeAllRows();
-      if (attemptsLeft !== null && attemptsLeft -1 <= 0) {
+      if (attemptsLeft !== null && attemptsLeft -1 < 0) { // Check if attempts will be zero or less
         setTimeout(() => {
             alert("No attempts left. You will be logged out.");
             sessionStorage.clear();
@@ -259,7 +235,7 @@ function WelcomeB16() {
 
             <div className="controls">
                 <button className="btn" onClick={handleReset}>Reset</button>
-                <button className="btn primary" onClick={handleStart} disabled={isBroadcasting}>
+                <button className="btn primary" onClick={handleStart} disabled={isBroadcasting || attemptsLeft <= 0}>
                   {isBroadcasting ? '...' : 'Start'}
                 </button>
             </div>

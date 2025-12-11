@@ -40,15 +40,6 @@ export type LoginFormProps = {
   customValidation?: (passwordData: any) => string | null;
 };
 
-const parseValidityToAttempts = (validity: string | null): number => {
-    if (!validity) return 1;
-    // Extracts the number part, e.g., from "11m" to 11
-    const value = parseInt(validity);
-    if (isNaN(value) || value < 1) return 1;
-    return value;
-};
-
-
 export default function LoginForm({ 
     welcomePath = '/Razor_1x', 
     title = 'RAZOR TERMINAL',
@@ -102,7 +93,6 @@ export default function LoginForm({
         if (snapshot.exists()) {
           const allPasswords = snapshot.val();
           let isValid = false;
-          let validityValue: string | number = '1h'; // Default for time
           let passwordKey: string | null = null;
           let passwordData: any = null;
 
@@ -111,11 +101,6 @@ export default function LoginForm({
               isValid = true;
               passwordKey = key;
               passwordData = allPasswords[key];
-              if (validityType === 'attempts') {
-                  validityValue = parseValidityToAttempts(passwordData.validity);
-              } else {
-                  validityValue = passwordData.validity || '1h';
-              }
               break;
             }
           }
@@ -132,16 +117,27 @@ export default function LoginForm({
             }
             
             sessionStorage.setItem('razor_user_id', values.userId);
+
+            const passwordRef = ref(database, `passwords/${passwordKey}`);
+
             if (validityType === 'attempts') {
-                sessionStorage.setItem('razor_session_attempts', String(validityValue));
+                const attempts = passwordData.attempts || '1'; // Default to 1 attempt if not specified
+                sessionStorage.setItem('razor_session_attempts', attempts);
                 sessionStorage.setItem('razor_key_id', passwordKey);
-            } else {
-                sessionStorage.setItem('razor_session_validity', String(validityValue));
-                 if (passwordData.uses && passwordData.uses > 1) {
-                    const passwordRef = ref(database, `passwords/${passwordKey}`);
+                // For attempts-based keys, `uses` handles login sessions.
+                if (passwordData.uses && passwordData.uses > 1) {
                     await update(passwordRef, { uses: passwordData.uses - 1 });
                 } else {
-                    const passwordRef = ref(database, `passwords/${passwordKey}`);
+                    // This is the last use, so we remove the key
+                    await remove(passwordRef);
+                }
+            } else { // Time-based validity
+                const validityValue = passwordData.validity || '1h';
+                sessionStorage.setItem('razor_session_validity', validityValue);
+                // Time-based keys are typically removed after first use unless `uses` is specified
+                if (passwordData.uses && passwordData.uses > 1) {
+                    await update(passwordRef, { uses: passwordData.uses - 1 });
+                } else {
                     await remove(passwordRef);
                 }
             }
