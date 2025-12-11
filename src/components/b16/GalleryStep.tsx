@@ -2,7 +2,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { BarChart, RotateCw, Play } from "lucide-react";
+import { RotateCw, Play } from "lucide-react";
+import Image from "next/image";
 import type { Row } from "@/lib/b16/types";
 
 interface GalleryStepProps {
@@ -13,17 +14,20 @@ interface GalleryStepProps {
   attemptsLeft: number;
 }
 
-const SequenceCell = ({ char }: { char: string }) => {
-  const isPositive = char === '+';
+const SequenceCell = ({ char, revealed }: { char: string; revealed: boolean }) => {
+  const isGood = char === '+';
   return (
-    <div className={`w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-sm font-mono text-lg ${
-      isPositive ? 'bg-green-500/80 text-white' : 'bg-red-500/80 text-white'
-    }`}>
-      {char}
+    <div className="relative w-16 h-16 md:w-20 md:h-20">
+      <Image
+        src={revealed ? (isGood ? '/apple_good.png' : '/apple_bad.png') : '/wood.jpg'}
+        alt={revealed ? (isGood ? 'Good Apple' : 'Bad Apple') : 'Wood'}
+        fill
+        className="object-contain transition-all duration-500"
+        style={{ opacity: revealed ? 1 : 0.5, transform: revealed ? 'scale(1)' : 'scale(0.9)' }}
+      />
     </div>
   );
 };
-
 
 export default function GalleryStep({
   rows,
@@ -32,26 +36,26 @@ export default function GalleryStep({
   onReset,
   attemptsLeft
 }: GalleryStepProps) {
+  const reversedRows = [...rows].reverse();
+
   return (
-    <div className="flex flex-col items-center justify-center text-center space-y-6 p-4">
-      <div className="flex items-center gap-2 text-primary text-2xl md:text-3xl font-bold">
-        <BarChart className="w-8 h-8" />
-        <h1>معرض B16</h1>
-      </div>
-      <p className="text-muted-foreground max-w-md">
-        اضغط على "بدء" للكشف عن التسلسل. لديك <span className="font-bold text-primary">{attemptsLeft}</span> محاولات متبقية.
+    <div className="flex flex-col items-center justify-center text-center space-y-6 p-4 text-blue-100">
+      <h1 className="text-3xl md:text-4xl font-bold text-blue-400" style={{fontFamily: 'Audiowide, sans-serif'}}>B16 VIP</h1>
+      <p className="text-blue-200/70 max-w-md text-sm">
+        * You are only one step away from achieving financial freedom with B16.
+        <br/>
+        You have <span className="font-bold text-blue-300">{attemptsLeft}</span> attempts left.
       </p>
 
-      <div className="w-full max-w-2xl space-y-3">
-        {rows.map((row) => (
-          <div key={row.id} className="grid grid-cols-3 items-center gap-4 p-3 bg-secondary rounded-lg">
-            <div className="text-left">
-              <p className="font-semibold text-sm md:text-base">{row.name}</p>
-              <p className="text-xs text-muted-foreground">{row.value}</p>
+      <div className="w-full max-w-2xl space-y-2">
+        {reversedRows.map((row) => (
+          <div key={row.id} className="grid grid-cols-[1fr,5fr] items-center gap-4 py-1">
+            <div className="text-right">
+              <p className="font-semibold text-sm md:text-base text-blue-200/80">{row.rate} ×</p>
             </div>
-            <div className="col-span-2 flex justify-end items-center gap-1 md:gap-2">
+            <div className="flex justify-center items-center gap-1 md:gap-2">
               {row.seq.split('').map((char, index) => (
-                <SequenceCell key={index} char={char} />
+                <SequenceCell key={index} char={char} revealed={hasStarted} />
               ))}
             </div>
           </div>
@@ -59,13 +63,13 @@ export default function GalleryStep({
       </div>
 
       <div className="flex gap-4 mt-6">
-        <Button onClick={onStart} disabled={attemptsLeft <= 0} className="w-32 h-12 text-lg bg-green-600 hover:bg-green-700">
-            <Play className="mr-2 h-5 w-5" />
-            {hasStarted ? "إعادة" : "بدء"}
-        </Button>
-        <Button onClick={onReset} variant="outline" className="w-32 h-12 text-lg">
+         <Button onClick={onReset} variant="outline" className="w-32 h-12 text-lg bg-black/30 border-blue-500/20 hover:bg-blue-900/40 hover:text-white">
             <RotateCw className="mr-2 h-5 w-5" />
-            إعادة ضبط
+            Reset
+        </Button>
+        <Button onClick={onStart} disabled={attemptsLeft <= 0} className="w-32 h-12 text-lg bg-blue-600 hover:bg-blue-700 text-white">
+            <Play className="mr-2 h-5 w-5" />
+            {hasStarted ? "Again" : "Start"}
         </Button>
       </div>
     </div>

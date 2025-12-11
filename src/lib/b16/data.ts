@@ -2,18 +2,17 @@
 import type { Platform, Row } from './types';
 
 export const platforms: Platform[] = [
-  { id: '1xbet', name: '1XBET', logo: 'https://cdn.worldvectorlogo.com/logos/1xbet-logo.svg' },
-  { id: 'linebet', name: 'LINEBET', logo: 'https://linebet.com/assets/images/logo.svg' },
-  { id: 'melbet', name: 'MELBET', logo: 'https://melbet.com/img/logo.svg' },
-  { id: '888starz', name: '888STARZ', logo: 'https://888starz.bet/img/logo.svg' },
-  { id: 'mostbet', name: 'MOSTBET', logo: 'https://mostbet.com/img/logo.svg' },
-  { id: 'betwinner', name: 'BETWINNER', logo: 'https://betwinner.com/img/logo.svg' },
+  { id: '1xbet', name: '1XBET', logo: 'https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_1xBet.png' },
+  { id: 'melbet', name: 'MelBet', logo: 'https://melbet.com/img/logo.svg' },
+  { id: 'linebet', name: 'LineBet', logo: 'https://upload.wikimedia.org/wikipedia/commons/9/90/Logo_lbet.png' },
 ];
 
 export const initialRows: Row[] = [
-  { id: '0', name: 'Cell-Alpha', value: '1.92', seq: '-+---' },
-  { id: '1', name: 'Cell-Beta', value: '3.84', seq: '--+--' },
-  { id: '2', name: 'Cell-Gamma', value: '7.68', seq: '---+-' },
-  { id: '3', name: 'Cell-Delta', value: '15.36', seq: '+----' },
-  { id: '4', name: 'Cell-Epsilon', value: '30.72', seq: '----+' },
+    { id: '0', rate:'1.23', seq:'+----'},
+    { id: '1', rate:'1.53', seq:'-+---'},
+    { id: '2', rate:'1.93', seq:'----+'},
+    { id: '3', rate:'2.41', seq:'----+'},
+    { id: '4', rate:'4.02', seq:'--+--'},
+    { id: '5', rate:'6.71', seq:'----+'},
+    { id: '6', rate:'11.18', seq:'+----'}
 ];

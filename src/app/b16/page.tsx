@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
@@ -21,7 +22,7 @@ const AppContent = () => {
   const [activeKey, setActiveKey] = useState<ApiKey | null>(null);
   
   const [userId, setUserId] = useState('');
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('');
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('1xbet');
   const [rows, setRows] = useState<Row[]>(initialRows);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
@@ -144,7 +145,7 @@ const AppContent = () => {
     setStep('key');
     setAppKeyInput('');
     setUserId('');
-    setSelectedPlatform('');
+    setSelectedPlatform('1xbet');
     setHasStarted(false);
     setAttemptsLeft(0);
     setActiveKey(null);
@@ -176,7 +177,7 @@ const AppContent = () => {
       const timer = setTimeout(deleteAndLogout, 30000);
       return () => clearTimeout(timer);
     }
-  }, [hasStarted, attemptsLeft, activeKey, firestore, handleResetToKey]);
+  }, [hasStarted, attemptsLeft, activeKey, firestore, handleResetToKey, toast]);
 
 
   const handleReset = () => {
@@ -228,8 +229,8 @@ const AppContent = () => {
   return (
     <>
       <main className="relative z-0 min-h-screen w-full flex items-center justify-center p-3 bg-black">
-        <div className="absolute inset-0 z-0 bg-cover bg-center opacity-30" style={{backgroundImage: "url('https://media.giphy.com/media/3o7btXkbs7i2Lz2dYk/giphy.gif')"}} />
-        <Card id="screen" className="relative z-10 w-full max-w-4xl bg-card/80 border-border/50 shadow-2xl shadow-black/50 p-4 md:p-6 backdrop-blur-sm">
+        <div className="absolute inset-0 z-0 bg-cover bg-center opacity-30" style={{backgroundImage: "url('https://prodigits.co.uk/pthumbs/screensavers/down/abstract/bluematrix_z15aaw35.gif')"}} />
+        <Card id="screen" className="relative z-10 w-full max-w-4xl bg-black/70 border-blue-500/20 shadow-2xl shadow-black/50 p-4 md:p-6 backdrop-blur-sm">
           {renderStep()}
         </Card>
       </main>

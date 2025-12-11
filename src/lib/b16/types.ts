@@ -1,8 +1,7 @@
 
 export interface Row {
   id: string;
-  name: string;
-  value: string;
+  rate: string;
   seq: string;
 }
 
