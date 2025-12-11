@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -73,20 +74,24 @@ export default function B16Home() {
         return;
       }
       
-      // Custom validation: Reject time-based keys
+      // Custom validation: Reject time-based keys for this page
       if (isTimeBasedValidity(passwordData.validity)) {
         setError("This key is not valid for this page. Please use a key with attempts-based access.");
         setIsSubmitting(false);
         return;
       }
 
-      // CRITICAL FIX: Correctly read 'attemps' or 'attempts' from the database record
-      // The user's database has a typo 'attemps' sometimes.
-      const attempts = passwordData.attemps || passwordData.attempts || '0';
+      // Read 'attemps' (with typo) or 'attempts' from the database record
+      const attempts = passwordData.attemps || passwordData.attempts;
+      if (!attempts) {
+        setError("This key is not configured for attempts-based access.");
+        setIsSubmitting(false);
+        return;
+      }
       
       // Store user ID and the correct attempts value in session storage
       sessionStorage.setItem('razor_user_id', values.userId);
-      sessionStorage.setItem('razor_session_attempts', attempts);
+      sessionStorage.setItem('razor_session_attempts', String(attempts));
       sessionStorage.setItem('razor_key_id', passwordKey);
       
       // Handle 'uses' logic for login sessions

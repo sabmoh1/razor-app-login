@@ -130,7 +130,11 @@ function WelcomeB16() {
   
   const onBroadcastComplete = useCallback(() => {
       setIsBroadcasting(false);
-      setAttemptsLeft(prev => (prev !== null ? prev - 1 : 0));
+      setAttemptsLeft(prev => {
+          const newAttempts = prev !== null ? prev - 1 : 0;
+          sessionStorage.setItem('razor_session_attempts', String(newAttempts));
+          return newAttempts;
+      });
       randomizeAllRows();
   }, [randomizeAllRows]);
 
