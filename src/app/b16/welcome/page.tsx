@@ -4,13 +4,13 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { database } from '@/lib/firebase';
-import { ref, runTransaction, remove } from 'firebase/database';
+import { ref, runTransaction } from 'firebase/database';
 import Image from 'next/image';
 
 // --- Constants ---
 const GOOD_APPLE_URL = "https://iili.io/f50k5vf.png";
 const BAD_APPLE_URL = "https://iili.io/f50v4f9.webp";
-const WOOD_URL = "https://iili.io/f50v4f9.webp"; // Using bad apple as wood for now
+const WOOD_URL = "https://iili.io/f50v4f9.webp"; 
 
 const INITIAL_ROWS = [
   {rate:'1.23', seq:'+----'},
@@ -28,25 +28,47 @@ type RowData = {
 };
 
 // --- Helper Components ---
-const BroadcastOverlay = () => (
-  <div className="broadcast-overlay">
-    <div className="spinner"></div>
-    <div style={{ fontSize: '18px', marginBottom: '8px' }}>Broadcasting...</div>
-  </div>
-);
+const BroadcastOverlay = ({ onComplete }: { onComplete: () => void }) => {
+  const [message, setMessage] = useState("Connecting...");
 
-const GalleryRow = ({ row, onRowClick }: { row: RowData, onRowClick: () => void }) => {
+  useEffect(() => {
+    const messages = ["Fetching data...", "Connecting to platform...", "Applying sequence..."];
+    let currentIndex = 0;
+
+    const interval = setInterval(() => {
+      if (currentIndex < messages.length) {
+        setMessage(messages[currentIndex]);
+        currentIndex++;
+      } else {
+        clearInterval(interval);
+        setTimeout(onComplete, 500);
+      }
+    }, 1200);
+
+    return () => clearInterval(interval);
+  }, [onComplete]);
+
+  return (
+    <div className="broadcast-overlay">
+      <div className="spinner"></div>
+      <div style={{ fontSize: '18px', marginBottom: '8px' }}>{message}</div>
+    </div>
+  );
+};
+
+
+const GalleryRow = ({ row, onRowClick, initialLoad }: { row: RowData, onRowClick: () => void, initialLoad: boolean }) => {
   return (
     <div style={{ position: 'relative', marginTop: '6px' }} onClick={onRowClick}>
       <div className="row-label">{row.rate} ×</div>
       <div className="gallery-row">
-        {row.seq.split('').map((char, index) => (
+        {(initialLoad ? "     " : row.seq).split('').map((char, index) => (
           <div key={index} className="cell">
             <Image
-              src={char === '+' ? GOOD_APPLE_URL : BAD_APPLE_URL}
+              src={initialLoad ? WOOD_URL : (char === '+' ? GOOD_APPLE_URL : BAD_APPLE_URL)}
               alt="apple"
-              width={80}
-              height={80}
+              width={60}
+              height={60}
               className="cell-image"
               unoptimized
             />
@@ -66,6 +88,7 @@ function WelcomeB16() {
   const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null);
   const [keyId, setKeyId] = useState<string | null>(null);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // --- Effects ---
   useEffect(() => {
@@ -84,6 +107,7 @@ function WelcomeB16() {
 
   // --- Core Logic ---
   const randomizeSingleRow = (rowIndex: number) => {
+     if (initialLoad) return;
     setRows(currentRows => {
       const newRows = [...currentRows];
       const rowToUpdate = { ...newRows[rowIndex] };
@@ -128,39 +152,46 @@ function WelcomeB16() {
     try {
         await runTransaction(keyRef, (currentData) => {
             if (currentData) {
-                if (currentData.uses > 1) {
+                if (currentData.uses && currentData.uses > 1) {
                     currentData.uses -= 1;
+                    return currentData;
                 } else {
-                    // If last use, set to null to be removed
-                    return null;
+                    return null; // Set to null to be removed by Firebase
                 }
             }
-            return currentData;
+            return currentData; // No change if data is null
         });
 
         const newAttempts = attemptsLeft - 1;
         setAttemptsLeft(newAttempts);
         sessionStorage.setItem('razor_session_attempts', String(newAttempts));
         
-        randomizeAllRows();
-
+        // The broadcast overlay will handle the rest
+        
     } catch (error) {
         console.error("Transaction failed: ", error);
         alert("An error occurred. Please try again.");
-    } finally {
-        setTimeout(() => {
-            setIsBroadcasting(false);
-            if (attemptsLeft - 1 <= 0) {
-              alert("No attempts left. You will be logged out.");
-              sessionStorage.clear();
-              router.push('/b16');
-            }
-        }, 1500);
+        setIsBroadcasting(false); // Stop broadcast on error
     }
   };
+  
+  const onBroadcastComplete = useCallback(() => {
+      setIsBroadcasting(false);
+      setInitialLoad(false);
+      randomizeAllRows();
+      if (attemptsLeft !== null && attemptsLeft -1 <= 0) {
+        setTimeout(() => {
+            alert("No attempts left. You will be logged out.");
+            sessionStorage.clear();
+            router.push('/b16');
+        }, 1000);
+      }
+  }, [randomizeAllRows, attemptsLeft, router]);
+
 
   const handleReset = () => {
     setRows(INITIAL_ROWS);
+    setInitialLoad(true);
   };
   
 
@@ -186,8 +217,8 @@ function WelcomeB16() {
         .card{width:100%;max-width:980px;background:linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.5));border-radius:14px;padding:14px;border:1px solid rgba(78,163,255,0.08);box-shadow:0 18px 40px rgba(0,0,0,0.65);box-sizing:border-box}
         h1{color:var(--primary);text-align:center;margin:0 0 8px;font-weight:700; font-family: 'Audiowide', cursive;}
         .subtitle{ text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: -5px; margin-bottom: 15px;}
-        .gallery-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;align-items:center;justify-items:center;padding:6px 0;cursor:pointer}
-        .row-label{width:100%;text-align:left;padding-left:8px;font-size:13px;color:var(--muted);margin-bottom:6px}
+        .gallery-row{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;align-items:center;justify-items:center;padding:4px 0;cursor:pointer}
+        .row-label{width:100%;text-align:left;padding-left:8px;font-size:13px;color:var(--muted);margin-bottom:4px}
         .cell{background:transparent;border:none;height:auto;display:flex;align-items:center;justify-content:center;padding:0}
         .cell-image { transition:transform .34s cubic-bezier(.2,.8,.2,1),opacity .34s;border-radius:6px; }
         .controls{display:flex;flex-wrap: wrap; gap:10px;justify-content:center;margin-top:12px}
@@ -206,11 +237,10 @@ function WelcomeB16() {
         <div className="card">
             <div className="centered-heading">
                 <h1 data-text="B16 VIP">B16 VIP</h1>
-                <p className="subtitle">اضغط على أي سطر (أو زر "عشوائي") لوضع التفاحة الصحيحة في مكان عشوائي — في كل مرة.</p>
             </div>
             
             <div className="attempts-counter">
-              المحاولات المتبقية: <span>{attemptsLeft}</span>
+              Attempts Left: <span>{attemptsLeft}</span>
             </div>
 
             <div id="galleryContainer">
@@ -221,21 +251,21 @@ function WelcomeB16() {
                       key={originalIndex} 
                       row={row} 
                       onRowClick={() => randomizeSingleRow(originalIndex)} 
+                      initialLoad={initialLoad}
                     />
                   );
                 })}
             </div>
 
             <div className="controls">
-                <button className="btn" onClick={handleReset}>إعادة تعيين</button>
-                <button className="btn" onClick={randomizeAllRows}>عشوائي (كل الأسطر)</button>
+                <button className="btn" onClick={handleReset}>Reset</button>
                 <button className="btn primary" onClick={handleStart} disabled={isBroadcasting}>
-                  {isBroadcasting ? '...' : 'عرض/تشغيل'}
+                  {isBroadcasting ? '...' : 'Start'}
                 </button>
             </div>
         </div>
       </main>
-      {isBroadcasting && <BroadcastOverlay />}
+      {isBroadcasting && <BroadcastOverlay onComplete={onBroadcastComplete} />}
     </>
   );
 }
