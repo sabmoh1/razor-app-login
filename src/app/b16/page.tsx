@@ -134,7 +134,7 @@ export default function B16Home() {
         <div className="w-full max-w-sm">
              <div className="text-center mb-8">
                 <h1 className="text-4xl font-black uppercase text-glow-blue" style={{color: 'var(--neon-blue)'}}>
-                    B16 TERMINAL
+                    B16 VIP
                 </h1>
              </div>
              <div className="bg-black/40 backdrop-blur-sm border border-blue-500/20 rounded-2xl p-6 shadow-2xl shadow-blue-500/10">
