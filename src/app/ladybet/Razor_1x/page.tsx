@@ -16,7 +16,7 @@ type LadybetConfig = {
 };
 
 const DEFAULT_CONFIG = {
-  name: "LADYBET",
+  name: "Lady BET",
   social_handle: "Telegram : lady_bet_dz",
   theme_color: "#ff69b4", // Pink
 };
@@ -312,7 +312,7 @@ function WelcomeContent() {
         <title>{config.name} — Matrix</title>
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
-      <style jsx global>{`
+      <style jsx global>{\`
           :root{
             --bg:#000;
             --neon-theme: ${config.theme_color};
@@ -463,7 +463,7 @@ function WelcomeContent() {
             white-space: nowrap;
             font-size: 0.9rem;
           }
-        `}</style>
+        \`}</style>
       <canvas id="matrix" ref={canvasRef}></canvas>
       <div className="user-id-display" style={userIdDisplayStyle}>
         <User size={16} color={config.theme_color} />

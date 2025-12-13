@@ -15,7 +15,7 @@ type LadybetConfig = {
 };
 
 const DEFAULT_CONFIG = {
-  name: "LADYBET",
+  name: "Lady BET",
   theme_color: "#ff69b4", // Pink
 };
 

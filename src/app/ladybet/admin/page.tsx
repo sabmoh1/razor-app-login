@@ -41,7 +41,7 @@ export default function LadybetAdmin() {
     const [isAuthenticating, setIsAuthenticating] = useState(false);
 
     const [config, setConfig] = useState<Omit<LadybetConfig, 'expires'>>({
-        name: "LADYBET",
+        name: "Lady BET",
         social_handle: "Telegram : lady_bet_dz",
         theme_color: "#ff69b4",
     });
@@ -142,7 +142,7 @@ export default function LadybetAdmin() {
         return (
             <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4">
                 <div className="w-full max-w-sm space-y-4">
-                    <h1 className="text-2xl font-bold text-center" style={{ color: '#ff69b4', textShadow: '0 0 8px #ff69b4' }}>Ladybet Admin</h1>
+                    <h1 className="text-2xl font-bold text-center" style={{ color: '#ff69b4', textShadow: '0 0 8px #ff69b4' }}>Lady BET Admin</h1>
                     <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                         <Input 
@@ -167,7 +167,7 @@ export default function LadybetAdmin() {
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-start p-4 space-y-8">
             <div className="w-full max-w-lg rounded-lg bg-gray-800 border border-gray-700 p-6 space-y-6">
-                <h1 className="text-2xl font-bold text-center" style={{ color: '#ff69b4', textShadow: '0 0 12px #ff69b4' }}>Ladybet Control Panel</h1>
+                <h1 className="text-2xl font-bold text-center" style={{ color: '#ff69b4', textShadow: '0 0 12px #ff69b4' }}>Lady BET Control Panel</h1>
 
                 <div className="space-y-2">
                     <Label htmlFor="page-name" className="flex items-center gap-2"><Edit3 size={16}/> Page Name</Label>
