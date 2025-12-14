@@ -21,8 +21,6 @@ function WelcomeContent() {
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<HTMLDivElement>(null);
-  const clickCounterRef = useRef(0);
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
 
   const doGlitchThenSet = useCallback((newVal: any) => {
@@ -90,21 +88,7 @@ function WelcomeContent() {
 
   // Admin panel access trigger
   const handleAdminTriggerClick = () => {
-    clickCounterRef.current += 1;
-
-    if (clickTimeoutRef.current) {
-        clearTimeout(clickTimeoutRef.current);
-    }
-
-    clickTimeoutRef.current = setTimeout(() => {
-        clickCounterRef.current = 0;
-    }, 1500); // Reset after 1.5 seconds
-
-    if (clickCounterRef.current === 5) {
-        clickCounterRef.current = 0;
-        if(clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
-        router.push('/razoor/admin');
-    }
+    router.push('/razoor/admin');
   };
 
 
@@ -190,8 +174,7 @@ function WelcomeContent() {
           .brand .logo-text, .brand h1, #username { font-family: 'Orbitron', sans-serif !important; font-weight: 900 !important; }
           canvas#matrix{position:fixed;inset:0;z-index:0;display:block}
           .wrap{position:relative;z-index:3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px; cursor: pointer;}
-          .header-controls { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 9999; pointer-events: none;}
-          .admin-trigger { position: fixed; top: 0; right: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+          .header-controls { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 9999; }
           .panel{ width:min(920px,94%);max-width:920px;margin:0 auto; background: transparent; border-radius:14px;padding:28px; display:flex;flex-direction:column;gap:18px;align-items:center;overflow:visible; margin-top: 60px;}
           .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
           .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
@@ -213,14 +196,13 @@ function WelcomeContent() {
           .last-box{background:transparent;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);min-width:140px;text-align:center}
           .last-box .label{font-size:0.82rem;color:rgba(230,255,248,0.6)}
           .last-box .value{font-weight:700;color:var(--neon-white);font-size:1.05rem}
-          .user-id-display { display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 16px; color: white; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+          .user-id-display { display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 16px; color: white; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
       `}</style>
 
       <canvas id="matrix" ref={canvasRef}></canvas>
-      <div className="admin-trigger" onClick={handleAdminTriggerClick}></div>
 
        <div className="header-controls">
-         <div className="user-id-display">
+         <div className="user-id-display" onClick={handleAdminTriggerClick}>
           <User size={16} color="var(--neon-primary)" />
           <span>{userId}</span>
         </div>
