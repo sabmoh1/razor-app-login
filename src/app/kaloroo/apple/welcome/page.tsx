@@ -259,7 +259,7 @@ function AppleWelcomeContent() {
                         <div className="relative z-10 flex flex-col gap-4 w-full">
                             <div className="multiplier">{gameStarted ? `x${currentMultiplier}` : 'Kaloro DZ'}</div>
                             <div className="grid-container">
-                                {[...currentRowData].reverse().map((cellValue, index) => (
+                                {currentRowData.map((cellValue, index) => (
                                     <div key={index} className="grid-cell">
                                         <Image src={getAppleImage(cellValue)} alt="Apple" width={64} height={64} unoptimized />
                                     </div>
