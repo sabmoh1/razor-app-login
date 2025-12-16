@@ -248,10 +248,11 @@ export default function KalorooAppleLoginPage() {
             animation: glow-pulse 2s infinite alternate;
         }
         .dragon-main {
+            display: block;
+            margin: 1rem auto 0;
             width: clamp(80px, 25vw, 120px);
             height: auto;
             filter: drop-shadow(0 0 1rem #00bfff);
-            margin-top: 1rem;
             animation: float 3s infinite ease-in-out;
         }
         .input-card {
