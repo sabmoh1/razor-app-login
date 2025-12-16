@@ -227,11 +227,11 @@ function WelcomeContent() {
         }
         .circle-bg-image {
           position: absolute;
-          width: 85%;
-          height: 85%;
+          width: 90%;
+          height: 90%;
           object-fit: contain;
           border-radius: 50%;
-          filter: opacity(0.2);
+          filter: opacity(0.3);
           z-index: -1;
         }
         .crash-value {
@@ -257,7 +257,7 @@ function WelcomeContent() {
         .kalorodz-title {
           font-family: 'Orbitron', sans-serif;
           font-weight: 900;
-          font-size: clamp(1.5rem, 6vw, 2rem);
+          font-size: clamp(1.5rem, 6vw, 1.8rem);
           letter-spacing: 0.15rem;
           color: white;
           text-transform: uppercase;
@@ -286,7 +286,7 @@ function WelcomeContent() {
           top: 2rem;
           width: calc(100% - 2rem);
           max-width: 450px;
-          margin-top: 1rem; /* Adjust this to add space */
+          margin-top: 4rem;
         }
         .info-bar-bottom {
           position: absolute;
