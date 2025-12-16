@@ -163,6 +163,7 @@ function WelcomeContent() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
       </Head>
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
         body {
           background: #0a0a1a;
           color: #eee;
@@ -220,6 +221,16 @@ function WelcomeContent() {
             align-items: center;
             justify-content: center;
             z-index: 1;
+            position: relative;
+        }
+        .circle-bg-image {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 50%;
+          filter: blur(2px) opacity(0.2);
+          z-index: -1;
         }
         .crash-value {
           font-size: clamp(4rem, 18vw, 7rem);
@@ -227,6 +238,7 @@ function WelcomeContent() {
           color: white;
           text-shadow: 0 0 1rem #00bfff, 0 0 2rem #007bff;
           transition: all 0.3s ease;
+          z-index: 2;
         }
         .glitch-active {
             animation: glitch 0.7s forwards;
@@ -239,11 +251,29 @@ function WelcomeContent() {
             80% { transform: skewX(10deg) translateX(5px); }
             100% { transform: skewX(0); opacity: 1; text-shadow: 0 0 1rem #00bfff; }
         }
-        .info-panel {
+        .kalorodz-title {
+          font-family: 'Orbitron', sans-serif;
+          font-size: clamp(2rem, 10vw, 3rem);
+          font-weight: 900;
+          letter-spacing: 0.15rem;
+          color: white;
+          text-transform: uppercase;
+          background: rgba(0,0,0,0.6);
+          padding: 0.8rem 1.5rem;
+          border-radius: 1.2rem;
+          backdrop-filter: blur(12px);
+          box-shadow: 0 0 1.5rem rgba(0,191,255,0.8), 0 0 3rem rgba(0,123,255,0.6);
+          text-shadow: 0 0 0.6rem #00bfff, 0 0 1.2rem #007bff;
+          animation: glow-pulse 2s infinite alternate;
+        }
+        @keyframes glow-pulse {
+          0% { text-shadow: 0 0 0.6rem #00bfff, 0 0 1.2rem #007bff; }
+          100% { text-shadow: 0 0 0.9rem #00bfff, 0 0 1.8rem #007bff, 0 0 2.7rem #00d4ff; }
+        }
+        .info-header, .info-footer {
           width: 100%;
-          max-width: 400px;
-          margin-top: 2rem;
-          padding: 1rem;
+          max-width: 450px;
+          padding: 0.75rem 1.25rem;
           background: rgba(0,0,0,0.4);
           border: 1px solid rgba(0,191,255,0.2);
           border-radius: 1rem;
@@ -255,30 +285,34 @@ function WelcomeContent() {
       `}</style>
       <main className="main-container">
         
-        <div className="text-center mb-8">
-             <h1 className="text-3xl font-bold text-white tracking-widest">KALORODZ</h1>
-             <p className="text-cyan-300">Terminal</p>
+        <div className="absolute top-8 text-center">
+             <h1 className="kalorodz-title">KALORODZ</h1>
+        </div>
+
+        <div className="absolute top-28 w-full px-4 flex justify-center">
+            <div className="info-header">
+                <div className="flex items-center gap-3">
+                    <User className="text-cyan-400" size={20} />
+                    <span className="font-semibold">{userId}</span>
+                </div>
+                <div className="text-sm font-semibold">
+                    {getStatusIndicator()}
+                </div>
+            </div>
         </div>
 
         <div className="display-circle">
           <div className="circle-inner">
-            <Zap size={40} className="text-yellow-400 mb-2" style={{filter: 'drop-shadow(0 0 5px #ffcc00)'}}/>
+            <img src="https://i.ibb.co/Kp4zV4wY/6050911538094214341-120-removebg-preview.png" alt="Dragon Background" className="circle-bg-image" />
             <div className={`crash-value ${isGlitching ? 'glitch-active' : ''}`}>{crashValue}</div>
           </div>
         </div>
 
-        <div className="info-panel">
-            <div className="flex items-center gap-3">
-                <User className="text-cyan-400" size={20} />
-                <span className="font-semibold">{userId}</span>
+        <div className="absolute bottom-8 w-full px-4 flex justify-center">
+            <div className="info-footer">
+                <div className="text-xs text-gray-400">Time Left</div>
+                <div className="font-mono font-bold text-lg">{formatTime(totalSeconds)}</div>
             </div>
-             <div className="text-sm font-semibold">
-                {getStatusIndicator()}
-            </div>
-        </div>
-         <div className="text-center mt-4">
-            <div className="text-xs text-gray-400">Time Left</div>
-            <div className="font-mono font-bold text-lg">{formatTime(totalSeconds)}</div>
         </div>
       </main>
     </>

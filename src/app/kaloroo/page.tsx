@@ -176,6 +176,7 @@ export default function KalorooLoginPage() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
       </Head>
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { height: 100dvh; }
         body {
@@ -207,6 +208,7 @@ export default function KalorooLoginPage() {
         }
         .header { text-align: center; margin-bottom: 1rem; }
         .kalorodz-title {
+          font-family: 'Orbitron', sans-serif;
           font-size: clamp(2rem, 10vw, 3rem);
           font-weight: 900;
           letter-spacing: 0.15rem;
@@ -369,7 +371,7 @@ export default function KalorooLoginPage() {
           <img src="https://i.ibb.co/Kp4zV4wY/6050911538094214341-120-removebg-preview.png" className="dragon-main" alt="Dragon" />
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-md space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-md flex flex-col items-center space-y-6">
           <div className="input-card">
             <div className="card-title">أدخل ID حسابك (10 أرقام)</div>
             <input type="text" {...register("userId")} className={`input-field ${errors.userId ? 'error' : ''}`} placeholder="" maxLength={10} inputMode="numeric" autoComplete="off" />
