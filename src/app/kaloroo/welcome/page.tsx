@@ -177,10 +177,11 @@ function WelcomeContent() {
           justify-content: center;
           padding: 1rem;
           background: radial-gradient(ellipse at center, rgba(10, 25, 47, 0.9), #0a0a1a 70%);
+          position: relative;
         }
         .display-circle {
-          width: clamp(280px, 70vw, 360px);
-          height: clamp(280px, 70vw, 360px);
+          width: clamp(280px, 70vw, 340px);
+          height: clamp(280px, 70vw, 340px);
           border-radius: 50%;
           border: 3px solid #00bfff;
           background: rgba(10, 25, 47, 0.5);
@@ -235,7 +236,7 @@ function WelcomeContent() {
         .crash-value {
           font-family: 'Orbitron', sans-serif;
           font-weight: 900;
-          font-size: clamp(4rem, 15vw, 6rem);
+          font-size: clamp(4rem, 15vw, 5.5rem);
           color: white;
           text-shadow: 0 0 1rem #00bfff, 0 0 2rem #007bff;
           transition: all 0.3s ease;
@@ -296,7 +297,7 @@ function WelcomeContent() {
              <h1 className="kalorodz-title">KALORODZ</h1>
         </div>
 
-        <div className="absolute top-32 w-full px-4 flex justify-center">
+        <div className="absolute top-40 w-full px-4 flex justify-center">
             <div className="info-bar">
                 <div className="flex items-center gap-3">
                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-cyan-400"><path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M20.59 22C20.59 18.13 16.74 15 12 15C7.26 15 3.41 18.13 3.41 22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
