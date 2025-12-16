@@ -227,10 +227,11 @@ export default function KalorooLoginPage() {
           100% { text-shadow: 0 0 0.9rem #00bfff, 0 0 1.8rem #007bff, 0 0 2.7rem #00d4ff; }
         }
         .dragon-main {
+          display: block;
+          margin: 1rem auto 0;
           width: clamp(80px, 25vw, 120px);
           height: auto;
           filter: drop-shadow(0 0 1rem #00bfff);
-          margin-top: 1rem;
           animation: float 3s infinite ease-in-out;
         }
         @keyframes float {
@@ -321,6 +322,9 @@ export default function KalorooLoginPage() {
           z-index: 1;
           min-height: 3.5rem;
           touch-action: manipulation;
+          display: block;
+          margin-left: auto;
+          margin-right: auto;
         }
         .play-btn:hover {
           transform: translateY(-4px) scale(1.03);
