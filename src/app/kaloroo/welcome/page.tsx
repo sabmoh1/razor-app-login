@@ -180,8 +180,8 @@ function WelcomeContent() {
           position: relative;
         }
         .display-circle {
-          width: clamp(260px, 65vw, 320px);
-          height: clamp(260px, 65vw, 320px);
+          width: clamp(260px, 60vw, 300px);
+          height: clamp(260px, 60vw, 300px);
           border-radius: 50%;
           border: 3px solid #00bfff;
           background: rgba(10, 25, 47, 0.5);
@@ -191,6 +191,7 @@ function WelcomeContent() {
           justify-content: center;
           position: relative;
           overflow: hidden;
+          margin-top: -2rem;
         }
         .display-circle::before, .display-circle::after {
             content: '';
@@ -236,7 +237,7 @@ function WelcomeContent() {
         .crash-value {
           font-family: 'Orbitron', sans-serif;
           font-weight: 900;
-          font-size: clamp(3.5rem, 13vw, 5rem);
+          font-size: clamp(3rem, 12vw, 4.5rem);
           color: white;
           text-shadow: 0 0 1rem #00bfff, 0 0 2rem #007bff;
           transition: all 0.3s ease;
@@ -256,14 +257,12 @@ function WelcomeContent() {
         .kalorodz-title {
           font-family: 'Orbitron', sans-serif;
           font-weight: 900;
-          font-size: clamp(1.8rem, 8vw, 2.5rem);
+          font-size: clamp(1.5rem, 6vw, 2rem);
           letter-spacing: 0.15rem;
           color: white;
           text-transform: uppercase;
-          background: rgba(0,0,0,0.6);
           padding: 0.6rem 1.2rem;
           border-radius: 1rem;
-          backdrop-filter: blur(12px);
           box-shadow: 0 0 1.5rem rgba(0,191,255,0.8), 0 0 3rem rgba(0,123,255,0.6);
           text-shadow: 0 0 0.6rem #00bfff, 0 0 1.2rem #007bff;
           animation: glow-pulse 2s infinite alternate;
@@ -284,20 +283,23 @@ function WelcomeContent() {
           justify-content: space-between;
           align-items: center;
           font-family: 'Orbitron', sans-serif;
+          margin-bottom: 2rem;
         }
         .info-bar-bottom {
           padding: 0.75rem 1.25rem;
+          margin-top: 1rem;
+          margin-bottom: 0;
         }
         .info-bar-bottom .text-xs { font-size: 0.7rem; }
         .info-bar-bottom .font-bold { font-size: 1.1rem; }
       `}</style>
       <main className="main-container">
         
-        <div className="absolute top-4 text-center">
+        <div className="absolute top-8 text-center">
              <h1 className="kalorodz-title">KALORODZ</h1>
         </div>
 
-        <div className="absolute top-24 w-full px-4 flex justify-center">
+        <div className="absolute top-28 w-full px-4 flex justify-center">
             <div className="info-bar">
                 <div className="flex items-center gap-3">
                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-cyan-400"><path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M20.59 22C20.59 18.13 16.74 15 12 15C7.26 15 3.41 18.13 3.41 22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
