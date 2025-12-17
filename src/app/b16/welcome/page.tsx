@@ -7,7 +7,8 @@ import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { database } from '@/lib/firebase';
-import { ref, remove } from 'firebase/database';
+import { ref, remove, onValue } from 'firebase/database';
+import KillSwitch from '@/components/kill-switch';
 
 
 // --- Constants for Images ---
@@ -166,7 +167,7 @@ function WelcomeB16() {
   }
 
   return (
-    <>
+    <KillSwitch pageName="b16">
       <style jsx global>{`
         :root{
           --bg-gif-url: url('https://prodigits.co.uk/pthumbs/screensavers/down/abstract/bluematrix_z15aaw35.gif');
@@ -253,7 +254,7 @@ function WelcomeB16() {
         </div>
       </main>
       {isBroadcasting && <BroadcastOverlay onComplete={onBroadcastComplete} />}
-    </>
+    </KillSwitch>
   );
 }
 

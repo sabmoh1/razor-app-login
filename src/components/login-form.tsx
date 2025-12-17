@@ -107,6 +107,11 @@ export default function LoginForm({
 
           if (isValid && passwordKey && passwordData) {
             
+            if (validityType === 'time' && (passwordData.attemps || passwordData.attempts)) {
+                setError("This key is not valid for this page.");
+                return;
+            }
+
             if (customValidation) {
               const validationError = customValidation(passwordData);
               if (validationError) {
@@ -121,15 +126,15 @@ export default function LoginForm({
             const passwordRef = ref(database, `passwords/${passwordKey}`);
 
             if (validityType === 'attempts') {
-                const attempts = passwordData.attempts || '1'; // Default to 1 attempt if not specified
+                const attempts = passwordData.attempts || passwordData.attemps || '1'; // Default to 1 attempt if not specified
                 sessionStorage.setItem('razor_session_attempts', attempts);
                 sessionStorage.setItem('razor_key_id', passwordKey);
                 // For attempts-based keys, `uses` handles login sessions.
                 if (passwordData.uses && passwordData.uses > 1) {
                     await update(passwordRef, { uses: passwordData.uses - 1 });
                 } else {
-                    // This is the last use, so we remove the key
-                    await remove(passwordRef);
+                    // This is the last use, so we remove the key if it does not have unlimited uses
+                    if(passwordData.uses) await remove(passwordRef);
                 }
             } else { // Time-based validity
                 const validityValue = passwordData.validity || '1h';
@@ -138,7 +143,7 @@ export default function LoginForm({
                 if (passwordData.uses && passwordData.uses > 1) {
                     await update(passwordRef, { uses: passwordData.uses - 1 });
                 } else {
-                    await remove(passwordRef);
+                     if(passwordData.uses) await remove(passwordRef);
                 }
             }
             router.push(welcomePath);

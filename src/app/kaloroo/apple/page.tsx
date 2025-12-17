@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -15,6 +16,12 @@ const formSchema = z.object({
   userId: z.string().min(10, { message: "يجب أن يكون 10 أرقام بالضبط!" }).max(10, { message: "يجب أن يكون 10 أرقام بالضبط!" }).regex(/^\d+$/, { message: "يجب أن يحتوي على أرقام فقط." }),
   password: z.string().min(1, { message: "الـ Key مطلوب!" }),
 });
+
+function isTimeBasedValidity(validity: string | null | undefined): boolean {
+    if (!validity) return false;
+    const lastChar = validity.slice(-1).toLowerCase();
+    return ['h', 'd', 'm', 's'].includes(lastChar);
+}
 
 export default function KalorooAppleLoginPage() {
   const router = useRouter();
@@ -51,7 +58,19 @@ export default function KalorooAppleLoginPage() {
           }
         }
         
-        if (isValid && passwordKey && passwordData && passwordData.attemps) {
+        if (isValid && passwordKey && passwordData) {
+            if(isTimeBasedValidity(passwordData.validity)) {
+                setAuthError("This key is not valid for this game.");
+                setIsSubmitting(false);
+                return;
+            }
+
+            if(typeof passwordData.attemps === 'undefined') {
+                setAuthError("This key is not configured for the Apple game.");
+                setIsSubmitting(false);
+                return;
+            }
+
             const userAuth = {
                 userId: values.userId,
                 userKey: values.password,
@@ -62,7 +81,7 @@ export default function KalorooAppleLoginPage() {
             sessionStorage.setItem('kaloroo_apple_auth', JSON.stringify(userAuth));
             router.push('/kaloroo/apple/welcome');
         } else {
-            setAuthError(passwordData && !passwordData.attemps ? "This key is not for the Apple game." : "Key غير صحيح!");
+            setAuthError("Key غير صحيح!");
             form.reset({ userId: values.userId, password: '' });
         }
 
@@ -73,7 +92,9 @@ export default function KalorooAppleLoginPage() {
       setAuthError("Network error. Please check your connection.");
       console.error("Login error:", error);
     } finally {
-      setIsSubmitting(false);
+      if (!router.asPath.includes('/kaloroo/apple/welcome')) {
+        setIsSubmitting(false);
+      }
     }
   }
   

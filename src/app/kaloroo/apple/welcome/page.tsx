@@ -1,13 +1,15 @@
+
 "use client";
 
 import { useEffect, useState, useRef, Suspense, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { database } from '@/lib/firebase';
-import { ref, update, remove } from 'firebase/database';
+import { ref, update, remove, onValue } from 'firebase/database';
 import { Loader2 } from 'lucide-react';
 import Head from 'next/head';
 import Image from 'next/image';
 import axios from 'axios';
+import KillSwitch from '@/components/kill-switch';
 
 const PROXY_URL = 'https://mafya.icu/apple/data.php';
 const multipliers = ['1.23', '1.54', '1.93', '2.41', '4.82', '6.71', '11.18', '27.97', '69.93', '349.68'];
@@ -201,6 +203,7 @@ function AppleWelcomeContent() {
     const displayRowNumber = gameStarted && gridData.length > 0 ? currentRowIndex + 1 : 0;
 
     return (
+      <KillSwitch pageName="kaloroo">
         <>
             <Head>
                 <title>Apple Predictor</title>
@@ -253,7 +256,7 @@ function AppleWelcomeContent() {
                     transform: translateX(-50%) translateY(0); 
                  }
                  .toast.destructive { 
-                    background-color: #c53030;
+                    background: linear-gradient(145deg, #5c1a1a, #a32a2a);
                     border-color: #ff1a1a;
                     color: white;
                     text-shadow: 0 0 0.5rem #ff0000;
@@ -310,6 +313,7 @@ function AppleWelcomeContent() {
             </div>
             <Toast message={toast?.message || null} variant={toast?.variant || 'default'} onDismiss={() => setToast(null)} />
         </>
+      </KillSwitch>
     );
 }
 

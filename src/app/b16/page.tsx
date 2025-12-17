@@ -83,7 +83,7 @@ export default function B16Home() {
 
       // Read 'attemps' (with typo) or 'attempts' from the database record
       const attempts = passwordData.attemps || passwordData.attempts;
-      if (!attempts) {
+      if (typeof attempts === 'undefined') {
         setError("This key is not configured for attempts-based access.");
         setIsSubmitting(false);
         return;
@@ -110,11 +110,7 @@ export default function B16Home() {
     } catch (e) {
       setError("Network error. Please check your connection.");
       console.error("Login error:", e);
-    } finally {
-        // We don't set isSubmitting to false on success because we are navigating away
-        if (error) {
-             setIsSubmitting(false);
-        }
+      setIsSubmitting(false);
     }
   }
 

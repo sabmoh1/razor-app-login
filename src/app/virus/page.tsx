@@ -73,6 +73,11 @@ export default function VirusLoginPage() {
         }
 
         if (isValid && passwordKey && passwordData) {
+            if (passwordData.attemps || passwordData.attempts) {
+                setAuthError("This key is not valid for this page.");
+                setIsSubmitting(false);
+                return;
+            }
           const passwordRef = ref(database, `passwords/${passwordKey}`);
           if (passwordData.uses && passwordData.uses > 1) {
             await update(passwordRef, { uses: passwordData.uses - 1 });
@@ -93,7 +98,9 @@ export default function VirusLoginPage() {
       setAuthError("Network error. Please check your connection.");
       console.error("Login error:", error);
     } finally {
-      setIsSubmitting(false);
+      if (!router.asPath.includes('/virus/welcome')) {
+        setIsSubmitting(false);
+      }
     }
   }
 
