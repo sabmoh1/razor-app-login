@@ -230,9 +230,35 @@ function AppleWelcomeContent() {
                  .grid-cell img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
                  .multiplier { font-size: 2.5rem; font-weight: 900; color: hsl(var(--primary)); text-shadow: 0 0 0.8rem hsl(var(--primary)); }
                  .row-info { font-size: 1.1rem; font-weight: bold; color: rgba(0, 212, 255, 0.8); }
-                 .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 15px 25px; border-radius: 8px; z-index: 1000; opacity: 0; transition: opacity 0.5s, top 0.5s; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-                 .toast.show { opacity: 1; top: 40px; }
-                 .toast.destructive { background-color: #c53030; }
+                 .toast { 
+                    position: fixed; 
+                    top: 20px; 
+                    left: 50%; 
+                    transform: translateX(-50%) translateY(-100%); 
+                    background: linear-gradient(145deg, #111, #1a1a1a);
+                    color: hsl(var(--foreground)); 
+                    padding: 1rem 1.5rem; 
+                    border-radius: 1rem; 
+                    z-index: 1000; 
+                    opacity: 0; 
+                    transition: opacity 0.5s, transform 0.5s; 
+                    box-shadow: 0 0 1.5rem rgba(0, 191, 255, 0.5);
+                    border: 2px solid hsl(var(--border));
+                    font-weight: bold;
+                    text-shadow: 0 0 0.5rem hsl(var(--primary));
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                 }
+                 .toast.show { 
+                    opacity: 1; 
+                    transform: translateX(-50%) translateY(0); 
+                 }
+                 .toast.destructive { 
+                    background-color: #c53030;
+                    border-color: #ff1a1a;
+                    color: white;
+                    text-shadow: 0 0 0.5rem #ff0000;
+                    box-shadow: 0 0 1.5rem rgba(255, 26, 26, 0.8);
+                 }
                  .loader { width: 24px; height: 24px; border: 3px solid #FFF; border-bottom-color: transparent; border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite; }
                  @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
                  @keyframes glow-pulse { from { text-shadow: 0 0 0.6rem hsl(var(--primary)), 0 0 1.2rem hsl(211 100% 50%); } to { text-shadow: 0 0 0.9rem hsl(var(--primary)), 0 0 1.8rem hsl(211 100% 50%), 0 0 2.7rem #00d4ff; } }
@@ -244,7 +270,7 @@ function AppleWelcomeContent() {
                 <div className="main-content">
                     <header>
                         <h1 className="kalorodz-title">KALORODZ</h1>
-                        <img src="https://i.ibb.co/Kp4zV4wY/6050911538094214341-120-removebg-preview.png" className="dragon-main" alt="Dragon" />
+                        <Image src="https://i.ibb.co/Kp4zV4wY/6050911538094214341-120-removebg-preview.png" className="dragon-main" alt="Dragon" width={120} height={120} unoptimized />
                     </header>
 
                     <div className="input-card">
