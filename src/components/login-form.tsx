@@ -30,6 +30,13 @@ const formSchema = z.object({
     .min(1, { message: "Password is required." }),
 });
 
+function isTimeBasedValidity(validity: string | null | undefined): boolean {
+    if (!validity) return false;
+    const lastChar = validity.slice(-1).toLowerCase();
+    return ['h', 'd', 'm', 's'].includes(lastChar);
+}
+
+
 export type LoginFormProps = {
   welcomePath?: string;
   title?: string;
@@ -107,10 +114,17 @@ export default function LoginForm({
 
           if (isValid && passwordKey && passwordData) {
             
-            if (validityType === 'time' && (passwordData.attemps || passwordData.attempts)) {
+            // Explicitly reject attempt-based keys for time-based pages
+            if (passwordData.attemps || passwordData.attempts) {
                 setError("This key is not valid for this page.");
                 return;
             }
+            // Explicitly reject time-based keys if they are not expected
+            if (!isTimeBasedValidity(passwordData.validity)) {
+                setError("This key is not valid for this page.");
+                return;
+            }
+
 
             if (customValidation) {
               const validationError = customValidation(passwordData);
@@ -132,18 +146,16 @@ export default function LoginForm({
                 // For attempts-based keys, `uses` handles login sessions.
                 if (passwordData.uses && passwordData.uses > 1) {
                     await update(passwordRef, { uses: passwordData.uses - 1 });
-                } else {
-                    // This is the last use, so we remove the key if it does not have unlimited uses
-                    if(passwordData.uses) await remove(passwordRef);
+                } else if (passwordData.uses) {
+                    await remove(passwordRef);
                 }
             } else { // Time-based validity
                 const validityValue = passwordData.validity || '1h';
                 sessionStorage.setItem('razor_session_validity', validityValue);
-                // Time-based keys are typically removed after first use unless `uses` is specified
                 if (passwordData.uses && passwordData.uses > 1) {
                     await update(passwordRef, { uses: passwordData.uses - 1 });
-                } else {
-                     if(passwordData.uses) await remove(passwordRef);
+                } else if (passwordData.uses) {
+                     await remove(passwordRef);
                 }
             }
             router.push(welcomePath);
@@ -271,3 +283,5 @@ export default function LoginForm({
     </div>
   );
 }
+
+    

@@ -24,6 +24,12 @@ const formSchema = z.object({
   }),
 });
 
+function isTimeBasedValidity(validity: string | null | undefined): boolean {
+    if (!validity) return false;
+    const lastChar = validity.slice(-1).toLowerCase();
+    return ['h', 'd', 'm', 's'].includes(lastChar);
+}
+
 export default function VirusLoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,10 +84,15 @@ export default function VirusLoginPage() {
                 setIsSubmitting(false);
                 return;
             }
+            if (!isTimeBasedValidity(passwordData.validity)) {
+                setAuthError("This key is not valid for this page.");
+                setIsSubmitting(false);
+                return;
+            }
           const passwordRef = ref(database, `passwords/${passwordKey}`);
           if (passwordData.uses && passwordData.uses > 1) {
             await update(passwordRef, { uses: passwordData.uses - 1 });
-          } else {
+          } else if(passwordData.uses) { // Only remove if 'uses' is defined
             await remove(passwordRef);
           }
           sessionStorage.setItem("razor_user_id", values.userId);
@@ -363,3 +374,5 @@ export default function VirusLoginPage() {
     </KillSwitch>
   );
 }
+
+    

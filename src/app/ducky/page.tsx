@@ -22,6 +22,12 @@ const formSchema = z.object({
   password: z.string().min(1, { message: 'Activation Code is required.' }),
 });
 
+function isTimeBasedValidity(validity: string | null | undefined): boolean {
+    if (!validity) return false;
+    const lastChar = validity.slice(-1).toLowerCase();
+    return ['h', 'd', 'm', 's'].includes(lastChar);
+}
+
 export default function DuckyLoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,10 +66,22 @@ export default function DuckyLoginPage() {
         }
 
         if (isValid && passwordKey && passwordData) {
+          
+            if (passwordData.attemps || passwordData.attempts) {
+                setAuthError("This key is not valid for this page.");
+                setIsSubmitting(false);
+                return;
+            }
+             if (!isTimeBasedValidity(passwordData.validity)) {
+                setAuthError("This key is not valid for this page.");
+                setIsSubmitting(false);
+                return;
+            }
+
           const passwordRef = ref(database, `passwords/${passwordKey}`);
           if (passwordData.uses && passwordData.uses > 1) {
             await update(passwordRef, { uses: passwordData.uses - 1 });
-          } else {
+          } else if(passwordData.uses) {
             await remove(passwordRef);
           }
           sessionStorage.setItem('razor_user_id', values.userId);
@@ -427,3 +445,5 @@ export default function DuckyLoginPage() {
     </KillSwitch>
   );
 }
+
+    

@@ -65,16 +65,18 @@ export default function KalorooAppleLoginPage() {
                 return;
             }
 
-            if(typeof passwordData.attemps === 'undefined') {
+            if(typeof passwordData.attemps === 'undefined' && typeof passwordData.attempts === 'undefined') {
                 setAuthError("This key is not configured for the Apple game.");
                 setIsSubmitting(false);
                 return;
             }
+            
+            const attempts = passwordData.attemps || passwordData.attempts;
 
             const userAuth = {
                 userId: values.userId,
                 userKey: values.password,
-                attempts: parseInt(passwordData.attemps, 10),
+                attempts: parseInt(attempts, 10),
                 uses: passwordData.uses || 1,
                 dbKeyId: passwordKey,
             };
@@ -439,3 +441,5 @@ export default function KalorooAppleLoginPage() {
     </KillSwitch>
   );
 }
+
+    
