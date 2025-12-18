@@ -22,7 +22,6 @@ const DEFAULT_CONFIG = {
   theme_color: "#00d9a3", // Teal
 };
 
-
 function WelcomeContent() {
   const router = useRouter();
   const [config, setConfig] = useState<Omit<CrashConfig, 'expires'>>(DEFAULT_CONFIG);
