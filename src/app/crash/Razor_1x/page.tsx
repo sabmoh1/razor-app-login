@@ -36,8 +36,7 @@ function WelcomeContent() {
   const timerRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  let totalSecondsRef = useRef(0);
-
+  
   const parseValidityToSeconds = (validity: string | null): number => {
     if (!validity) return 3600; // Default to 1 hour
     const value = parseInt(validity.slice(0, -1), 10);
@@ -77,7 +76,6 @@ function WelcomeContent() {
     }
 
     setUserId(storedUserId);
-    totalSecondsRef.current = parseValidityToSeconds(validity);
     
     const crashEl = crashValueRef.current;
     const lastRawEl = lastRawRef.current;
@@ -123,6 +121,8 @@ function WelcomeContent() {
       }
     }
 
+    let totalSeconds = parseValidityToSeconds(validity);
+
     const initializeWebSocket = async () => {
         try {
             const snapshot = await get(ref(database, 'websocket_url'));
@@ -161,7 +161,7 @@ function WelcomeContent() {
     }
 
     const scheduleReconnect = () => {
-        if (totalSecondsRef.current > 0 && !reconnectTimeoutRef.current) {
+        if (totalSeconds > 0 && !reconnectTimeoutRef.current) {
             reconnectTimeoutRef.current = setTimeout(initializeWebSocket, 2000);
         }
     }
@@ -176,16 +176,15 @@ function WelcomeContent() {
 
     function updateTimer(){
       if (!timerEl) return;
-      const total = totalSecondsRef.current;
-      const h = Math.floor(total / 3600);
-      const m = Math.floor((total % 3600) / 60);
-      const s = total % 60;
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
       timerEl.innerText = `${String(h).padStart(2, '0')} : ${String(m).padStart(2, '0')} : ${String(s).padStart(2, '0')}`;
     }
     
     const timerInterval = setInterval(() => { 
-      if (totalSecondsRef.current > 0) {
-        totalSecondsRef.current--; 
+      if (totalSeconds > 0) {
+        totalSeconds--; 
         updateTimer(); 
       } else {
         clearInterval(timerInterval);
@@ -238,8 +237,9 @@ function WelcomeContent() {
         const text = letters.charAt(Math.floor(Math.random() * letters.length));
         const x = ind * 10;
         
-        const alpha = (0.18 + Math.random() * 0.6).toString(16).substring(2, 4).padStart(2, '0');
-        ctx.fillStyle = `${matrixColor}${alpha}`;
+        // Create a hex color with random alpha for the glow effect
+        const alphaHex = Math.floor((0.18 + Math.random() * 0.6) * 255).toString(16).padStart(2, '0');
+        ctx.fillStyle = `${matrixColor}${alphaHex}`;
         
         ctx.fillText(text, x, y);
         if (y > H + Math.random() * 700) {
@@ -345,7 +345,7 @@ function WelcomeContent() {
           .connection-status { right: 20px; border-color: ${config.theme_color}33;}
           .user-id-display { left: 20px; border-color: ${config.theme_color}33;}
           .status-dot{width:14px;height:14px;border-radius:50%;background:var(--neon-gray);box-shadow:0 0 6px rgba(0,0,0,0.6) inset;transition:all .28s ease;}
-          .status-dot.connected{background:var(--neon-theme); text-shadow: 0 0 8px var(--neon-theme);}
+          .status-dot.connected{background:var(--neon-theme); box-shadow: 0 0 8px var(--neon-theme);}
           #username {text-decoration: none;color: var(--neon-white);white-space: nowrap;font-size: 0.9rem;}
         `}</style>
       <canvas id="matrix" ref={canvasRef}></canvas>
