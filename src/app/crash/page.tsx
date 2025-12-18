@@ -56,7 +56,7 @@ export default function CrashHome() {
     let H = canvas.height = window.innerHeight;
     let cols = Math.floor(W / 10) + 1;
     let ypos = Array(cols).fill(0);
-    const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
+    const letters = '01・〇●■▲▼◆CRASH';
 
     const matrixResize = () => {
         W = canvas.width = window.innerWidth;
@@ -70,11 +70,18 @@ export default function CrashHome() {
         ctx.fillStyle = 'rgba(0,0,0,0.22)';
         ctx.fillRect(0,0,W,H);
         ctx.font = '12px monospace';
+
+        // Use the dynamic theme color from the config state
+        const matrixColor = config.themeColor;
+
         ypos.forEach((y, ind) => {
             const text = letters.charAt(Math.floor(Math.random() * letters.length));
             const x = ind * 10;
-            // Use dynamic theme color here
-            ctx.fillStyle = config.themeColor + (0.18 + Math.random()*0.6).toString(16).slice(2,4);
+            
+            // Create a hex color with random alpha for the glow effect
+            const alpha = (0.18 + Math.random() * 0.6).toString(16).substring(2, 4);
+            ctx.fillStyle = `${matrixColor}${alpha.padStart(2, '0')}`;
+            
             ctx.fillText(text, x, y);
             if(y > H + Math.random()*700) {
               ypos[ind] = 0;
@@ -90,7 +97,7 @@ export default function CrashHome() {
         window.removeEventListener('resize', matrixResize);
         clearInterval(matrixInterval);
     }
-  }, [config.themeColor]);
+  }, [config.themeColor]); // Re-run effect if themeColor changes
 
   return (
     <KillSwitch pageName="crash">
