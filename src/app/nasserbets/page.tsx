@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import LoginForm from '@/components/login-form';
 import { database } from "@/lib/firebase";
 import { ref, onValue } from "firebase/database";
@@ -26,6 +26,7 @@ export default function NasserbetsHome() {
     themeGlow: DEFAULT_CONFIG.themeGlow,
     isCustom: false
   });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const configRef = ref(database, 'nasserbets_config');
@@ -45,16 +46,56 @@ export default function NasserbetsHome() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let W = canvas.width = window.innerWidth;
+    let H = canvas.height = window.innerHeight;
+    let cols = Math.floor(W / 10) + 1;
+    let ypos = Array(cols).fill(0);
+    const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
+
+    const matrixResize = () => {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+        cols = Math.floor(W / 10) + 1;
+        ypos = Array(cols).fill(0);
+    };
+    window.addEventListener('resize', matrixResize);
+
+    const drawMatrix = () => {
+        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.fillRect(0,0,W,H);
+        ctx.font = '12px monospace';
+        ypos.forEach((y, ind) => {
+            const text = letters.charAt(Math.floor(Math.random() * letters.length));
+            const x = ind * 10;
+            // Use dynamic theme color here
+            ctx.fillStyle = config.themeColor + (0.18 + Math.random()*0.6).toString(16).slice(2,4);
+            ctx.fillText(text, x, y);
+            if(y > H + Math.random()*700) {
+              ypos[ind] = 0;
+            } else {
+              ypos[ind] = y + 12 + Math.random()*8;
+            }
+        });
+    };
+    
+    const matrixInterval = setInterval(drawMatrix, 40);
+
+    return () => {
+        window.removeEventListener('resize', matrixResize);
+        clearInterval(matrixInterval);
+    }
+  }, [config.themeColor]);
+
   return (
     <KillSwitch pageName="nasserbets">
       <div className="fixed inset-0 -z-10">
-        <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{
-            backgroundImage: "url('https://cdn.dribbble.com/userupload/20787734/file/original-6a95ade3f7286f5da2b16669f6ff93c3.gif')",
-            filter: 'hue-rotate(120deg) brightness(0.9)',
-          }}
-        ></div>
+        <canvas ref={canvasRef} id="matrix"></canvas>
         <div className="absolute inset-0 w-full h-full bg-black/60"></div>
       </div>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
