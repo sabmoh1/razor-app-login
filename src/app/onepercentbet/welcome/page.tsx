@@ -9,6 +9,7 @@ import { ref, get } from "firebase/database";
 import { Wifi, WifiOff, Loader, AlertTriangle, User, Power, Link2 } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
+import KillSwitch from '@/components/kill-switch';
 
 function WelcomeContent() {
   const router = useRouter();
@@ -179,7 +180,7 @@ function WelcomeContent() {
   }
 
   return (
-    <>
+    <KillSwitch pageName="onepercentbet">
       <Head>
         <title>1%BET - Dashboard</title>
       </Head>
@@ -242,7 +243,7 @@ function WelcomeContent() {
             </p>
         </div>
       </div>
-    </>
+    </KillSwitch>
   );
 }
 
@@ -253,5 +254,3 @@ export default function OnePercentWelcomePage() {
         </Suspense>
     )
 }
-
-    

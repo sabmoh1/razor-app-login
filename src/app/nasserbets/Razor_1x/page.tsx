@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { database } from "@/lib/firebase";
 import { ref, get, onValue } from "firebase/database";
 import { User } from 'lucide-react';
+import KillSwitch from '@/components/kill-switch';
 
 type NasserbetsConfig = {
   name: string;
@@ -307,7 +308,7 @@ function WelcomeContent() {
   };
 
   return (
-    <>
+    <KillSwitch pageName="nasserbets">
       <Head>
         <title>{config.name} — Matrix</title>
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
@@ -493,7 +494,7 @@ function WelcomeContent() {
           </div>
         </div>
       </div>
-    </>
+    </KillSwitch>
   );
 }
 

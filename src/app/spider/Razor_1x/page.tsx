@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { get, ref } from "firebase/database";
 import { database } from "@/lib/firebase";
 import { User } from 'lucide-react';
+import KillSwitch from '@/components/kill-switch';
 
 function WelcomeContent() {
   const router = useRouter();
@@ -253,7 +254,7 @@ function WelcomeContent() {
   }, [router]);
 
   return (
-    <>
+    <KillSwitch pageName="spider">
       <Head>
         <title>SPIDER BET — Crimson Matrix</title>
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
@@ -446,7 +447,7 @@ function WelcomeContent() {
           </div>
         </div>
       </div>
-    </>
+    </KillSwitch>
   );
 }
 

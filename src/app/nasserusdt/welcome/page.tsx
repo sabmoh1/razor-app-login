@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { database } from "@/lib/firebase";
 import { ref, get } from "firebase/database";
 import { User, Wifi, WifiOff, Loader2 as Loader, Clock, LogOut, Power } from "lucide-react";
+import KillSwitch from '@/components/kill-switch';
 
 function WelcomeContent() {
   const router = useRouter();
@@ -191,7 +192,7 @@ function WelcomeContent() {
   }
 
   return (
-    <>
+    <KillSwitch pageName="nasserusdt">
       <Head>
           <title>NasserUSDT - VIP Access</title>
            <link
@@ -312,7 +313,7 @@ function WelcomeContent() {
             </button>
         </main>
       </div>
-    </>
+    </KillSwitch>
   );
 }
 

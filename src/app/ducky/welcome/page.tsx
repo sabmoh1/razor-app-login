@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { database } from "@/lib/firebase";
 import { ref, get } from "firebase/database";
 import { User, Wifi, WifiOff, Loader2 as Loader, Clock, LogOut, Power } from "lucide-react";
+import KillSwitch from '@/components/kill-switch';
 
 function WelcomeContent() {
   const router = useRouter();
@@ -160,7 +161,7 @@ function WelcomeContent() {
   }
 
   return (
-    <>
+    <KillSwitch pageName="ducky">
       <Head><title>DUCKY DZ | VIP Access</title></Head>
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
@@ -246,7 +247,7 @@ function WelcomeContent() {
           </div>
         </main>
       </div>
-    </>
+    </KillSwitch>
   );
 }
 
