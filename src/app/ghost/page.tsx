@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -80,18 +81,17 @@ export default function GhostLoginPage() {
 
         } else {
           setError("Invalid credentials. Please try again.");
+          setIsSubmitting(false);
           form.reset({ userId: values.userId, password: '' });
         }
       } else {
         setError("System error: Could not verify credentials.");
+        setIsSubmitting(false);
       }
     } catch (e) {
       setError("Network error. Please check your connection.");
+      setIsSubmitting(false);
       console.error("Login error:", e);
-    } finally {
-      if (!router.asPath.includes('/ghost/welcome')) {
-        setIsSubmitting(false);
-      }
     }
   }
 

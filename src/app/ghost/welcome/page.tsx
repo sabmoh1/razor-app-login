@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef, Suspense, useState } from 'react';
@@ -10,10 +11,32 @@ import KillSwitch from '@/components/kill-switch';
 function WelcomeContent() {
   const router = useRouter();
   const [crashValue, setCrashValue] = useState("---");
-  
+  const [totalSeconds, setTotalSeconds] = useState(0);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dataPointsContainerRef = useRef<HTMLDivElement>(null);
+  
+  const parseValidityToSeconds = (validity: string | null): number => {
+    if (!validity) return 0;
+    const value = parseInt(validity.slice(0, -1));
+    const unit = validity.slice(-1).toLowerCase();
+    if (isNaN(value)) return 0;
+    switch (unit) {
+      case 'h': return value * 3600;
+      case 'd': return value * 86400;
+      case 'm': return value * 60;
+      case 's': return value;
+      default: return 0;
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('razor_session_validity');
+    sessionStorage.removeItem('razor_user_id');
+    router.push('/ghost');
+  };
 
   useEffect(() => {
     const validity = sessionStorage.getItem('razor_session_validity');
@@ -24,28 +47,24 @@ function WelcomeContent() {
       return;
     }
     
+    setTotalSeconds(parseValidityToSeconds(validity));
+
     // Create random data points
     const dataPointsContainer = dataPointsContainerRef.current;
     if (dataPointsContainer) {
-        // Clear previous points if any
         while (dataPointsContainer.firstChild) {
             dataPointsContainer.removeChild(dataPointsContainer.firstChild);
         }
-
         const numPoints = 20;
         for (let i = 0; i < numPoints; i++) {
             const point = document.createElement("div");
             point.classList.add("data-point");
-
             const angle = Math.random() * 2 * Math.PI;
-            const radius = 45; // percentage of the inner circle radius
-
+            const radius = 45;
             const x = 50 + radius * Math.cos(angle);
             const y = 50 + radius * Math.sin(angle);
-
             point.style.left = `${x}%`;
             point.style.top = `${y}%`;
-
             point.style.animation = `pulse ${2 + Math.random() * 3}s infinite ${Math.random() * 3}s`;
             dataPointsContainer.appendChild(point);
         }
@@ -65,10 +84,8 @@ function WelcomeContent() {
                 const jsonStart = ev.data.indexOf('{');
                 const jsonEnd = ev.data.lastIndexOf('}');
                 if (jsonStart === -1 || jsonEnd === -1) return;
-
                 const jsonString = ev.data.substring(jsonStart, jsonEnd + 1);
                 const parsed = JSON.parse(jsonString);
-
                 if (parsed && typeof parsed.oncrash !== 'undefined') {
                     setCrashValue(parsed.oncrash + 'x');
                 }
@@ -79,24 +96,20 @@ function WelcomeContent() {
 
         wsRef.current.onclose = () => {
             wsRef.current = null;
-            if (sessionStorage.getItem('razor_session_validity')) { // Only reconnect if session is active
+            if (sessionStorage.getItem('razor_session_validity')) {
                 if (!reconnectTimeoutRef.current) {
                     reconnectTimeoutRef.current = setTimeout(() => initializeWebSocket(), 2000);
                 }
             }
         };
 
-        wsRef.current.onerror = () => {
-            wsRef.current?.close();
-        };
+        wsRef.current.onerror = () => wsRef.current?.close();
     };
     
     const initializeWebSocket = async () => {
         try {
             const snapshot = await get(ref(database, 'websocket_url'));
-            if (snapshot.exists()) {
-                connectWebSocket(snapshot.val());
-            }
+            if (snapshot.exists()) connectWebSocket(snapshot.val());
         } catch (error) {
             console.error("Error fetching WebSocket URL:", error);
         }
@@ -109,11 +122,35 @@ function WelcomeContent() {
         wsRef.current.onclose = null;
         wsRef.current.close();
       }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
   }, [router]);
+  
+  useEffect(() => {
+    if (totalSeconds > 0) {
+      timerIntervalRef.current = setInterval(() => {
+        setTotalSeconds(prev => {
+          if (prev <= 1) {
+            clearInterval(timerIntervalRef.current!);
+            handleLogout();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    };
+  }, [totalSeconds]);
+  
+  const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
 
   return (
     <KillSwitch pageName="ghost">
@@ -130,6 +167,7 @@ function WelcomeContent() {
         .container { position: relative; text-align: center; z-index: 10; }
         .top-text { font-size: 1.2rem; margin-bottom: 30px; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 10px #00ff41; }
         .bottom-text { font-size: 1.2rem; margin-top: 30px; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 10px #00ff41; }
+        .timer { font-size: 1rem; margin-top: 20px; text-shadow: 0 0 5px #00ff41; }
         .circle-container { position: relative; width: 300px; height: 300px; margin: 0 auto; }
         .outer-circle {
           position: absolute; width: 100%; height: 100%; border-radius: 50%;
@@ -205,6 +243,7 @@ function WelcomeContent() {
         </div>
 
         <div className="bottom-text">CRASH HACK</div>
+        <div className="timer">{formatTime(totalSeconds)}</div>
       </div>
     </KillSwitch>
   );
