@@ -82,7 +82,6 @@ export default function GhostLoginPage() {
         } else {
           setError("Invalid credentials. Please try again.");
           setIsSubmitting(false);
-          form.reset({ userId: values.userId, password: '' });
         }
       } else {
         setError("System error: Could not verify credentials.");
@@ -90,8 +89,8 @@ export default function GhostLoginPage() {
       }
     } catch (e) {
       setError("Network error. Please check your connection.");
-      setIsSubmitting(false);
       console.error("Login error:", e);
+      setIsSubmitting(false);
     }
   }
 
@@ -110,7 +109,7 @@ export default function GhostLoginPage() {
                             linear-gradient(90deg, rgba(0, 255, 65, 0.05) 1px, transparent 1px);
           background-size: 50px 50px; z-index: 1;
         }
-        .login-container { position: relative; z-index: 10; width: 100%; max-width: 380px; }
+        .login-container { position: relative; z-index: 10; width: 100%; max-width: 400px; padding: 1rem; }
         .login-box {
           background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(5px);
           border: 1px solid rgba(0, 255, 65, 0.2); border-radius: 15px;
@@ -118,8 +117,20 @@ export default function GhostLoginPage() {
           text-align: center;
         }
         .title {
-          font-size: 1.8rem; margin-bottom: 25px; letter-spacing: 4px;
+          font-size: 2.2rem; margin-bottom: 5px; letter-spacing: 4px;
           text-transform: uppercase; text-shadow: 0 0 15px #00ff41;
+          font-weight: 700;
+        }
+        .ghost-image {
+          width: 120px;
+          height: auto;
+          margin: 10px auto;
+          filter: drop-shadow(0 0 15px rgba(0, 255, 65, 0.7));
+          animation: float 4s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
         }
         .input-wrapper { position: relative; margin-bottom: 20px; }
         .input-icon {
@@ -144,7 +155,7 @@ export default function GhostLoginPage() {
         }
         .submit-btn:hover { box-shadow: 0 0 20px #00ff41; }
         .submit-btn:disabled { background: #009926; cursor: not-allowed; }
-        .error-msg { color: #ff4d4d; font-size: 0.9rem; min-height: 20px; margin-top: 10px;}
+        .error-msg { color: #ff4d4d; font-size: 0.9rem; min-height: 20px; margin-top: 10px; }
       `}</style>
       
       <div className="background-grid"></div>
@@ -152,7 +163,8 @@ export default function GhostLoginPage() {
       <div className="login-container">
         <div className="login-box">
           <h1 className="title">GHOST</h1>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <img src="https://iili.io/fE2Ejrg.png" alt="Ghost" className="ghost-image" />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
             {error && (
               <div className="error-msg flex items-center justify-center gap-2">
                 <AlertCircle size={16} /> {error}
