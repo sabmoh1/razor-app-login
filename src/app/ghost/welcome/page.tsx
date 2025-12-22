@@ -58,15 +58,25 @@ function WelcomeContent() {
 
         wsRef.current.onmessage = (ev) => {
             try {
-                const jsonStart = ev.data.indexOf('{');
-                if (jsonStart === -1) return;
-                const jsonString = ev.data.substring(jsonStart);
-                const parsed = JSON.parse(jsonString);
-                if (parsed && typeof parsed.oncrash !== 'undefined') {
-                    setCrashValue(parsed.oncrash + 'x');
+                // The data can be just the number, or a JSON string.
+                // We need to handle both cases.
+                let data;
+                try {
+                    data = JSON.parse(ev.data.endsWith('') ? ev.data.slice(0, -1) : ev.data);
+                } catch(e) {
+                     const match = ev.data.match(/{.*}/);
+                     if (match) {
+                        data = JSON.parse(match[0]);
+                     } else {
+                        return; // Not a valid format
+                     }
+                }
+                
+                if (data && typeof data.oncrash !== 'undefined') {
+                    setCrashValue(data.oncrash + 'x');
                 }
             } catch (e) {
-                // ignore parse error
+                console.error("Failed to parse WebSocket message:", e);
             }
         };
 
@@ -145,19 +155,21 @@ function WelcomeContent() {
         .bottom-text { font-size: 1.2rem; margin-top: 30px; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 10px #00ff41; }
         .timer { font-size: 1.1rem; margin-top: 20px; text-shadow: 0 0 5px #00ff41; letter-spacing: 1px; }
 
-        .ghost-image-container {
-          position: relative;
-          margin: 20px auto;
-        }
         .ghost-image {
           width: 150px;
           height: auto;
           filter: drop-shadow(0 0 25px rgba(0, 255, 65, 0.8));
           animation: float 4s ease-in-out infinite;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 1;
+          opacity: 0.3;
         }
         @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
+            0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
+            50% { transform: translate(-50%, -50%) translateY(-20px); }
         }
 
         #crashValue {
@@ -167,6 +179,8 @@ function WelcomeContent() {
           text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41, 0 0 40px #00ff41;
           letter-spacing: 2px;
           margin-bottom: 20px;
+          position: relative;
+          z-index: 2;
         }
         
         .background-grid {
@@ -177,15 +191,9 @@ function WelcomeContent() {
         }
         
         @media (max-width: 600px) {
-            #crashValue {
-                font-size: 5rem;
-            }
-            .ghost-image {
-                width: 120px;
-            }
-            .top-text {
-                font-size: 1.2rem;
-            }
+            #crashValue { font-size: 5rem; }
+            .ghost-image { width: 120px; }
+            .top-text { font-size: 1.2rem; }
         }
       `}</style>
       
@@ -194,10 +202,9 @@ function WelcomeContent() {
       <div className="container">
         <div className="top-text">GHOST BETTING</div>
         
-        <div id="crashValue">{crashValue}</div>
-
-        <div className="ghost-image-container">
+        <div style={{ position: 'relative', margin: '20px auto' }}>
             <img src="https://iili.io/fE2Ejrg.png" alt="Ghost" className="ghost-image" />
+            <div id="crashValue">{crashValue}</div>
         </div>
 
         <div className="bottom-text">CRASH HACK</div>
@@ -214,4 +221,3 @@ export default function GhostWelcomePage() {
       </Suspense>
     );
 }
-
