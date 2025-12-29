@@ -127,12 +127,18 @@ function WelcomeContent() {
     }
   };
 
+  const handleLogout = () => {
+    sessionStorage.removeItem('razor_session_validity');
+    sessionStorage.removeItem('razor_user_id');
+    router.push('/nasserusdt');
+  };
+
   useEffect(() => {
     const storedUserId = sessionStorage.getItem('razor_user_id');
     const storedValidity = sessionStorage.getItem('razor_session_validity');
 
     if (!storedUserId || !storedValidity) {
-      router.push('/nasserusdt/login');
+      handleLogout();
       return;
     }
 
@@ -149,6 +155,7 @@ function WelcomeContent() {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   useEffect(() => {
@@ -167,13 +174,8 @@ function WelcomeContent() {
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalSeconds, router]);
-
-  const handleLogout = () => {
-    sessionStorage.removeItem('razor_session_validity');
-    sessionStorage.removeItem('razor_user_id');
-    router.push('/nasserusdt/login');
-  };
 
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
