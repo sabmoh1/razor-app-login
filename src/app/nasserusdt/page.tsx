@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -7,11 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
-import { database } from "@/lib/firebase";
-import { ref, get } from "firebase/database";
 import { cn } from '@/lib/utils';
 import { forecastIncome } from '@/ai/flows/income-forecast';
+import { useRouter } from 'next/navigation';
 
 
 // --- Motion Variants ---
@@ -92,22 +91,6 @@ const SpotsLeftCounter = () => {
     );
 };
 
-const AppHeader = ({ onMenuClick }: { onMenuClick: (action: 'change_game' | 'logout') => void }) => (
-    <header className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-20 bg-black/30 backdrop-blur-sm">
-        <div className="w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
-             <img src="https://i.ibb.co/6yv6W64/photo-2024-07-28-18-09-01-removebg-preview.png" alt="Logo" className="w-10 h-10 object-contain"/>
-        </div>
-        <div className="relative group">
-            <Button variant="ghost" className="rounded-full h-12 w-12 p-0 text-white hover:bg-cyan-500/20">
-                <ChevronDown />
-            </Button>
-            <div className="absolute top-full right-0 mt-2 w-48 bg-slate-800 border border-cyan-500/20 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-                <button onClick={() => onMenuClick('change_game')} className="block w-full text-right px-4 py-2 text-sm text-slate-200 hover:bg-cyan-500/20">تغيير اللعبة</button>
-                <button onClick={() => onMenuClick('logout')} className="block w-full text-right px-4 py-2 text-sm text-slate-200 hover:bg-cyan-500/20">تسجيل الخروج</button>
-            </div>
-        </div>
-    </header>
-);
 
 // --- Main Views ---
 
@@ -143,8 +126,7 @@ const LandingView = ({ onNavigate }: { onNavigate: (view: string) => void }) => 
   </motion.div>
 );
 
-const MainView = ({ onNavigate }: { onNavigate: (view: string) => void }) => {
-    const [mode, setMode] = useState<'login' | 'signup'>('signup');
+const MainView = ({ onNavigate }: { onNavigate: (view: string, data?: any) => void }) => {
     const [casino, setCasino] = useState(casinos[0]);
     const [casinoId, setCasinoId] = useState('');
     const [password, setPassword] = useState('');
@@ -154,45 +136,18 @@ const MainView = ({ onNavigate }: { onNavigate: (view: string) => void }) => {
     const handleSubmit = async () => {
         setIsLoading(true);
         setError(null);
-        if (mode === 'signup') {
-            if(!casinoId || !password) {
-                 setError('يرجى ملء جميع الحقول.');
-                 setIsLoading(false);
-                 return;
-            }
-            // Mock signup
-            setTimeout(() => {
-                sessionStorage.setItem('nasser_auth', JSON.stringify({ casino, casinoId }));
-                onNavigate('game');
-            }, 1000);
-        } else {
-            try {
-                const passwordsRef = ref(database, 'passwords');
-                const snapshot = await get(passwordsRef);
-                if (snapshot.exists()) {
-                    const allPasswords = snapshot.val();
-                    let isValid = false;
-                    for (const key in allPasswords) {
-                        if (allPasswords[key].password === password && allPasswords[key].userId === casinoId) {
-                            isValid = true;
-                            break;
-                        }
-                    }
-                    if (isValid) {
-                        sessionStorage.setItem('nasser_auth', JSON.stringify({ casino, casinoId }));
-                        onNavigate('game');
-                    } else {
-                        setError('معرف الكازينو أو كلمة المرور غير صحيحة.');
-                    }
-                } else {
-                    setError('خطأ في النظام: لا يمكن التحقق من البيانات.');
-                }
-            } catch (err) {
-                 setError('خطأ في الشبكة. يرجى التحقق من اتصالك.');
-            } finally {
-                setIsLoading(false);
-            }
+
+        if (!casinoId || !password) {
+            setError('يرجى ملء جميع الحقول.');
+            setIsLoading(false);
+            return;
         }
+
+        // Mock account creation, directly navigate to payment
+        setTimeout(() => {
+            const signupData = { casino, casinoId, password };
+            onNavigate('game', signupData); // Navigate to game selection
+        }, 1000);
     };
     
     return (
@@ -222,12 +177,11 @@ const MainView = ({ onNavigate }: { onNavigate: (view: string) => void }) => {
                 <Card className="bg-slate-900 border-cyan-500/30">
                     <CardHeader>
                         <div className="flex border-b border-cyan-500/30">
-                            <button onClick={() => setMode('signup')} className={cn("flex-1 p-3 font-bold", mode === 'signup' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-400')}>إنشاء حساب</button>
-                            <button onClick={() => setMode('login')} className={cn("flex-1 p-3 font-bold", mode === 'login' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-400')}>تسجيل الدخول</button>
+                            <button className="flex-1 p-3 font-bold text-cyan-400 border-b-2 border-cyan-400">إنشاء حساب جديد</button>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                         <div className="space-y-2">
+                         <div className="space-y-2 text-right">
                              <label className="text-sm font-medium text-slate-300">اختر الكازينو</label>
                              <div className="flex gap-2">
                                  {casinos.map(c => <Button key={c} onClick={() => setCasino(c)} variant={casino === c ? 'default' : 'outline'} className={cn(casino === c ? 'bg-cyan-500' : 'border-cyan-800 text-slate-300 hover:bg-cyan-900/50')}>{c}</Button>)}
@@ -243,7 +197,7 @@ const MainView = ({ onNavigate }: { onNavigate: (view: string) => void }) => {
                         </div>
                         {error && <p className="text-sm text-red-400 text-center">{error}</p>}
                         <Button onClick={handleSubmit} disabled={isLoading} className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-bold">
-                            {isLoading ? <Loader2 className="animate-spin" /> : (mode === 'signup' ? 'إنشاء حساب' : 'تسجيل الدخول')}
+                            {isLoading ? <Loader2 className="animate-spin" /> : 'إنشاء حساب'}
                         </Button>
                     </CardContent>
                 </Card>
@@ -252,13 +206,13 @@ const MainView = ({ onNavigate }: { onNavigate: (view: string) => void }) => {
     );
 };
 
-const GameView = ({ onNavigate }: { onNavigate: (view: string, data?: any) => void }) => {
+const GameView = ({ onNavigate, signupData }: { onNavigate: (view: string, data?: any) => void; signupData: any; }) => {
     return (
         <motion.div variants={viewVariants} initial="initial" animate="in" exit="out" className="w-full max-w-2xl mx-auto space-y-8 text-center">
             <h1 className="text-4xl font-bold text-white">اختر لعبتك</h1>
             <div className="grid grid-cols-2 gap-6">
                 {games.map(game => (
-                    <motion.div key={game.id} whileHover={{ y: -5 }} onClick={() => onNavigate('payment', { game })}
+                    <motion.div key={game.id} whileHover={{ y: -5 }} onClick={() => onNavigate('payment', { ...signupData, game })}
                         className="bg-slate-800/50 border-2 border-cyan-500/20 rounded-xl p-6 cursor-pointer hover:border-cyan-500 hover:bg-slate-800 transition-all">
                         <game.icon className="w-20 h-20 mx-auto text-cyan-400 mb-4" />
                         <h3 className="text-2xl font-bold text-white">{game.name}</h3>
@@ -269,25 +223,37 @@ const GameView = ({ onNavigate }: { onNavigate: (view: string, data?: any) => vo
     );
 };
 
-const PaymentView = ({ onNavigate, gameData }: { onNavigate: (view: string, data?: any) => void; gameData: any }) => {
+const PaymentView = ({ onNavigate, viewData }: { onNavigate: (view: string, data?: any) => void; viewData: any }) => {
     const [plan, setPlan] = useState<any | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<any | null>(null);
     const [proof, setProof] = useState<File | null>(null);
+    const [isSending, setIsSending] = useState(false);
     const [predictedIncomes, setPredictedIncomes] = useState<Record<string, number | null>>({ "1h": null, "2h": null });
+    const router = useRouter();
 
      useEffect(() => {
         const fetchPredictions = async () => {
             try {
-                const oneHour = await forecastIncome({ duration: '1_hour', casino: gameData.casino });
-                const twoHours = await forecastIncome({ duration: '2_hours', casino: gameData.casino });
+                const oneHour = await forecastIncome({ duration: '1_hour', casino: viewData.casino });
+                const twoHours = await forecastIncome({ duration: '2_hours', casino: viewData.casino });
                 setPredictedIncomes({ "1h": oneHour.income, "2h": twoHours.income });
             } catch (error) {
                 console.error("Failed to fetch income predictions:", error);
                 setPredictedIncomes({ "1h": 150, "2h": 250 }); // Fallback
             }
         };
-        fetchPredictions();
-    }, [gameData]);
+        if(viewData.casino) {
+            fetchPredictions();
+        }
+    }, [viewData.casino]);
+    
+    const handleSubmit = () => {
+        setIsSending(true);
+        // Simulate sending data
+        setTimeout(() => {
+            onNavigate('confirmation');
+        }, 1500);
+    };
 
     const isReady = plan && paymentMethod && proof;
     
@@ -300,9 +266,9 @@ const PaymentView = ({ onNavigate, gameData }: { onNavigate: (view: string, data
                     <CardTitle className="text-white">تفاصيل طلبك</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-slate-300">
-                    <p><strong>اللعبة:</strong> {gameData.game.name}</p>
-                    <p><strong>الكازينو:</strong> {gameData.casino}</p>
-                    <p><strong>المعرف:</strong> {gameData.casinoId}</p>
+                    <p><strong>اللعبة:</strong> {viewData.game.name}</p>
+                    <p><strong>الكازينو:</strong> {viewData.casino}</p>
+                    <p><strong>المعرف:</strong> {viewData.casinoId}</p>
                 </CardContent>
             </Card>
 
@@ -312,13 +278,13 @@ const PaymentView = ({ onNavigate, gameData }: { onNavigate: (view: string, data
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 gap-4">
                     {plans.map(p => {
-                        const income = predictedIncomes[p.id];
+                        const income = predictedIncomes[p.id as keyof typeof predictedIncomes];
                         return (
                             <div key={p.id} onClick={() => setPlan(p)} className={cn("p-4 rounded-lg border-2 cursor-pointer", plan?.id === p.id ? "border-cyan-400 bg-cyan-900/50" : "border-cyan-800")}>
                                 <h4 className="font-bold text-lg text-white">{p.name}</h4>
                                 <p className="text-slate-300">{p.priceDZD} / {p.priceUSDT}</p>
                                 <p className="text-sm text-green-400 font-bold mt-2">
-                                   الربح المتوقع: {income ? `~${income} USDT` : <Loader2 className="w-4 h-4 inline animate-spin" />}
+                                   الربح المتوقع: {income ? `~${income.toFixed(0)} USDT` : <Loader2 className="w-4 h-4 inline animate-spin" />}
                                 </p>
                             </div>
                         )
@@ -347,25 +313,26 @@ const PaymentView = ({ onNavigate, gameData }: { onNavigate: (view: string, data
                 </CardContent>
             </Card>
 
-            <Button onClick={() => onNavigate('confirmation')} disabled={!isReady} className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-bold text-lg p-6">
-                إرسال الطلب
+            <Button onClick={handleSubmit} disabled={!isReady || isSending} className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-bold text-lg p-6">
+                {isSending ? <Loader2 className="animate-spin" /> : 'إرسال الطلب'}
             </Button>
          </motion.div>
     );
 };
 
-const ConfirmationView = ({ onNavigate }: { onNavigate: (view: string) => void }) => {
+const ConfirmationView = () => {
+    const router = useRouter();
     useEffect(() => {
-        const timer = setTimeout(() => onNavigate('game_final'), 3000);
+        const timer = setTimeout(() => router.push('/nasserusdt/login'), 3000);
         return () => clearTimeout(timer);
-    }, [onNavigate]);
+    }, [router]);
 
     return (
         <motion.div variants={viewVariants} initial="initial" animate="in" exit="out" className="w-full max-w-md mx-auto text-center space-y-6">
             <Card className="bg-slate-800/50 border-cyan-500/20 p-8">
                 <CheckCircle className="w-20 h-20 text-green-400 mx-auto mb-4" />
                 <h1 className="text-3xl font-bold text-white">تم استلام طلبك</h1>
-                <p className="text-slate-300 mt-2">جاري تأكيد الدفع وتفعيل حسابك. سيتم توجيهك قريبًا...</p>
+                <p className="text-slate-300 mt-2">جاري تأكيد الدفع وتفعيل حسابك. سيتم توجيهك إلى صفحة تسجيل الدخول...</p>
                  <div className="flex justify-center mt-4">
                     <Loader2 className="w-8 h-8 text-cyan-400 animate-spin"/>
                 </div>
@@ -377,25 +344,12 @@ const ConfirmationView = ({ onNavigate }: { onNavigate: (view: string) => void }
                 <CardContent className="space-y-3 text-slate-300">
                      <p>إذا واجهت أي مشكلة، تواصل معنا عبر:</p>
                      <p className="flex items-center justify-center gap-2"><Instagram size={18}/> <span>@nasserusdt</span></p>
-                     <p className="flex items-center justify-center gap-2"><Smartphone size={18}/> <span>+213 123 456 789</span></p>
+                     <p className="flex items-center justify-center gap-2"><Send size={18}/> <span>@nasserusdt</span></p>
                 </CardContent>
             </Card>
         </motion.div>
     );
 };
-
-
-const CrashGameView = ({ onMenuClick }: { onMenuClick: (action: 'change_game' | 'logout') => void }) => (
-    <div className="w-full h-screen bg-black">
-        <AppHeader onMenuClick={onMenuClick} />
-        <iframe 
-            src="https://1wovk.xyz/casino/play/1play_1play_crash" 
-            className="w-full h-full border-0 pt-16"
-            title="Crash Game"
-        ></iframe>
-    </div>
-);
-
 
 // --- Main App Component ---
 
@@ -414,16 +368,6 @@ export default function NasserusdtPage() {
     setView(targetView);
   };
   
-  const handleMenuAction = (action: 'change_game' | 'logout') => {
-      if (action === 'logout') {
-          sessionStorage.removeItem('nasser_auth');
-          handleNavigate('main');
-      } else {
-          handleNavigate('game');
-      }
-  };
-
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black" dir="rtl">
@@ -436,19 +380,12 @@ export default function NasserusdtPage() {
     switch (view) {
       case 'landing': return <LandingView onNavigate={handleNavigate} />;
       case 'main': return <MainView onNavigate={handleNavigate} />;
-      case 'game': 
-        const authData = JSON.parse(sessionStorage.getItem('nasser_auth') || '{}');
-        return <GameView onNavigate={(v, d) => handleNavigate(v, { ...d, ...authData })} />;
-      case 'payment': return <PaymentView onNavigate={handleNavigate} gameData={viewData} />;
-      case 'confirmation': return <ConfirmationView onNavigate={handleNavigate} />;
-      case 'game_final': return <CrashGameView onMenuClick={handleMenuAction}/>;
+      case 'game': return <GameView onNavigate={handleNavigate} signupData={viewData} />;
+      case 'payment': return <PaymentView onNavigate={handleNavigate} viewData={viewData} />;
+      case 'confirmation': return <ConfirmationView />;
       default: return <LandingView onNavigate={handleNavigate} />;
     }
   };
-
-  if (view === 'game_final') {
-      return renderView();
-  }
 
   return (
     <main className="min-h-screen bg-slate-900 text-white p-4 md:p-8 flex items-center justify-center" dir="rtl">
