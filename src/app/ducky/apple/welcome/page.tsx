@@ -55,6 +55,7 @@ function AppleWelcomeContent() {
     const [isLoading, setIsLoading] = useState(false);
     const [gameStarted, setGameStarted] = useState(false);
     const [toast, setToast] = useState<{ message: string | null, variant: 'default' | 'destructive' }>({ message: null, variant: 'default' });
+    const [lastRan, setLastRan] = useState('start');
 
     const showToast = (message: string, variant: 'default' | 'destructive' = 'default') => {
         setToast({ message, variant });
@@ -93,7 +94,6 @@ function AppleWelcomeContent() {
         
         setIsLoading(true);
 
-        // Optimistically update UI
         if(isRestart) {
             const updatedAuth = { ...userAuth, attempts: currentAttempts };
             setUserAuth(updatedAuth);
@@ -103,15 +103,18 @@ function AppleWelcomeContent() {
         try {
             const response = await fetch(PROXY_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ id: userAuth.userId, ran: 'start' }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: userAuth.userId, ran: lastRan }),
             });
             
             const data = await response.json();
 
-            if (data.success && data.AP && Array.isArray(data.AP)) {
+            if (response.ok && data.success && data.AP && Array.isArray(data.AP)) {
                 setGridData(data.AP.map((row: any[]) => row.slice(0, 5)));
                 setCurrentRowIndex(0);
+                 if (data.RAN) {
+                    setLastRan(data.RAN);
+                }
                 if (!gameStarted) setGameStarted(true);
 
                 if (isRestart) {
@@ -122,7 +125,7 @@ function AppleWelcomeContent() {
                     showToast("Network updated successfully!", "default");
                 }
             } else {
-                throw new Error(data.message || 'Unexpected data from server.');
+                throw new Error(data.message || 'Failed to fetch data.');
             }
         } catch (err: any) {
             console.error('Fetch error:', err);
@@ -141,7 +144,7 @@ function AppleWelcomeContent() {
                 }, 2000);
             }
         }
-    }, [userAuth, gameStarted, handleLogout]);
+    }, [userAuth, gameStarted, handleLogout, lastRan]);
 
     const getAppleImage = (value: number | null) => {
         if (value === 1) return goodAppleImg;

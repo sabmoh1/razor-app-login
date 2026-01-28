@@ -17,14 +17,25 @@ export async function POST(request: Request) {
 
     if (!proxyResponse.ok) {
       const errorText = await proxyResponse.text();
+      console.error(`Error from external service: ${errorText}`);
       return NextResponse.json(
-        { message: `Error from proxy: ${errorText}` },
+        { message: `Error from proxy target: ${proxyResponse.statusText}` },
         { status: proxyResponse.status }
       );
     }
-
-    const data = await proxyResponse.json();
-    return NextResponse.json(data);
+    
+    const contentType = proxyResponse.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+        const data = await proxyResponse.json();
+        return NextResponse.json(data);
+    } else {
+        const textData = await proxyResponse.text();
+        console.error("Proxy received non-JSON response from external service:", textData);
+        return NextResponse.json(
+            { message: 'The remote service returned an invalid response format.' },
+            { status: 502 } // Bad Gateway
+        );
+    }
 
   } catch (error) {
     console.error('API Proxy Error:', error);
