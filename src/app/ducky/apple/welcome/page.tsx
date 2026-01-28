@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, Suspense, useCallback } from 'react';
@@ -212,7 +211,7 @@ function AppleWelcomeContent() {
                             <div className="font-orbitron text-5xl font-black text-yellow-400 mb-2" style={{textShadow: '0 0 15px rgba(255,176,32,0.7)'}}>x{currentMultiplier}</div>
                             <p className="text-sm text-gray-400 mb-4">{gameStarted ? `Level: ${currentRowIndex + 1} / ${gridData.length}` : 'Press start to get predictions'}</p>
                             <div className="grid grid-cols-5 gap-2 w-full">
-                                {[...currentRowData].reverse().map((cellValue, index) => (
+                                {currentRowData.map((cellValue, index) => (
                                     <div key={index} className="aspect-square bg-black/40 rounded-lg border-2 border-yellow-500/20 flex items-center justify-center overflow-hidden">
                                         <Image src={getAppleImage(cellValue)} alt="Apple" width={64} height={64} objectFit="contain" unoptimized />
                                     </div>
