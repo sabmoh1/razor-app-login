@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -8,7 +7,7 @@ import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { database } from '@/lib/firebase';
 import { ref, get, update, remove } from 'firebase/database';
-import { Loader2, Send, Instagram, User, KeyRound } from 'lucide-react';
+import { Loader2, Send, User, KeyRound } from 'lucide-react';
 import Head from 'next/head';
 import KillSwitch from '@/components/kill-switch';
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
@@ -112,34 +111,40 @@ export default function DuckyAppleLoginPage() {
             --bg-dark: #05080d;
             --bg-light: #0a101a;
             --primary: #FFB020;
-            --primary-glow: rgba(255, 176, 32, 0.7);
-            --secondary: #00bfff;
-            --secondary-glow: rgba(0, 191, 255, 0.6);
+            --primary-glow: rgba(255, 176, 32, 0.5);
             --border-color: rgba(255, 176, 32, 0.2);
+            --border-hover: rgba(255, 176, 32, 0.6);
         }
         body { background-color: var(--bg-dark); color: #e0e0e0; font-family: 'Chakra Petch', sans-serif; }
-        .cyber-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(var(--border-color) 1px, transparent 1px), linear-gradient(90deg, var(--border-color) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.2; animation: pan-grid 60s linear infinite; }
-        @keyframes pan-grid { from { background-position: 0 0; } to { background-position: 400px 400px; } }
-        .content-wrapper { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
-        .main-card { background: rgba(10, 16, 26, 0.7); backdrop-filter: blur(10px); border: 2px solid var(--border-color); border-radius: 20px; padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 0 30px var(--primary-glow); }
-        .title { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; color: var(--primary); text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow); text-transform: uppercase; letter-spacing: 2px; }
-        .logo { width: 100px; height: 100px; margin: -1.5rem auto 1.5rem; filter: drop-shadow(0 0 15px var(--primary-glow)); animation: float 4s ease-in-out infinite; }
+        .cyber-grid-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: 
+            linear-gradient(var(--border-color) 1px, transparent 1px), 
+            linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+            background-size: 50px 50px; opacity: 0.1; animation: pan-grid 90s linear infinite; }
+        @keyframes pan-grid { from { background-position: 0 0; } to { background-position: 500px 500px; } }
+        .content-wrapper { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1.5rem; }
+        .main-card { position: relative; background: #0c111a; border: 2px solid var(--border-color); border-radius: 1rem; padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 0 40px var(--primary-glow); transform: skewY(-2deg); transition: transform 0.3s ease; }
+        .main-card:hover { transform: skewY(0); }
+        .card-content { transform: skewY(2deg); }
+        .title { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: var(--primary); text-shadow: 0 0 10px var(--primary-glow), 0 0 20px var(--primary); text-transform: uppercase; letter-spacing: 3px; }
+        .logo { width: 100px; height: 100px; margin: 0 auto 1.5rem; filter: drop-shadow(0 0 20px var(--primary-glow)); animation: float 4s ease-in-out infinite; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .form-group { position: relative; margin-bottom: 1.5rem; }
-        .input-field { background: #000; border: 2px solid var(--border-color); color: #fff; width: 100%; padding: 0.8rem 1rem 0.8rem 2.8rem; border-radius: 10px; font-size: 1.1rem; font-family: 'Chakra Petch', sans-serif; transition: all 0.3s ease; }
-        .input-field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
-        .input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--primary); opacity: 0.7; }
-        .submit-btn { background: linear-gradient(45deg, var(--primary), #FF9500); color: #000; width: 100%; border: none; border-radius: 10px; padding: 1rem; font-size: 1.25rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 15px var(--primary-glow); }
+        .input-field { background: #000; border: 2px solid var(--border-color); color: #fff; width: 100%; padding: 0.8rem 2.8rem; border-radius: 8px; font-size: 1.1rem; font-family: 'Chakra Petch', sans-serif; transition: all 0.3s ease; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%); }
+        .input-field:focus { outline: none; border-color: var(--border-hover); box-shadow: 0 0 15px var(--primary-glow); }
+        .input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--primary); opacity: 0.6; transition: all 0.3s ease; }
+        .form-group:focus-within .input-icon { opacity: 1; transform: translateY(-50%) scale(1.1); }
+        .submit-btn { background: linear-gradient(45deg, var(--primary), #FF9500); color: #000; width: 100%; border: none; border-radius: 8px; padding: 1rem; font-size: 1.25rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 15px var(--primary-glow); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%); }
         .submit-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 0 25px var(--primary-glow); }
         .submit-btn:disabled { background: #333; cursor: not-allowed; box-shadow: none; }
         .error-message { color: #ff4d4d; font-size: 0.9rem; text-shadow: 0 0 5px #ff4d4d; text-align: center; min-height: 1.25rem; margin-top: 0.5rem;}
-        .social-link { display: flex; align-items: center; justify-content: center; gap: 0.75rem; text-decoration: none; color: #fff; margin-top: 2rem; background: rgba(0,0,0,0.3); padding: 0.75rem 1.5rem; border-radius: 10px; border: 1px solid var(--border-color); transition: all 0.3s ease; }
+        .social-link { display: flex; align-items: center; justify-content: center; gap: 0.75rem; text-decoration: none; color: #fff; margin-top: 2rem; background: rgba(0,0,0,0.3); padding: 0.75rem 1.5rem; border-radius: 8px; border: 1px solid var(--border-color); transition: all 0.3s ease; }
         .social-link:hover { background: var(--border-color); color: #000; }
         .social-link .fab { font-size: 1.5rem; color: var(--secondary); }
       `}</style>
-      <div className="cyber-grid"></div>
+      <div className="cyber-grid-bg"></div>
       <div className="content-wrapper">
         <div className="main-card">
+         <div className="card-content">
           <header className="text-center">
             <img src="https://i.ibb.co/NgJnjdc4/t-l-chargement-11-removebg-preview.png" className="logo" alt="Ducky" />
             <h1 className="title">DUCKY DZ</h1>
@@ -187,6 +192,7 @@ export default function DuckyAppleLoginPage() {
             <Send />
             <span>Telegram: @duckyoffi</span>
           </a>
+         </div>
         </div>
       </div>
     </>
