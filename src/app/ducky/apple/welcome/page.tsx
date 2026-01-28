@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, Suspense, useCallback } from 'react';
@@ -10,7 +11,7 @@ import Image from 'next/image';
 import KillSwitch from '@/components/kill-switch';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const PROXY_URL = 'https://razorhacks.kesug.com/data.php';
+const PROXY_URL = '/api/proxy';
 const multipliers = ['1.23', '1.54', '1.93', '2.41', '4.82', '6.71', '11.18', '27.97', '69.93', '349.68'];
 const goodAppleImg = 'https://razorhacks.kesug.com/IMG/razorgood.png';
 const badAppleImg = 'https://razorhacks.kesug.com/IMG/razorbad.png';
