@@ -12,7 +12,6 @@ function WelcomeContent() {
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isInitialWait, setIsInitialWait] = useState(true);
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<HTMLDivElement>(null);
@@ -85,7 +84,7 @@ function WelcomeContent() {
     router.push('/b16vip/admin');
   };
 
-  // Dummy timer and matrix effect to replicate the original look
+  // Dummy timer
   useEffect(() => {
     const timerEl = timerRef.current;
     let seconds = 0;
@@ -97,59 +96,8 @@ function WelcomeContent() {
       if(timerEl) timerEl.innerText = `${String(h).padStart(2,'0')} : ${String(m).padStart(2,'0')} : ${String(s).padStart(2,'0')}`;
     }, 1000);
 
-    const canvas = canvasRef.current;
-    let matrixInterval: NodeJS.Timeout;
-    if (canvas) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            let W = canvas.width = window.innerWidth;
-            let H = canvas.height = window.innerHeight;
-            let cols = Math.floor(W / 10) + 1;
-            let ypos = Array(cols).fill(0);
-            const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
-
-            const matrixResize = () => {
-                W = canvas.width = window.innerWidth;
-                H = canvas.height = window.innerHeight;
-                cols = Math.floor(W / 10) + 1;
-                ypos = Array(cols).fill(0);
-            };
-            window.addEventListener('resize', matrixResize);
-
-            const drawMatrix = () => {
-                ctx.fillStyle = 'rgba(0,0,0,0.22)';
-                ctx.fillRect(0,0,W,H);
-                ctx.font = '12px monospace';
-                ypos.forEach((y, ind) => {
-                    const text = letters.charAt(Math.floor(Math.random() * letters.length));
-                    const x = ind * 10;
-                    ctx.fillStyle = 'rgba(0,191,255,'+ (0.18 + Math.random()*0.6) +')';
-                    ctx.fillText(text, x, y);
-                    if(y > H + Math.random()*700) {
-                        ypos[ind] = 0;
-                    } else {
-                        ypos[ind] = y + 12 + Math.random()*8;
-                    }
-                });
-            };
-            matrixInterval = setInterval(drawMatrix, 40);
-            
-             const cleanup = () => {
-                window.removeEventListener('resize', matrixResize);
-                clearInterval(matrixInterval);
-                clearInterval(timerInterval);
-             };
-
-            (window as any).__b16vipCleanup = cleanup;
-        }
-    }
-    
     return () => {
-        if ((window as any).__b16vipCleanup) {
-          (window as any).__b16vipCleanup();
-        } else {
-            clearInterval(timerInterval);
-        }
+        clearInterval(timerInterval);
     };
   }, []);
 
@@ -159,13 +107,15 @@ function WelcomeContent() {
         <title>B16VIP — Terminal</title>
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
-      <style jsx global>{\`
+      <style jsx global>{`
+          body {
+            background: black;
+          }
           :root{ --bg:#000; --neon-primary:#00bfff; --neon-white:#e6fff8; --neon-gray:#666; --accent:#00bfff; }
           *{box-sizing:border-box}
           html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
           body, .font-orbitron, .timer-big, .last-box .value, .last-box .label, #crashValue { font-family: 'Orbitron', sans-serif !important; font-weight: 900 !important; }
           .brand .logo-text, .brand h1, #username { font-family: 'Orbitron', sans-serif !important; font-weight: 900 !important; }
-          canvas#matrix{position:fixed;inset:0;z-index:0;display:block}
           .wrap{position:relative;z-index:3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px; cursor: pointer;}
           .header-controls { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 9999; }
           .panel{ width:min(920px,94%);max-width:920px;margin:0 auto; background: transparent; border-radius:14px;padding:28px; display:flex;flex-direction:column;gap:18px;align-items:center;overflow:visible; margin-top: 60px;}
@@ -190,9 +140,7 @@ function WelcomeContent() {
           .last-box .label{font-size:0.82rem;color:rgba(230,255,248,0.6)}
           .last-box .value{font-weight:700;color:var(--neon-white);font-size:1.05rem}
           .user-id-display { display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 16px; color: white; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(0,191,255,0.1); cursor: pointer; }
-      \`}</style>
-
-      <canvas id="matrix" ref={canvasRef}></canvas>
+      `}</style>
 
        <div className="header-controls">
          <div className="user-id-display" onClick={handleAdminTriggerClick}>
