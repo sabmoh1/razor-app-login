@@ -55,25 +55,41 @@ function WelcomeContent() {
       };
 
       wsRef.current.onmessage = (ev) => {
-        try {
-          const jsonStart = ev.data.indexOf('{');
-          const jsonEnd = ev.data.lastIndexOf('}');
-          if (jsonStart === -1 || jsonEnd === -1) return;
-          const jsonString = ev.data.substring(jsonStart, jsonEnd + 1);
-          const parsed = JSON.parse(jsonString);
+        let rawData = typeof ev.data === 'string' ? ev.data.trim() : String(ev.data).trim();
+        if (rawData.endsWith('\x1e')) rawData = rawData.slice(0, -1).trim();
 
-          if (parsed && typeof parsed.oncrash !== 'undefined') {
-            if (lastValueRef.current !== parsed.oncrash) {
-              setIsLoading(true);
-              if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
-              loadingTimeoutRef.current = setTimeout(() => {
-                setCrashValue(parsed.oncrash);
-                setIsLoading(false);
-                lastValueRef.current = parsed.oncrash;
-              }, 1200);
+        let newValue = null;
+
+        // Check if raw data is a number
+        if (rawData !== '' && !isNaN(Number(rawData))) {
+          newValue = rawData;
+        } else {
+          // Try JSON parsing
+          try {
+            const parsed = JSON.parse(rawData);
+            if (parsed && typeof parsed.oncrash !== 'undefined') {
+              newValue = String(parsed.oncrash);
+            } else if (!isNaN(parseFloat(parsed))) {
+              newValue = String(parsed);
+            }
+          } catch (e) {
+            // Fallback regex
+            const match = rawData.match(/"oncrash"\s*:\s*"?([0-9.]+)"?/);
+            if (match && match[1]) {
+              newValue = match[1];
             }
           }
-        } catch (e) { /* ignore parse error */ }
+        }
+
+        if (newValue && lastValueRef.current !== newValue) {
+          setIsLoading(true);
+          if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+          loadingTimeoutRef.current = setTimeout(() => {
+            setCrashValue(newValue);
+            setIsLoading(false);
+            lastValueRef.current = newValue;
+          }, 1200);
+        }
       };
 
       wsRef.current.onclose = () => {

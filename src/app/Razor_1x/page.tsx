@@ -64,8 +64,8 @@ function WelcomeContent() {
       crashEl.classList.add('glitch');
       setTimeout(()=>{
         const prev = crashEl.innerText;
-        if(prev && prev.trim() !== '') lastRawEl.innerText = prev;
-        const t = (newVal===undefined||newVal===null) ? '' : String(newVal);
+        if(prev && prev.trim() !== '' && prev !== '0.00') lastRawEl.innerText = prev;
+        const t = (newVal===undefined||newVal===null) ? '0.00' : String(newVal);
         crashEl.innerText = t;
         crashEl.setAttribute('data-text', t);
       }, 220);
@@ -73,19 +73,29 @@ function WelcomeContent() {
     }
 
     function setCrashText(data: string) {
-      try {
-        const jsonStart = data.indexOf('{');
-        const jsonEnd = data.lastIndexOf('}');
-        if (jsonStart === -1 || jsonEnd === -1 || jsonEnd < jsonStart) return;
+      let rawData = typeof data === 'string' ? data.trim() : String(data).trim();
+      if (rawData.endsWith('\x1e')) rawData = rawData.slice(0, -1).trim();
 
-        const jsonString = data.substring(jsonStart, jsonEnd + 1);
-        
-        const parsed = JSON.parse(jsonString);
+      // Case 1: Direct number (e.g. "1.90")
+      if (rawData !== '' && !isNaN(Number(rawData))) {
+        doGlitchThenSet(rawData);
+        return;
+      }
+
+      // Case 2: JSON data
+      try {
+        const parsed = JSON.parse(rawData);
         if (parsed && typeof parsed.oncrash !== 'undefined') {
           doGlitchThenSet(parsed.oncrash);
+        } else if (!isNaN(parseFloat(parsed))) {
+          doGlitchThenSet(parsed);
         }
       } catch (e) {
-        // The data was not valid JSON, do nothing to prevent errors
+        // Case 3: Embedded JSON or complex string
+        const match = rawData.match(/"oncrash"\s*:\s*"?([0-9.]+)"?/);
+        if (match && match[1]) {
+          doGlitchThenSet(match[1]);
+        }
       }
     }
 

@@ -57,26 +57,34 @@ function WelcomeContent() {
         };
 
         wsRef.current.onmessage = (ev) => {
-            try {
-                // The data can be just the number, or a JSON string.
-                // We need to handle both cases.
-                let data;
-                try {
-                    data = JSON.parse(ev.data.endsWith('') ? ev.data.slice(0, -1) : ev.data);
-                } catch(e) {
-                     const match = ev.data.match(/{.*}/);
-                     if (match) {
-                        data = JSON.parse(match[0]);
-                     } else {
-                        return; // Not a valid format
-                     }
+            let rawData = typeof ev.data === 'string' ? ev.data.trim() : String(ev.data).trim();
+            if (rawData.endsWith('\x1e')) rawData = rawData.slice(0, -1).trim();
+
+            let newValue = null;
+
+            // Check if raw data is a number
+            if (rawData !== '' && !isNaN(Number(rawData))) {
+              newValue = rawData;
+            } else {
+              // Try JSON parsing
+              try {
+                const parsed = JSON.parse(rawData);
+                if (parsed && typeof parsed.oncrash !== 'undefined') {
+                  newValue = String(parsed.oncrash);
+                } else if (!isNaN(parseFloat(parsed))) {
+                  newValue = String(parsed);
                 }
-                
-                if (data && typeof data.oncrash !== 'undefined') {
-                    setCrashValue(data.oncrash + 'x');
+              } catch (e) {
+                // Fallback regex
+                const match = rawData.match(/"oncrash"\s*:\s*"?([0-9.]+)"?/);
+                if (match && match[1]) {
+                  newValue = match[1];
                 }
-            } catch (e) {
-                console.error("Failed to parse WebSocket message:", e);
+              }
+            }
+
+            if (newValue) {
+              setCrashValue(newValue + 'x');
             }
         };
 
@@ -147,7 +155,7 @@ function WelcomeContent() {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
           display: flex; justify-content: center; align-items: center; min-height: 100vh;
-          background-color: #0a0a0a; color: #00ff41; font-family: "Courier New", monospace;
+          background-color: #0a0a1a; color: #00ff41; font-family: "Courier New", monospace;
           overflow: hidden; position: relative;
         }
         .container { position: relative; text-align: center; z-index: 10; }
