@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
@@ -37,9 +38,9 @@ function WelcomeContent() {
   // Load user ID and predictions from session/local storage
   useEffect(() => {
     const storedUserId = sessionStorage.getItem('razor_user_id');
-    const validity = sessionStorage.getItem('razor_session_validity'); // We still check this to ensure login was valid
+    const validity = sessionStorage.getItem('razor_session_validity');
 
-    if (!storedUserId || !validity) {
+    if (!storedUserId) {
       router.push('/b16vip');
       return;
     }
@@ -62,7 +63,7 @@ function WelcomeContent() {
         setCurrentIndex(0);
         doGlitchThenSet(predictions[0]);
         setIsInitialWait(false);
-      }, 10000); // 10 seconds
+      }, 10000);
 
       return () => clearTimeout(initialTimeout);
     }
@@ -79,8 +80,8 @@ function WelcomeContent() {
     });
   }, [isInitialWait, predictions, doGlitchThenSet]);
 
-  // Admin panel access trigger
-  const handleAdminTriggerClick = () => {
+  const handleAdminTriggerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     router.push('/b16vip/admin');
   };
 
@@ -109,13 +110,13 @@ function WelcomeContent() {
       </Head>
       <style jsx global>{`
           body {
-            background: black;
+            background: black !important;
           }
           :root{ --bg:#000; --neon-primary:#00bfff; --neon-white:#e6fff8; --neon-gray:#666; --accent:#00bfff; }
           *{box-sizing:border-box}
           html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
           body, .font-orbitron, .timer-big, .last-box .value, .last-box .label, #crashValue { font-family: 'Orbitron', sans-serif !important; font-weight: 900 !important; }
-          .brand .logo-text, .brand h1, #username { font-family: 'Orbitron', sans-serif !important; font-weight: 900 !important; }
+          .brand .logo-text, .brand h1 { font-family: 'Orbitron', sans-serif !important; font-weight: 900 !important; }
           .wrap{position:relative;z-index:3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px; cursor: pointer;}
           .header-controls { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 9999; }
           .panel{ width:min(920px,94%);max-width:920px;margin:0 auto; background: transparent; border-radius:14px;padding:28px; display:flex;flex-direction:column;gap:18px;align-items:center;overflow:visible; margin-top: 60px;}
@@ -156,7 +157,7 @@ function WelcomeContent() {
           <div className="brand">
             <h1 className="neon-label">B16VIP</h1>
           </div>
-            <a id="username" target="_blank" rel="noopener noreferrer">Prediction System</a>
+            <div className="prediction-system-label" style={{color: 'var(--neon-white)', fontWeight: 900, marginTop: '5px'}}>Prediction System</div>
           <div className="display-circle" aria-hidden="false">
             <div id="crashValue" ref={crashValueRef} data-text="0.00">0.00</div>
           </div>

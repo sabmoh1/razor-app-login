@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { database } from '@/lib/firebase';
 import { ref, update, remove } from 'firebase/database';
-import { Loader2, ArrowLeft, ArrowRight, User, ShieldAlert, Power, Zap } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, User, ShieldAlert, Power } from 'lucide-react';
 import Head from 'next/head';
 import Image from 'next/image';
 import KillSwitch from '@/components/kill-switch';
@@ -104,13 +105,24 @@ function AppleWelcomeContent() {
             const response = await fetch(PROXY_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: userAuth.userId, ran: lastRan }),
+                body: JSON.stringify({ id: userAuth.userId, ran: isRestart ? 'start' : lastRan }),
             });
             
+            if (!response.ok) {
+                const errorBody = await response.json().catch(() => ({}));
+                throw new Error(errorBody.message || `Server error: ${response.status}`);
+            }
+
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("Invalid response format from server.");
+            }
+
             const data = await response.json();
 
-            if (response.ok && data.success && data.AP && Array.isArray(data.AP)) {
-                setGridData(data.AP.map((row: any[]) => row.slice(0, 5)));
+            if (data.success && data.AP && Array.isArray(data.AP)) {
+                // Here we apply the reversal fix to correctly align images
+                setGridData(data.AP.map((row: any[]) => [...row.slice(0, 5)].reverse()));
                 setCurrentRowIndex(0);
                  if (data.RAN) {
                     setLastRan(data.RAN);
@@ -119,8 +131,8 @@ function AppleWelcomeContent() {
 
                 if (isRestart) {
                     const updates: { [key: string]: any } = {};
-                    updates[`/passwords/${userAuth.dbKeyId}/attemps`] = currentAttempts;
-                    updates[`/passwords/${userAuth.dbKeyId}/attempts`] = currentAttempts;
+                    updates[`/passwords/${userAuth.dbKeyId}/attemps`] = currentAttempts.toString();
+                    updates[`/passwords/${userAuth.dbKeyId}/attempts`] = currentAttempts.toString();
                     await update(ref(database), updates);
                     showToast("Network updated successfully!", "default");
                 }

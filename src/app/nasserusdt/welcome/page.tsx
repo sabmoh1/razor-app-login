@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useRef, Suspense, useState } from 'react';
-import Head from 'head';
+import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { database } from "@/lib/firebase";
 import { ref, get } from "firebase/database";
@@ -31,7 +31,7 @@ function WelcomeContent() {
         container.removeChild(container.firstChild);
     }
     
-    const particleCount = 30; // Increased density
+    const particleCount = 30; 
     const imageUrl = "https://iili.io/fxaO5P9.jpg";
 
     for (let i = 0; i < particleCount; i++) {
@@ -91,11 +91,9 @@ function WelcomeContent() {
 
         let newValue = null;
 
-        // Check if raw data is a number
         if (rawData !== '' && !isNaN(Number(rawData))) {
           newValue = rawData;
         } else {
-          // Try JSON parsing
           try {
             const parsed = JSON.parse(rawData);
             if (parsed && typeof parsed.oncrash !== 'undefined') {
@@ -104,7 +102,6 @@ function WelcomeContent() {
               newValue = String(parsed);
             }
           } catch (e) {
-            // Fallback regex
             const match = rawData.match(/"oncrash"\s*:\s*"?([0-9.]+)"?/);
             if (match && match[1]) {
               newValue = match[1];
@@ -171,7 +168,6 @@ function WelcomeContent() {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   useEffect(() => {
@@ -190,7 +186,6 @@ function WelcomeContent() {
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalSeconds, router]);
 
   const formatTime = (seconds: number) => {

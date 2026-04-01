@@ -16,10 +16,8 @@ export async function POST(request: Request) {
     });
 
     if (!proxyResponse.ok) {
-      const errorText = await proxyResponse.text();
-      console.error(`Error from external service: ${errorText}`);
       return NextResponse.json(
-        { message: `Error from proxy target: ${proxyResponse.statusText}` },
+        { message: `Error from proxy source: ${proxyResponse.statusText}` },
         { status: proxyResponse.status }
       );
     }
@@ -29,19 +27,20 @@ export async function POST(request: Request) {
         const data = await proxyResponse.json();
         return NextResponse.json(data);
     } else {
+        // If not JSON, it might be an error page or raw text
         const textData = await proxyResponse.text();
-        console.error("Proxy received non-JSON response from external service:", textData);
+        console.warn("Non-JSON response received:", textData.substring(0, 100));
         return NextResponse.json(
-            { message: 'The remote service returned an invalid response format.' },
-            { status: 502 } // Bad Gateway
+            { message: 'The remote service returned an invalid response format. Please try again.' },
+            { status: 502 }
         );
     }
 
   } catch (error) {
     console.error('API Proxy Error:', error);
-    if (error instanceof Error) {
-        return NextResponse.json({ message: error.message }, { status: 500 });
-    }
-    return NextResponse.json({ message: 'An internal server error occurred.' }, { status: 500 });
+    return NextResponse.json(
+        { message: 'Internal server error occurred while processing your request.' }, 
+        { status: 500 }
+    );
   }
 }
