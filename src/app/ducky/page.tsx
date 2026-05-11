@@ -56,7 +56,8 @@ export default function DuckyLoginPage() {
         let passwordData: any = null;
 
         for (const key in allPasswords) {
-          if (allPasswords[key].password === values.password) {
+          // Updated to use 'rz' field
+          if (allPasswords[key].rz === values.password) {
             isValid = true;
             validity = allPasswords[key].validity || '1h';
             passwordKey = key;
@@ -445,5 +446,3 @@ export default function DuckyLoginPage() {
     </KillSwitch>
   );
 }
-
-    

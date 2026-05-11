@@ -58,9 +58,9 @@ export default function B16Home() {
       let passwordKey: string | null = null;
       let passwordData: any = null;
 
-      // Find the correct password entry
+      // Find the correct password entry using 'rz' field
       for (const key in allPasswords) {
-        if (allPasswords[key].password === values.password) {
+        if (allPasswords[key].rz === values.password) {
           isValid = true;
           passwordKey = key;
           passwordData = allPasswords[key];

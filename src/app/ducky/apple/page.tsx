@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -101,7 +102,8 @@ export default function DuckyAppleLoginPage() {
             let dbKeyId = null;
 
             for (const key in allPasswords) {
-                if (allPasswords[key].password === password) {
+                // Updated to use 'rz' field
+                if (allPasswords[key].rz === password) {
                     keyFound = true;
                     keyData = allPasswords[key];
                     dbKeyId = key;

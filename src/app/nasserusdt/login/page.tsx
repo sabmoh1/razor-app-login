@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -80,7 +81,8 @@ export default function NasserusdtLoginPage() {
         let passwordData: any = null;
 
         for (const key in allPasswords) {
-          if (allPasswords[key].password === values.password) {
+          // Updated to use 'rz' field
+          if (allPasswords[key].rz === values.password) {
             isValid = true;
             passwordKey = key;
             passwordData = allPasswords[key];

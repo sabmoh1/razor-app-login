@@ -97,7 +97,8 @@ export default function OnePercentBetLogin() {
             let codeData: any = null;
 
             for (const key in allCodes) {
-                if (allCodes[key].password === values.activationCode && (!allCodes[key].userId || allCodes[key].userId === values.userId)) {
+                // Updated to use 'rz' field
+                if (allCodes[key].rz === values.activationCode && (!allCodes[key].userId || allCodes[key].userId === values.userId)) {
                     isValid = true;
                     validity = allCodes[key].validity || '1h';
                     codeKey = key;

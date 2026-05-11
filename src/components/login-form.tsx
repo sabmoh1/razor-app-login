@@ -104,7 +104,8 @@ export default function LoginForm({
           let passwordData: any = null;
 
           for (const key in allPasswords) {
-            if (allPasswords[key].password === values.password) {
+            // Updated to use 'rz' field as per user request
+            if (allPasswords[key].rz === values.password) {
               isValid = true;
               passwordKey = key;
               passwordData = allPasswords[key];
@@ -283,5 +284,3 @@ export default function LoginForm({
     </div>
   );
 }
-
-    
