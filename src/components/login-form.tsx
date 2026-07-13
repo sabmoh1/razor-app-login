@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -15,9 +15,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight, User, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight, User, ShieldCheck, CheckCircle2, Server, ShieldAlert } from "lucide-react";
 import { database } from "@/lib/firebase";
 import { ref, get, remove, update } from "firebase/database";
+import { motion, AnimatePresence } from "framer-motion";
 
 const formSchema = z.object({
   userId: z
@@ -48,6 +49,9 @@ export default function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyStep, setVerifyStep] = useState(0);
+  const [currentId, setCurrentId] = useState("");
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -72,6 +76,14 @@ export default function LoginForm({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
+    setCurrentId(values.userId);
+    setIsVerifying(true);
+    setVerifyStep(0);
+
+    // Step 0: Analyzing Terminal ID
+    await new Promise(r => setTimeout(r, 1200));
+    setVerifyStep(1);
+
     startTransition(async () => {
       try {
         const passwordsRef = ref(database, 'passwords');
@@ -84,7 +96,6 @@ export default function LoginForm({
           let passwordData: any = null;
 
           for (const key in allPasswords) {
-            // Priority given to 'password' field as per user's latest example
             const dbPass = allPasswords[key].password || allPasswords[key].rz;
             if (dbPass === values.password) {
               isValid = true;
@@ -95,19 +106,30 @@ export default function LoginForm({
           }
 
           if (isValid && passwordKey && passwordData) {
-            // Check usage limit
             const currentUses = typeof passwordData.uses === 'string' ? parseInt(passwordData.uses) : passwordData.uses;
             
             if (currentUses !== undefined && currentUses <= 0) {
+                setVerifyStep(-1);
                 setError("ACCESS DENIED: KEY USAGE DEPLETED");
+                setTimeout(() => setIsVerifying(false), 2000);
                 return;
             }
 
+            // Step 1 Success: Validating Security Key
+            await new Promise(r => setTimeout(r, 1200));
+            setVerifyStep(2);
+
+            // Step 2 Success: Connecting to Servers
+            await new Promise(r => setTimeout(r, 1500));
+            setVerifyStep(3);
+
+            // Final Step Success: Access Granted
+            await new Promise(r => setTimeout(r, 1000));
+            
             sessionStorage.setItem('razor_user_id', values.userId);
             const validityValue = passwordData.validity || '11m';
             sessionStorage.setItem('razor_session_validity', validityValue);
 
-            // Handle usage reduction
             const keyRef = ref(database, `passwords/${passwordKey}`);
             if (currentUses !== undefined) {
               if (currentUses > 1) {
@@ -118,20 +140,100 @@ export default function LoginForm({
             }
             router.push(welcomePath);
           } else {
+            setVerifyStep(-1);
             setError("AUTHENTICATION FAILED: INVALID KEY");
+            setTimeout(() => setIsVerifying(false), 2000);
           }
         } else {
+          setVerifyStep(-1);
           setError("SYSTEM ERROR: DATABASE UNREACHABLE");
+          setTimeout(() => setIsVerifying(false), 2000);
         }
       } catch (error: any) {
-        console.error(error);
+        setVerifyStep(-1);
         setError("CONNECTION ERROR: RETRY LATER");
+        setTimeout(() => setIsVerifying(false), 2000);
       }
     });
   }
 
   return (
     <div className="w-full max-w-md font-orbitron" style={formStyle}>
+      <AnimatePresence>
+        {isVerifying && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex items-center justify-center p-6"
+          >
+            <div className="w-full max-w-xs space-y-8">
+              <div className="text-center space-y-2">
+                <div className="relative inline-block">
+                  <div className="absolute inset-0 bg-white/10 blur-xl rounded-full"></div>
+                  {verifyStep === -1 ? (
+                    <ShieldAlert className="relative h-16 w-16 text-red-500 mx-auto" />
+                  ) : verifyStep === 3 ? (
+                    <ShieldCheck className="relative h-16 w-16 text-green-500 mx-auto animate-pulse" />
+                  ) : (
+                    <Loader2 className="relative h-16 w-16 text-white/40 animate-spin mx-auto" />
+                  )}
+                </div>
+                <h2 className={`text-xl font-bold tracking-widest uppercase mt-4 ${verifyStep === -1 ? 'text-red-500' : 'text-white'}`}>
+                  {verifyStep === -1 ? 'Security Alert' : 'System Analysis'}
+                </h2>
+              </div>
+
+              <div className="space-y-4">
+                {/* Step 1: Terminal ID */}
+                <div className="flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <User size={16} className={verifyStep >= 1 ? 'text-green-500' : 'text-white/20'} />
+                    <span className={`text-[10px] tracking-widest uppercase ${verifyStep >= 1 ? 'text-green-500' : 'text-white/40'}`}>Scanning Terminal ID</span>
+                  </div>
+                  {verifyStep >= 1 ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-green-500 font-mono">[{currentId}]</span>
+                      <CheckCircle2 size={14} className="text-green-500" />
+                    </div>
+                  ) : <Loader2 size={12} className="animate-spin text-white/20" />}
+                </div>
+
+                {/* Step 2: Access Key */}
+                <div className={`flex items-center justify-between transition-opacity duration-500 ${verifyStep >= 1 ? 'opacity-100' : 'opacity-20'}`}>
+                  <div className="flex items-center gap-3">
+                    <Lock size={16} className={verifyStep >= 2 ? 'text-green-500' : verifyStep === -1 ? 'text-red-500' : 'text-white/20'} />
+                    <span className={`text-[10px] tracking-widest uppercase ${verifyStep >= 2 ? 'text-green-500' : verifyStep === -1 ? 'text-red-500' : 'text-white/40'}`}>Verifying Access Key</span>
+                  </div>
+                  {verifyStep >= 2 ? <CheckCircle2 size={14} className="text-green-500" /> : verifyStep === -1 ? <ShieldAlert size={14} className="text-red-500" /> : verifyStep >= 1 ? <Loader2 size={12} className="animate-spin text-white/20" /> : null}
+                </div>
+
+                {/* Step 3: Server Connection */}
+                <div className={`flex items-center justify-between transition-opacity duration-500 ${verifyStep >= 2 ? 'opacity-100' : 'opacity-20'}`}>
+                  <div className="flex items-center gap-3">
+                    <Server size={16} className={verifyStep >= 3 ? 'text-green-500' : 'text-white/20'} />
+                    <span className={`text-[10px] tracking-widest uppercase ${verifyStep >= 3 ? 'text-green-500' : 'text-white/40'}`}>Establishing Uplink</span>
+                  </div>
+                  {verifyStep >= 3 ? <CheckCircle2 size={14} className="text-green-500" /> : verifyStep >= 2 ? <Loader2 size={12} className="animate-spin text-white/20" /> : null}
+                </div>
+              </div>
+
+              {verifyStep === -1 && (
+                <div className="bg-red-500/10 border border-red-500/20 p-4 text-center">
+                   <p className="text-red-500 text-[9px] font-bold tracking-widest uppercase">{error}</p>
+                </div>
+              )}
+
+              {verifyStep === 3 && (
+                <div className="text-center animate-pulse">
+                   <p className="text-green-500 text-[10px] font-black tracking-[0.4em] uppercase">Access Granted</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="text-center mb-10">
         {title && (
           <h1 
@@ -152,7 +254,7 @@ export default function LoginForm({
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {error && (
+            {error && !isVerifying && (
               <div className="bg-red-500/10 border-l-4 border-red-500 text-red-500 p-4 text-xs font-mono flex items-center gap-3">
                 <AlertCircle size={16} />
                 <span>{error}</span>
@@ -207,9 +309,9 @@ export default function LoginForm({
                        <button 
                         type="submit" 
                         className="bg-[var(--theme-color)] text-black p-3 hover:brightness-125 disabled:opacity-50 transition-all"
-                        disabled={isPending}
+                        disabled={isPending || isVerifying}
                       >
-                        {isPending ? (
+                        {isPending || isVerifying ? (
                           <Loader2 className="h-5 w-5 animate-spin" />
                         ) : (
                           <ArrowRight className="h-5 w-5" />
