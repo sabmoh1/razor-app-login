@@ -2,9 +2,9 @@
 "use client";
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
-import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { User, LogOut } from 'lucide-react';
+import KillSwitch from '@/components/kill-switch';
 
 function WelcomeContent() {
   const router = useRouter();
@@ -51,7 +51,6 @@ function WelcomeContent() {
       setLastRaw(prev => (prev !== newVal && crashValue !== "0.00" ? crashValue : prev));
       setCrashValue(newVal);
       
-      // Trigger Flip Animation
       const valEl = document.getElementById('value-display');
       if (valEl) {
         valEl.classList.remove('flip');
@@ -62,6 +61,7 @@ function WelcomeContent() {
   }, [crashValue]);
 
   useEffect(() => {
+    document.title = "RAZOR — Predictor V2";
     const validity = sessionStorage.getItem('razor_session_validity');
     const storedUserId = sessionStorage.getItem('razor_user_id');
 
@@ -79,7 +79,6 @@ function WelcomeContent() {
       try {
         eventSource = new EventSource(STREAM_URL);
         eventSource.onopen = () => setStatus("live");
-        
         const handleEvent = (ev: MessageEvent) => {
           let payload;
           try { payload = JSON.parse(ev.data); } catch (_) { return; }
@@ -89,16 +88,10 @@ function WelcomeContent() {
           stateRef.current = applyAtPath(stateRef.current, path, data);
           updateUI(stateRef.current);
         };
-
         eventSource.addEventListener('put', handleEvent as any);
         eventSource.addEventListener('patch', handleEvent as any);
-        eventSource.onerror = () => {
-          eventSource?.close();
-          startPolling();
-        };
-      } catch (e) {
-        startPolling();
-      }
+        eventSource.onerror = () => { eventSource?.close(); startPolling(); };
+      } catch (e) { startPolling(); }
     };
 
     const startPolling = () => {
@@ -116,7 +109,6 @@ function WelcomeContent() {
 
     startSSE();
 
-    // Session Timer
     let totalSeconds = parseValidityToSeconds(validity);
     const timerInterval = setInterval(() => {
       if (totalSeconds > 0) {
@@ -145,13 +137,7 @@ function WelcomeContent() {
   };
 
   return (
-    <>
-      <Head>
-        <title>RAZOR — Predictor V2</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Acme&family=Amiri:wght@400;700&family=Sedgwick+Ave&display=swap" rel="stylesheet" />
-      </Head>
+    <KillSwitch pageName="razor">
       <style jsx global>{`
           :root {
             --bg: #000000;
@@ -182,14 +168,6 @@ function WelcomeContent() {
             backdrop-filter: grayscale(1) brightness(2.5);
             z-index: -1;
           }
-          body::after {
-            content: "";
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(ellipse at 50% 42%, rgba(255,255,255,0.05), transparent 70%);
-            pointer-events: none;
-            z-index: 0;
-          }
           .app {
             position: relative;
             z-index: 10;
@@ -200,116 +178,32 @@ function WelcomeContent() {
             flex-direction: column;
             padding: 25px;
           }
-          .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-          }
+          .topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
           .user-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            border: 1px solid var(--muted-2);
-            border-radius: 12px;
-            padding: 8px 15px;
-            font-size: 13px;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
+            display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--muted-2); border-radius: 12px; padding: 8px 15px; font-size: 13px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
           }
-          .status {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: var(--green);
-            font-weight: bold;
-            text-transform: uppercase;
-          }
-          .status .dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background: var(--green);
-            box-shadow: 0 0 10px var(--green);
-            animation: blink 1.6s ease-in-out infinite;
-          }
+          .status { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--green); font-weight: bold; text-transform: uppercase; }
+          .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: blink 1.6s ease-in-out infinite; }
           @keyframes blink { 0%,100% { opacity: 1 } 50% { opacity: .3 } }
-          .logout {
-            width: 40px; height: 40px;
-            border: 1px solid var(--muted-2);
-            border-radius: 10px;
-            background: rgba(0,0,0,0.6);
-            color: var(--fg);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-          }
-          .logout:active { transform: scale(0.9); }
+          .logout { width: 40px; height: 40px; border: 1px solid var(--muted-2); border-radius: 10px; background: rgba(0,0,0,0.6); color: var(--fg); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
           .brand { text-align: center; margin-top: 20px; }
           .brand .sub-top { font-size: 14px; letter-spacing: 5px; opacity: 0.7; }
-          .brand .title { 
-            font-size: 56px; 
-            font-family: var(--font-accent);
-            margin: 5px 0;
-            text-shadow: 0 0 20px rgba(255,255,255,0.4);
-          }
-          .brand .telegram { font-size: 11px; letter-spacing: 2px; color: var(--muted); }
-          .stage {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .dial {
-            position: relative;
-            width: 320px;
-            height: 320px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .dial::before {
-            content: "";
-            position: absolute; inset: 0;
-            border-radius: 50%;
-            border: 1px solid var(--ring);
-            box-shadow: inset 0 0 30px rgba(255,255,255,0.03);
-          }
-          .dial::after {
-            content: "";
-            position: absolute; inset: -2px;
-            border-radius: 50%;
-            background: conic-gradient(from 0deg, transparent 0deg, var(--ring-glow) 30deg, transparent 90deg);
-            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
-            animation: spin 5s linear infinite;
-          }
+          .brand .title { font-size: 56px; font-family: var(--font-accent); margin: 5px 0; text-shadow: 0 0 20px rgba(255,255,255,0.4); }
+          .stage { flex: 1; display: flex; align-items: center; justify-content: center; }
+          .dial { position: relative; width: 320px; height: 320px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+          .dial::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--ring); box-shadow: inset 0 0 30px rgba(255,255,255,0.03); }
+          .dial::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, var(--ring-glow) 30deg, transparent 90deg); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); animation: spin 5s linear infinite; }
           @keyframes spin { to { transform: rotate(360deg); } }
-          .value {
-            position: relative;
-            font-size: 72px;
-            font-family: var(--font-accent);
-            text-shadow: 0 0 30px rgba(255,255,255,0.6);
-          }
+          .value { position: relative; font-size: 72px; font-family: var(--font-accent); text-shadow: 0 0 30px rgba(255,255,255,0.6); }
           .value.flip { animation: flip 0.4s ease; }
-          @keyframes flip {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            45% { transform: translateY(-10px) scale(1.08); opacity: 0.3; }
-            100% { transform: translateY(0) scale(1); opacity: 1; }
-          }
+          @keyframes flip { 0% { transform: translateY(0) scale(1); opacity: 1; } 45% { transform: translateY(-10px) scale(1.08); opacity: 0.3; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
           .value::after { content: "x"; font-size: 28px; vertical-align: super; margin-left: 5px; opacity: 0.6; }
-          .footer {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            padding-bottom: 10px;
-          }
+          .footer { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 10px; }
           .timer { font-size: 18px; letter-spacing: 2px; font-weight: bold; }
           .lastraw { text-align: right; }
           .lastraw .label { font-size: 10px; color: var(--muted); margin-bottom: 5px; display: block; }
           .lastraw .val { font-size: 16px; font-weight: bold; font-family: var(--font-accent); }
       `}</style>
-
       <div className="app">
         <header className="topbar">
           <div className="user-chip">
@@ -345,7 +239,7 @@ function WelcomeContent() {
           </div>
         </footer>
       </div>
-    </>
+    </KillSwitch>
   );
 }
 

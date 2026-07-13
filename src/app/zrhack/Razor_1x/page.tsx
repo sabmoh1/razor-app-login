@@ -2,10 +2,11 @@
 "use client";
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
-import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { User } from 'lucide-react';
 import KillSwitch from '@/components/kill-switch';
+import { database } from "@/lib/firebase";
+import { ref, get } from "firebase/database";
 
 function WelcomeContent() {
   const router = useRouter();
@@ -16,7 +17,8 @@ function WelcomeContent() {
   const statusDotRef = useRef<HTMLDivElement>(null);
   const statusTextRef = useRef<HTMLSpanElement>(null);
   const timerRef = useRef<HTMLDivElement>(null);
-  const lastValueRef = useRef<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const parseValidityToSeconds = (validity: string | null): number => {
     if (!validity) return 60 * 60;
@@ -39,6 +41,7 @@ function WelcomeContent() {
   }, [router]);
 
   useEffect(() => {
+    document.title = "ZR HACK — Crimson Matrix";
     const validity = sessionStorage.getItem('razor_session_validity');
     const storedUserId = sessionStorage.getItem('razor_user_id');
 
@@ -59,71 +62,61 @@ function WelcomeContent() {
       crashEl.classList.add('glitch');
       setTimeout(()=>{
         const prev = crashEl.innerText;
-        if(prev && prev.trim() !== '') lastRawEl.innerText = prev;
-        const t = (newVal===undefined||newVal===null) ? '' : String(newVal);
+        if(prev && prev.trim() !== '' && prev !== '0.00') lastRawEl.innerText = prev;
+        const t = (newVal===undefined||newVal===null) ? '0.00' : String(newVal);
         crashEl.innerText = t;
         crashEl.setAttribute('data-text', t);
       }, 220);
       setTimeout(()=> crashEl.classList.remove('glitch'), 560);
     }
 
-    function setStatusIndicator(status: 'live' | 'wait' | 'err', text: string){
+    function setStatusIndicator(connected: boolean){
       if (!statusDot || !statusText) return;
-      statusDot.className = `status-dot ${status === 'live' ? 'connected' : ''}`;
-      statusText.textContent = text;
+      if(connected){
+        statusDot.classList.add('connected');
+        statusText.textContent = "connected";
+      } else {
+        statusDot.classList.remove('connected');
+        statusText.textContent = "disconnected";
+      }
     }
 
-    // --- New Data Reception Logic (SSE & Polling) ---
-    const STREAM_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com/predictions/current.json";
-    let eventSource: EventSource | null = null;
-    let pollInterval: NodeJS.Timeout | null = null;
-
-    const handleData = (data: any) => {
-      if (data && data.value) {
-        const val = String(data.value);
-        if (lastValueRef.current !== val) {
-          doGlitchThenSet(val);
-          lastValueRef.current = val;
-        }
-      }
-    };
-
-    const startSSE = () => {
-      if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
-      try {
-        eventSource = new EventSource(STREAM_URL);
-        eventSource.addEventListener('put', (e) => handleData(JSON.parse(e.data).data));
-        eventSource.addEventListener('patch', (e) => handleData(JSON.parse(e.data).data));
-        eventSource.onopen = () => setStatusIndicator('live', 'connected (live)');
-        eventSource.onerror = () => {
-          eventSource?.close();
-          startPolling();
+    const connectWebSocket = (url: string) => {
+        if (wsRef.current) wsRef.current.close();
+        wsRef.current = new WebSocket(url);
+        wsRef.current.onopen = () => { setStatusIndicator(true); if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current); };
+        wsRef.current.onmessage = (ev) => {
+            let rawData = String(ev.data).trim();
+            if (rawData.endsWith('\x1e')) rawData = rawData.slice(0, -1).trim();
+            if (rawData !== '' && !isNaN(Number(rawData))) { doGlitchThenSet(rawData); }
         };
-      } catch (e) {
-        startPolling();
-      }
-    };
-
-    const startPolling = () => {
-      if (pollInterval) return;
-      setStatusIndicator('wait', 'reconnecting...');
-      pollInterval = setInterval(async () => {
+        wsRef.current.onclose = () => { wsRef.current = null; setStatusIndicator(false); reconnectTimeoutRef.current = setTimeout(initializeWebSocket, 2000); };
+        wsRef.current.onerror = () => { setStatusIndicator(false); wsRef.current?.close(); };
+    }
+    
+    const initializeWebSocket = async () => {
         try {
-          const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
-          const data = await res.json();
-          handleData(data);
-          setStatusIndicator('live', 'connected (polling)');
-        } catch (e) {
-          setStatusIndicator('err', 'connection error');
+            const snapshot = await get(ref(database, 'websocket_url'));
+            if (snapshot.exists()) connectWebSocket(snapshot.val());
+        } catch (error) { setStatusIndicator(false); }
+    }
+
+    initializeWebSocket();
+
+    let totalSeconds = parseValidityToSeconds(validity);
+    const timerInterval = setInterval(() => { 
+      if (totalSeconds > 0) {
+        totalSeconds--;
+        if (timerEl) {
+            const h = Math.floor(totalSeconds/3600);
+            const m = Math.floor((totalSeconds%3600)/60);
+            const s = totalSeconds%60;
+            timerEl.innerText = `${String(h).padStart(2,'0')} : ${String(m).padStart(2,'0')} : ${String(s).padStart(2,'0')}`;
         }
-      }, 2000);
-    };
+      } else { clearInterval(timerInterval); handleLogout(); }
+    }, 1000);
 
-    startSSE();
-
-    // Matrix background
     const canvas = canvasRef.current;
-    let matrixInterval: NodeJS.Timeout;
     if (canvas) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
@@ -132,12 +125,7 @@ function WelcomeContent() {
             let cols = Math.floor(W / 10) + 1;
             let ypos = Array(cols).fill(0);
             const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
-            const matrixResize = () => {
-                W = canvas.width = window.innerWidth;
-                H = canvas.height = window.innerHeight;
-                cols = Math.floor(W / 10) + 1;
-                ypos = Array(cols).fill(0);
-            };
+            const matrixResize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; cols = Math.floor(W / 10) + 1; ypos = Array(cols).fill(0); };
             window.addEventListener('resize', matrixResize);
             const drawMatrix = () => {
                 ctx.fillStyle = 'rgba(0,0,0,0.22)';
@@ -152,72 +140,41 @@ function WelcomeContent() {
                     else ypos[ind] = y + 12 + Math.random()*8;
                 });
             };
-            matrixInterval = setInterval(drawMatrix, 40);
-            (window as any).__matrixCleanup = () => {
+            const matrixInterval = setInterval(drawMatrix, 40);
+            return () => {
                 window.removeEventListener('resize', matrixResize);
                 clearInterval(matrixInterval);
+                if (wsRef.current) wsRef.current.close();
+                clearInterval(timerInterval);
             };
         }
     }
-
-    let totalSeconds = parseValidityToSeconds(validity);
-    function updateTimer(){
-      if (!timerEl) return;
-      const h = Math.floor(totalSeconds/3600);
-      const m = Math.floor((totalSeconds%3600)/60);
-      const s = totalSeconds%60;
-      timerEl.innerText = `${String(h).padStart(2,'0')} : ${String(m).padStart(2,'0')} : ${String(s).padStart(2,'0')}`;
-    }
-    const timerInterval = setInterval(() => { 
-      if (totalSeconds > 0) { totalSeconds--; updateTimer(); }
-      else { clearInterval(timerInterval); handleLogout(); }
-    }, 1000);
-    updateTimer();
-
-    return () => {
-      eventSource?.close();
-      if (pollInterval) clearInterval(pollInterval);
-      clearInterval(timerInterval);
-      if ((window as any).__matrixCleanup) (window as any).__matrixCleanup();
-    };
   }, [router, handleLogout]);
 
   return (
     <KillSwitch pageName="zrhack">
-      <Head>
-        <title>ZR HACK — Crimson Matrix</title>
-        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
-      </Head>
       <style jsx global>{`
           :root{ --bg:#000; --neon-red:#ff003c; --neon-white:#e6fff8; --neon-gray:#666; --accent:#ff005a; }
           *{box-sizing:border-box}
           html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden}
           body, .font-orbitron, .timer-big, .last-box .value, .last-box .label, #crashValue { font-family: 'Orbitron', sans-serif !important; font-weight: 900 !important; }
-          .brand .logo-text, .brand h1, #username { font-family: 'Orbitron', sans-serif !important; font-weight: 900 !important; }
           canvas#matrix{position:fixed;inset:0;z-index:0;display:block}
           .wrap{position:relative;z-index:3;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
           .panel{ width:min(920px,94%);max-width:920px;margin:0 auto; background: transparent; border-radius:14px;padding:28px; display:flex;flex-direction:column;gap:18px;align-items:center;overflow:visible; }
-          .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
-          .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
-          #crashValue { color: var(--neon-white); text-shadow: 0 0 8px var(--neon-red); }
-          .brand h1, .status-dot.connected { text-shadow: 0 0 5px var(--neon-red), 0 0 10px var(--neon-red), 0 0 15px var(--neon-red), 0 0 20px var(--neon-red); }
           .brand h1{ font-size:2rem;margin:0;color:var(--neon-red);letter-spacing:4px;font-weight:900; }
           .display-circle{ width:420px;height:420px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative; background: radial-gradient(ellipse at center, rgba(0,0,0,0.18), rgba(0,0,0,0.45)); border:1px solid rgba(255,0,60,0.04); overflow:hidden; }
           #crashValue{ font-size:6rem;font-weight:900; letter-spacing: 1px;transition:transform .18s ease, opacity .18s ease; text-align:center;white-space:nowrap; -webkit-font-smoothing:antialiased; }
-          #crashValue.small{font-size:2.2rem}
           #crashValue.glitch{ animation: glitch-taz-taz 0.5s linear; }
           @keyframes glitch-taz-taz { 0% { clip-path: inset(3% 0 94% 0); transform: translate(-10px, -5px); opacity: 0.8; } 20% { clip-path: inset(80% 0 3% 0); transform: translate(10px, 5px); } 40% { clip-path: inset(45% 0 45% 0); transform: translate(-5px, 0); opacity: 0.7; } 60% { clip-path: inset(90% 0 5% 0); transform: translate(5px, 0); } 80% { clip-path: inset(5% 0 88% 0); transform: translate(-10px, -5px); opacity: 0.9; } 100% { clip-path: inset(0 0 0 0); transform: translate(0, 0); opacity: 1; } }
           .meta-row{ display:flex;gap:18px;align-items:center; justify-content:center; width:100%; flex-wrap:wrap; }
-          .timer-big{ font-weight:800;color:var(--neon-white); background:transparent;padding:8px 12px;border-radius:10px; font-size:1.05rem;letter-spacing:0.6px;text-align:center; border:1px solid rgba(255,255,255,0.02); }
-          .last-box{ background:transparent;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);min-width:140px;text-align:center }
+          .timer-big, .last-box { background:transparent;padding:8px 12px;border-radius:10px; font-size:1.05rem; text-align:center; border:1px solid rgba(255,255,255,0.02); }
           .last-box .label{font-size:0.82rem;color:rgba(230,255,248,0.6)}
           .last-box .value{font-weight:700;color:var(--neon-white);font-size:1.05rem}
-          .connection-status { position: fixed; top: 15px; right: 20px; display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 16px; color: white; z-index: 9999; }
-          .user-id-display { position: fixed; top: 15px; left: 20px; display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 16px; color: white; z-index: 9999; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,0,60,0.1); }
-          .status-dot{ width:14px;height:14px;border-radius:50%; background:var(--neon-gray); box-shadow:0 0 6px rgba(0,0,0,0.6) inset; transition:all .28s ease; }
+          .connection-status, .user-id-display { position: fixed; top: 15px; display: flex; align-items: center; gap: 8px; font-size: 16px; color: white; z-index: 9999; }
+          .connection-status { right: 20px; } .user-id-display { left: 20px; }
+          .status-dot{ width:14px;height:14px;border-radius:50%; background:var(--neon-gray); transition:all .28s ease; }
           .status-dot.connected{ background:var(--neon-red); }
-          #username { text-decoration: none; color: var(--neon-white); white-space: nowrap; font-size: 0.9rem; }
-        `}</style>
+      `}</style>
       <canvas id="matrix" ref={canvasRef}></canvas>
       <div className="user-id-display">
         <User size={16} color="var(--neon-red)" />
@@ -225,35 +182,32 @@ function WelcomeContent() {
       </div>
       <div className="connection-status">
         <div id="statusDot" className="status-dot" ref={statusDotRef}></div>
-        <span id="statusText" ref={statusTextRef}>Disconnected</span>
+        <span id="statusText" ref={statusTextRef}>disconnected</span>
       </div>
       <div className="wrap">
         <div className="panel">
           <div className="brand">
-            <div className="logo-text">1XBET</div>
             <h1 className="neon-label">ZR HACK</h1>
           </div>
-            <a id="username" target="_blank" rel="noopener noreferrer">Telegram : @Ruusagsyityou</a>
-          <div className="display-circle" aria-hidden="false">
-            <div className="inner-ring" style={{position: 'absolute', inset: '18px', borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'overlay'}}></div>
-            <div id="crashValue" ref={crashValueRef} data-text="0.00">0.00</div>
+          <div className="display-circle">
+            <div id="crashValue" ref={crashValueRef}>0.00</div>
           </div>
           <div className="meta-row">
             <div className="timer-big" id="timer" ref={timerRef}>00 : 00 : 00</div>
-            <div className="last-box" aria-hidden="false">
+            <div className="last-box">
               <div className="label">LastRaw</div>
               <div className="value" id="lastRaw" ref={lastRawRef}>-</div>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </KillSwitch>
   );
 }
 
 export default function ZRHackWelcomePage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="bg-black min-h-screen flex items-center justify-center text-white">Loading...</div>}>
       <WelcomeContent />
     </Suspense>
   );
