@@ -22,7 +22,9 @@ import {
   Lock, 
   ShieldAlert,
   User,
-  Fingerprint
+  Fingerprint,
+  Database,
+  Cpu
 } from "lucide-react";
 import { database } from "@/lib/firebase";
 import { ref, get, remove, update } from "firebase/database";
@@ -72,7 +74,7 @@ export default function LoginForm({
   useEffect(() => {
     if (isVerifying) {
       const interval = setInterval(() => {
-        setBitStream(Math.random().toString(16).substring(2, 8).toUpperCase());
+        setBitStream(Math.random().toString(16).substring(2, 10).toUpperCase());
       }, 80);
       return () => clearInterval(interval);
     }
@@ -81,9 +83,9 @@ export default function LoginForm({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
     setIsVerifying(true);
-    setVerifyStep(1); // Step 1: Scanning ID
+    setVerifyStep(1); // Step 1: Scanning ID & Access Key
 
-    await new Promise(r => setTimeout(r, 2500));
+    await new Promise(r => setTimeout(r, 3000));
 
     startTransition(async () => {
       try {
@@ -97,8 +99,7 @@ export default function LoginForm({
           let passwordData: any = null;
 
           for (const key in allPasswords) {
-            const dbPass = allPasswords[key].password;
-            if (dbPass === values.password) {
+            if (allPasswords[key].password === values.password) {
               isValid = true;
               passwordKey = key;
               passwordData = allPasswords[key];
@@ -109,23 +110,20 @@ export default function LoginForm({
           if (isValid && passwordKey && passwordData) {
             const currentUses = passwordData.uses;
             
-            setVerifyStep(2); // Step 2: Validating Access Key
-            await new Promise(r => setTimeout(r, 2800));
-
             if (currentUses !== undefined && currentUses <= 0) {
                 setVerifyStep(-1);
                 setError("ACCESS DENIED: KEY USAGE DEPLETED");
-                setTimeout(() => setIsVerifying(false), 3500);
+                setTimeout(() => setIsVerifying(false), 4000);
                 return;
             }
 
-            setVerifyStep(3); // Step 3: Establishing Server Connection
-            await new Promise(r => setTimeout(r, 2200));
+            setVerifyStep(2); // Step 2: Establishing Server Connection
+            await new Promise(r => setTimeout(r, 2800));
+
+            setVerifyStep(3); // Step 3: Encrypting Entry Data
+            await new Promise(r => setTimeout(r, 2500));
             
-            setVerifyStep(4); // Step 4: Encrypting Entry Data
-            await new Promise(r => setTimeout(r, 2000));
-            
-            setVerifyStep(5); // Final Success
+            setVerifyStep(4); // Final Success
             await new Promise(r => setTimeout(r, 1200));
             
             sessionStorage.setItem('razor_user_id', values.userId);
@@ -138,31 +136,25 @@ export default function LoginForm({
             }
             router.push(welcomePath);
           } else {
-            await new Promise(r => setTimeout(r, 1500));
             setVerifyStep(-1);
             setError("AUTHENTICATION FAILED: INVALID SECURITY KEY");
-            setTimeout(() => setIsVerifying(false), 3500);
+            setTimeout(() => setIsVerifying(false), 4000);
           }
         } else {
           setVerifyStep(-1);
           setError("SYSTEM ERROR: DATABASE UNREACHABLE");
-          setTimeout(() => setIsVerifying(false), 3500);
+          setTimeout(() => setIsVerifying(false), 4000);
         }
       } catch (e) {
         setVerifyStep(-1);
         setError("CONNECTION ERROR: UPLINK FAILED");
-        setTimeout(() => setIsVerifying(false), 3500);
+        setTimeout(() => setIsVerifying(false), 4000);
       }
     });
   }
 
-  const dynamicGlowStyle = {
-      color: themeColor,
-      textShadow: `0 0 10px ${themeColor}, 0 0 20px ${themeColor}`
-  };
-
   return (
-    <div className="w-full max-w-sm space-y-6">
+    <div className="w-full max-w-sm space-y-8">
       <AnimatePresence>
         {isVerifying && (
           <motion.div 
@@ -171,72 +163,63 @@ export default function LoginForm({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/98 backdrop-blur-3xl flex items-center justify-center p-6"
           >
-            <div className="w-full max-w-md space-y-16">
+            <div className="w-full max-w-xl space-y-12">
               <div className="text-center">
-                <div className="relative inline-block">
+                <div className="relative inline-block mb-10">
                   {verifyStep === -1 ? (
-                    <ShieldAlert className="h-28 w-28 text-red-600 mx-auto" />
-                  ) : verifyStep === 5 ? (
-                    <ShieldCheck className="h-28 w-28 text-green-500 mx-auto animate-bounce" />
+                    <ShieldAlert className="h-32 w-32 text-red-600 mx-auto drop-shadow-[0_0_20px_rgba(220,38,38,0.5)]" />
+                  ) : verifyStep === 4 ? (
+                    <ShieldCheck className="h-32 w-32 text-green-500 mx-auto animate-bounce drop-shadow-[0_0_20px_rgba(34,197,94,0.5)]" />
                   ) : (
                     <div className="relative flex items-center justify-center">
-                      <div className="h-32 w-32 flex items-center justify-center">
-                         <span className="text-sm font-mono text-white/80 tracking-widest uppercase">{bitStream}</span>
+                      <div className="h-40 w-40 flex items-center justify-center border-4 border-white/5 rounded-full">
+                         <span className="text-xl font-mono text-cyan-400 tracking-[0.2em] uppercase font-bold">{bitStream}</span>
                       </div>
-                      <div className="absolute -inset-4 rounded-full border-t-2 border-white/40 animate-spin" />
+                      <div className="absolute -inset-4 rounded-full border-t-2 border-cyan-500/60 animate-spin" />
                       <div className="absolute -inset-2 rounded-full border-b-2 border-white/10 animate-spin-slow" />
                     </div>
                   )}
                 </div>
-                <h2 className={`text-2xl font-black tracking-[0.3em] uppercase mt-12 ${verifyStep === -1 ? 'text-red-600' : 'text-white'}`}>
-                  {verifyStep === -1 ? 'System Breach Detected' : verifyStep === 5 ? 'Authentication Complete' : 'Deep Protocol Analysis'}
+                <h2 className={`text-3xl font-black tracking-[0.4em] uppercase ${verifyStep === -1 ? 'text-red-600' : 'text-white'}`} style={{ fontFamily: 'Orbitron' }}>
+                  {verifyStep === -1 ? 'System Breach' : verifyStep === 4 ? 'Access Granted' : 'V2 DEEP ANALYSIS'}
                 </h2>
               </div>
 
-              <div className="space-y-8 px-4">
-                {/* Step 1: ID Scan */}
+              <div className="space-y-8 max-w-md mx-auto">
+                {/* Step 1: ID & Key Validation */}
                 <div className={`flex items-center justify-between transition-all duration-700 ${verifyStep >= 1 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
-                  <div className="flex items-center gap-4">
-                    <Fingerprint size={24} className={verifyStep > 1 ? 'text-green-500' : verifyStep === -1 ? 'text-red-600' : 'text-blue-400 animate-pulse'} />
-                    <span className={`text-sm md:text-base font-bold tracking-widest uppercase ${verifyStep > 1 ? 'text-green-500' : 'text-white/80'}`}>Scanning Terminal ID</span>
+                  <div className="flex items-center gap-6">
+                    <Fingerprint size={32} className={verifyStep > 1 ? 'text-green-500' : verifyStep === -1 ? 'text-red-600' : 'text-cyan-400 animate-pulse'} />
+                    <span className={`text-lg font-bold tracking-widest uppercase ${verifyStep > 1 ? 'text-green-500' : 'text-white/80'}`} style={{ fontFamily: 'Acme' }}>ID & Access Key Analysis</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {verifyStep >= 1 && <span className="text-xs font-mono text-white/40">{form.getValues('userId')}</span>}
-                    {verifyStep > 1 ? <CheckCircle2 size={20} className="text-green-500" /> : verifyStep === -1 ? <ShieldAlert size={20} className="text-red-600" /> : <Loader2 size={18} className="animate-spin text-blue-400" />}
+                  <div className="flex items-center gap-4">
+                    {verifyStep >= 1 && <span className="text-sm font-mono text-cyan-500/60">{form.getValues('userId')}</span>}
+                    {verifyStep > 1 ? <CheckCircle2 size={24} className="text-green-500" /> : verifyStep === -1 ? <ShieldAlert size={24} className="text-red-600" /> : <Loader2 size={22} className="animate-spin text-cyan-400" />}
                   </div>
                 </div>
 
-                {/* Step 2: Key Validation */}
+                {/* Step 2: Server Connection */}
                 <div className={`flex items-center justify-between transition-all duration-700 delay-100 ${verifyStep >= 2 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
-                  <div className="flex items-center gap-4">
-                    <Lock size={24} className={verifyStep > 2 ? 'text-green-500' : 'text-blue-400'} />
-                    <span className={`text-sm md:text-base font-bold tracking-widest uppercase ${verifyStep > 2 ? 'text-green-500' : 'text-white/80'}`}>Validating Access Key</span>
+                  <div className="flex items-center gap-6">
+                    <Server size={32} className={verifyStep > 2 ? 'text-green-500' : verifyStep === -1 ? 'text-red-600/30' : 'text-cyan-400'} />
+                    <span className={`text-lg font-bold tracking-widest uppercase ${verifyStep > 2 ? 'text-green-500' : 'text-white/80'}`} style={{ fontFamily: 'Acme' }}>Uplink Authorization</span>
                   </div>
-                  {verifyStep > 2 ? <CheckCircle2 size={20} className="text-green-500" /> : verifyStep >= 2 ? <Loader2 size={18} className="animate-spin text-blue-400" /> : null}
+                  {verifyStep > 2 ? <CheckCircle2 size={24} className="text-green-500" /> : verifyStep >= 2 ? <Loader2 size={22} className="animate-spin text-cyan-400" /> : null}
                 </div>
 
-                {/* Step 3: Server Connection */}
+                {/* Step 3: Data Encryption */}
                 <div className={`flex items-center justify-between transition-all duration-700 delay-200 ${verifyStep >= 3 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
-                  <div className="flex items-center gap-4">
-                    <Server size={24} className={verifyStep > 3 ? 'text-green-500' : 'text-blue-400'} />
-                    <span className={`text-sm md:text-base font-bold tracking-widest uppercase ${verifyStep > 3 ? 'text-green-500' : 'text-white/80'}`}>Establishing Uplink</span>
+                  <div className="flex items-center gap-6">
+                    <Cpu size={32} className={verifyStep > 3 ? 'text-green-500' : verifyStep === -1 ? 'text-red-600/30' : 'text-cyan-400'} />
+                    <span className={`text-lg font-bold tracking-widest uppercase ${verifyStep > 3 ? 'text-green-500' : 'text-white/80'}`} style={{ fontFamily: 'Acme' }}>Data Stream Encryption</span>
                   </div>
-                  {verifyStep > 3 ? <CheckCircle2 size={20} className="text-green-500" /> : verifyStep >= 3 ? <Loader2 size={18} className="animate-spin text-blue-400" /> : null}
-                </div>
-
-                {/* Step 4: Data Encryption */}
-                <div className={`flex items-center justify-between transition-all duration-700 delay-300 ${verifyStep >= 4 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
-                  <div className="flex items-center gap-4">
-                    <Lock size={24} className={verifyStep > 4 ? 'text-green-500' : 'text-blue-400'} />
-                    <span className={`text-sm md:text-base font-bold tracking-widest uppercase ${verifyStep > 4 ? 'text-green-500' : 'text-white/80'}`}>Encrypting Data stream</span>
-                  </div>
-                  {verifyStep > 4 ? <CheckCircle2 size={20} className="text-green-500" /> : verifyStep >= 4 ? <Loader2 size={18} className="animate-spin text-blue-400" /> : null}
+                  {verifyStep > 3 ? <CheckCircle2 size={24} className="text-green-500" /> : verifyStep >= 3 ? <Loader2 size={22} className="animate-spin text-cyan-400" /> : null}
                 </div>
               </div>
 
               {error && (
-                <div className="text-center animate-shake mt-12">
-                  <p className="text-3xl md:text-4xl text-red-600 font-black tracking-widest uppercase drop-shadow-[0_0_20px_rgba(220,38,38,0.7)]">
+                <div className="text-center mt-12">
+                  <p className="text-4xl md:text-5xl text-red-600 font-black tracking-widest uppercase" style={{ fontFamily: 'Orbitron', textShadow: '0 0 30px rgba(220,38,38,0.8)' }}>
                     {error}
                   </p>
                 </div>
@@ -246,26 +229,22 @@ export default function LoginForm({
         )}
       </AnimatePresence>
 
-      <div className="text-center mb-12">
-        {title && <h1 className="text-4xl font-black uppercase tracking-tighter" style={dynamicGlowStyle}>{title}</h1>}
-      </div>
-
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="group"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative"
           >
             <FormField control={form.control} name="userId" render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-white/60 transition-colors" />
+                  <div className="relative group">
+                    <User className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-white/20 group-focus-within:text-cyan-400 transition-all duration-300" />
                     <Input 
                       type="text" 
                       placeholder="TERMINAL ID" 
-                      className="bg-white/[0.03] backdrop-blur-md border-white/10 hover:border-white/20 focus:border-white/40 text-white h-16 pl-12 rounded-xl tracking-widest font-bold placeholder:text-white/10" 
+                      className="bg-black/40 backdrop-blur-xl border-2 border-white/5 hover:border-cyan-500/30 focus:border-cyan-500/60 text-white h-16 pl-14 rounded-2xl tracking-[0.2em] font-black placeholder:text-white/10 transition-all text-lg shadow-2xl" 
                       {...field} 
                     />
                   </div>
@@ -275,31 +254,31 @@ export default function LoginForm({
           </motion.div>
 
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
-            className="group"
+            className="relative"
           >
             <FormField control={form.control} name="password" render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-white/60 transition-colors" />
+                  <div className="relative group">
+                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-white/20 group-focus-within:text-cyan-400 transition-all duration-300" />
                     <Input 
                       type="password" 
                       placeholder="ACCESS KEY" 
-                      className="bg-white/[0.03] backdrop-blur-md border-white/10 hover:border-white/20 focus:border-white/40 text-white h-16 pl-12 pr-16 rounded-xl tracking-widest font-bold placeholder:text-white/10" 
+                      className="bg-black/40 backdrop-blur-xl border-2 border-white/5 hover:border-cyan-500/30 focus:border-cyan-500/60 text-white h-16 pl-14 pr-16 rounded-2xl tracking-[0.2em] font-black placeholder:text-white/10 transition-all text-lg shadow-2xl" 
                       {...field} 
                     />
                     <button 
                       type="submit" 
                       disabled={isVerifying || isPending}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center text-white/40 hover:text-white active:scale-90 transition-all disabled:opacity-30"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 flex items-center justify-center text-cyan-400/40 hover:text-cyan-400 active:scale-90 transition-all disabled:opacity-30 drop-shadow-[0_0_10px_rgba(34,211,238,0.3)]"
                     >
                       {isVerifying || isPending ? (
-                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <Loader2 className="h-8 w-8 animate-spin" />
                       ) : (
-                        <ArrowRightCircle className="h-8 w-8 stroke-[1.5px]" />
+                        <ArrowRightCircle className="h-10 w-10 stroke-[1px]" />
                       )}
                     </button>
                   </div>
@@ -310,8 +289,10 @@ export default function LoginForm({
         </form>
       </Form>
 
-      <div className="pt-6 text-center">
-        <span className="text-[9px] text-white/10 tracking-[0.3em] uppercase font-black">RAZOR V2 CRASH</span>
+      <div className="pt-10 text-center opacity-30">
+        <span className="text-[11px] text-white tracking-[0.5em] uppercase font-black" style={{ fontFamily: 'Orbitron' }}>
+           RAZOR SECURE PROTOCOL V2.0
+        </span>
       </div>
     </div>
   );

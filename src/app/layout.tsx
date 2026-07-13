@@ -24,10 +24,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Acme&family=Sedgwick+Ave&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">{children}</body>
     </html>
   );
 }
-
-    
