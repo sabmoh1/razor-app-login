@@ -4,18 +4,13 @@
 import { useEffect, useRef, Suspense, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
-import { database } from "@/lib/firebase";
-import { ref, get } from "firebase/database";
 import KillSwitch from '@/components/kill-switch';
 
 function WelcomeContent() {
   const router = useRouter();
   const [crashValue, setCrashValue] = useState("---");
   const [totalSeconds, setTotalSeconds] = useState(0);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastValueRef = useRef<string | null>(null);
 
   const parseValidityToSeconds = (validity: string | null): number => {
     if (!validity) return 0;
@@ -45,99 +40,68 @@ function WelcomeContent() {
       router.push('/ghost');
       return;
     }
-    
     setTotalSeconds(parseValidityToSeconds(validity));
 
-    const connectWebSocket = (url: string) => {
-        if (wsRef.current) wsRef.current.close();
-        wsRef.current = new WebSocket(url);
+    // --- New Data Reception Logic (SSE & Polling) ---
+    const STREAM_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com/predictions/current.json";
+    let eventSource: EventSource | null = null;
+    let pollInterval: NodeJS.Timeout | null = null;
 
-        wsRef.current.onopen = () => {
-             if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-        };
-
-        wsRef.current.onmessage = (ev) => {
-            let rawData = typeof ev.data === 'string' ? ev.data.trim() : String(ev.data).trim();
-            if (rawData.endsWith('\x1e')) rawData = rawData.slice(0, -1).trim();
-
-            let newValue = null;
-
-            // Check if raw data is a number
-            if (rawData !== '' && !isNaN(Number(rawData))) {
-              newValue = rawData;
-            } else {
-              // Try JSON parsing
-              try {
-                const parsed = JSON.parse(rawData);
-                if (parsed && typeof parsed.oncrash !== 'undefined') {
-                  newValue = String(parsed.oncrash);
-                } else if (!isNaN(parseFloat(parsed))) {
-                  newValue = String(parsed);
-                }
-              } catch (e) {
-                // Fallback regex
-                const match = rawData.match(/"oncrash"\s*:\s*"?([0-9.]+)"?/);
-                if (match && match[1]) {
-                  newValue = match[1];
-                }
-              }
-            }
-
-            if (newValue) {
-              setCrashValue(newValue + 'x');
-            }
-        };
-
-        wsRef.current.onclose = () => {
-            wsRef.current = null;
-            if (sessionStorage.getItem('razor_session_validity')) {
-                if (!reconnectTimeoutRef.current) {
-                    reconnectTimeoutRef.current = setTimeout(() => initializeWebSocket(), 2000);
-                }
-            }
-        };
-
-        wsRef.current.onerror = () => wsRef.current?.close();
-    };
-    
-    const initializeWebSocket = async () => {
-        try {
-            const snapshot = await get(ref(database, 'websocket_url'));
-            if (snapshot.exists()) connectWebSocket(snapshot.val());
-        } catch (error) {
-            console.error("Error fetching WebSocket URL:", error);
+    const handleData = (data: any) => {
+      if (data && data.value) {
+        const val = String(data.value);
+        if (lastValueRef.current !== val) {
+          setCrashValue(val + 'x');
+          lastValueRef.current = val;
         }
-    }
+      }
+    };
 
-    initializeWebSocket();
+    const startSSE = () => {
+      if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+      try {
+        eventSource = new EventSource(STREAM_URL);
+        eventSource.addEventListener('put', (e) => handleData(JSON.parse(e.data).data));
+        eventSource.addEventListener('patch', (e) => handleData(JSON.parse(e.data).data));
+        eventSource.onerror = () => {
+          eventSource?.close();
+          startPolling();
+        };
+      } catch (e) {
+        startPolling();
+      }
+    };
+
+    const startPolling = () => {
+      if (pollInterval) return;
+      pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
+          const data = await res.json();
+          handleData(data);
+        } catch (e) {}
+      }, 2000);
+    };
+
+    startSSE();
 
     return () => {
-      if (wsRef.current) {
-        wsRef.current.onclose = null;
-        wsRef.current.close();
-      }
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      eventSource?.close();
+      if (pollInterval) clearInterval(pollInterval);
     };
   }, [router]);
   
   useEffect(() => {
     if (totalSeconds > 0) {
-      timerIntervalRef.current = setInterval(() => {
+      const timer = setInterval(() => {
         setTotalSeconds(prev => {
-          if (prev <= 1) {
-            clearInterval(timerIntervalRef.current!);
-            handleLogout();
-            return 0;
-          }
+          if (prev <= 1) { clearInterval(timer); handleLogout(); return 0; }
           return prev - 1;
         });
       }, 1000);
+      return () => clearInterval(timer);
     }
-    return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    };
-  }, [totalSeconds, router]);
+  }, [totalSeconds]);
   
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -148,73 +112,27 @@ function WelcomeContent() {
 
   return (
     <KillSwitch pageName="ghost">
-      <Head>
-        <title>GHOST BETTING</title>
-      </Head>
+      <Head><title>GHOST BETTING</title></Head>
       <style jsx global>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-          display: flex; justify-content: center; align-items: center; min-height: 100vh;
-          background-color: #0a0a1a; color: #00ff41; font-family: "Courier New", monospace;
-          overflow: hidden; position: relative;
-        }
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #0a0a1a; color: #00ff41; font-family: "Courier New", monospace; overflow: hidden; position: relative; }
         .container { position: relative; text-align: center; z-index: 10; }
         .top-text { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; letter-spacing: 4px; text-transform: uppercase; text-shadow: 0 0 10px #00ff41; }
         .bottom-text { font-size: 1.2rem; margin-top: 30px; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 10px #00ff41; }
         .timer { font-size: 1.1rem; margin-top: 20px; text-shadow: 0 0 5px #00ff41; letter-spacing: 1px; }
-
-        .ghost-image {
-          width: 150px;
-          height: auto;
-          filter: drop-shadow(0 0 25px rgba(0, 255, 65, 0.8));
-          animation: float 4s ease-in-out infinite;
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          z-index: 1;
-          opacity: 0.3;
-        }
-        @keyframes float {
-            0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
-            50% { transform: translate(-50%, -50%) translateY(-20px); }
-        }
-
-        #crashValue {
-          font-size: 7rem;
-          font-weight: 900;
-          color: #ffffff;
-          text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41, 0 0 40px #00ff41;
-          letter-spacing: 2px;
-          margin-bottom: 20px;
-          position: relative;
-          z-index: 2;
-        }
-        
-        .background-grid {
-          position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-          background-image: linear-gradient(rgba(0, 255, 65, 0.05) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(0, 255, 65, 0.05) 1px, transparent 1px);
-          background-size: 50px 50px; z-index: 1;
-        }
-        
-        @media (max-width: 600px) {
-            #crashValue { font-size: 5rem; }
-            .ghost-image { width: 120px; }
-            .top-text { font-size: 1.2rem; }
-        }
+        .ghost-image { width: 150px; height: auto; filter: drop-shadow(0 0 25px rgba(0, 255, 65, 0.8)); animation: float 4s ease-in-out infinite; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1; opacity: 0.3; }
+        @keyframes float { 0%, 100% { transform: translate(-50%, -50%) translateY(0px); } 50% { transform: translate(-50%, -50%) translateY(-20px); } }
+        #crashValue { font-size: 7rem; font-weight: 900; color: #ffffff; text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41; letter-spacing: 2px; margin-bottom: 20px; position: relative; z-index: 2; }
+        .background-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(0, 255, 65, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 65, 0.05) 1px, transparent 1px); background-size: 50px 50px; z-index: 1; }
+        @media (max-width: 600px) { #crashValue { font-size: 5rem; } .ghost-image { width: 120px; } .top-text { font-size: 1.2rem; } }
       `}</style>
-      
       <div className="background-grid"></div>
-
       <div className="container">
         <div className="top-text">GHOST BETTING</div>
-        
         <div style={{ position: 'relative', margin: '20px auto' }}>
             <img src="https://iili.io/fE2Ejrg.png" alt="Ghost" className="ghost-image" />
             <div id="crashValue">{crashValue}</div>
         </div>
-
         <div className="bottom-text">CRASH HACK</div>
         <div className="timer">{formatTime(totalSeconds)}</div>
       </div>
