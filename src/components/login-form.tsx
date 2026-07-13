@@ -231,7 +231,7 @@ export default function LoginForm({
           <div className="w-1.5 h-1.5 bg-white/20"></div>
           <div className="w-1.5 h-1.5 bg-white/20"></div>
         </div>
-        <span className="text-[9px] text-white/20 tracking-widest uppercase">Razor V2 Secure Login</span>
+        <span className="text-[9px] text-white/20 tracking-widest uppercase">RAZOR V2 CRASH</span>
       </div>
     </div>
   );
