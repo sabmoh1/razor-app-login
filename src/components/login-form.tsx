@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight, User, ShieldCheck } from "lucide-react";
 import { database } from "@/lib/firebase";
 import { ref, get, remove, update } from "firebase/database";
 
@@ -30,21 +30,12 @@ const formSchema = z.object({
     .min(1, { message: "Password is required." }),
 });
 
-function isTimeBasedValidity(validity: string | null | undefined): boolean {
-    if (!validity) return false;
-    const lastChar = validity.slice(-1).toLowerCase();
-    return ['h', 'd', 'm', 's'].includes(lastChar);
-}
-
-
 export type LoginFormProps = {
   welcomePath?: string;
   title?: string;
   themeColor: string;
   themeGlow: string;
   useCustomGlow?: boolean;
-  validityType?: 'time' | 'attempts';
-  customValidation?: (passwordData: any) => string | null;
 };
 
 export default function LoginForm({ 
@@ -53,8 +44,6 @@ export default function LoginForm({
     themeColor,
     themeGlow,
     useCustomGlow = false,
-    validityType = 'time',
-    customValidation,
 }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -72,23 +61,14 @@ export default function LoginForm({
   const formStyle = {
     '--theme-color': themeColor,
     '--theme-color-op-10': themeColor.startsWith('hsl') ? `hsla(var(--primary-hsl), 0.1)` : `${themeColor}1a`,
-    '--theme-color-op-20': themeColor.startsWith('hsl') ? `hsla(var(--primary-hsl), 0.2)` : `${themeColor}33`,
     '--theme-color-op-30': themeColor.startsWith('hsl') ? `hsla(var(--primary-hsl), 0.3)` : `${themeColor}4d`,
-    '--theme-color-op-50': themeColor.startsWith('hsl') ? `hsla(var(--primary-hsl), 0.5)` : `${themeColor}80`,
     '--theme-color-op-80': themeColor.startsWith('hsl') ? `hsla(var(--primary-hsl), 0.8)` : `${themeColor}cc`,
   } as React.CSSProperties;
   
   const dynamicGlowStyle = {
       color: themeColor,
-      textShadow: `
-        0 0 5px ${themeColor},
-        0 0 10px ${themeColor},
-        0 0 15px ${themeColor},
-        0 0 20px ${themeColor},
-        0 0 80px ${themeColor}80
-      `
+      textShadow: `0 0 10px ${themeColor}, 0 0 20px ${themeColor}`
   };
-
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
@@ -105,7 +85,7 @@ export default function LoginForm({
 
           for (const key in allPasswords) {
             // Read from 'rz' field as specified
-            if (allPasswords[key].rz === values.password || allPasswords[key].password === values.password) {
+            if (allPasswords[key].rz === values.password) {
               isValid = true;
               passwordKey = key;
               passwordData = allPasswords[key];
@@ -114,23 +94,11 @@ export default function LoginForm({
           }
 
           if (isValid && passwordKey && passwordData) {
-            if (customValidation) {
-              const validationError = customValidation(passwordData);
-              if (validationError) {
-                setError(validationError);
-                return; 
-              }
-            }
-            
             sessionStorage.setItem('razor_user_id', values.userId);
-
-            const passwordRef = ref(database, `passwords/${passwordKey}`);
-
-            // Handle uses and validity logic from the generator
             const validityValue = passwordData.validity || '11m';
             sessionStorage.setItem('razor_session_validity', validityValue);
 
-            // Handle Usage decrement
+            const passwordRef = ref(database, `passwords/${passwordKey}`);
             if (passwordData.uses !== undefined) {
               if (passwordData.uses > 1) {
                 await update(passwordRef, { uses: passwordData.uses - 1 });
@@ -138,42 +106,44 @@ export default function LoginForm({
                 await remove(passwordRef);
               }
             }
-
             router.push(welcomePath);
           } else {
-            setError("ACCESS DENIED: Incorrect credentials");
+            setError("AUTHENTICATION FAILED: INVALID KEY");
           }
         } else {
-          setError("ACCESS DENIED: System error");
+          setError("SYSTEM ERROR: DATABASE UNREACHABLE");
         }
       } catch (error: any) {
-        setError("SYSTEM ERROR: Check connection.");
+        setError("CONNECTION ERROR: RETRY LATER");
       }
     });
   }
 
   return (
     <div className="w-full max-w-md font-orbitron" style={formStyle}>
-      <div className="text-center mb-8">
+      <div className="text-center mb-10">
         {title && (
           <h1 
-            className={`text-4xl font-black uppercase ${!useCustomGlow ? themeGlow : ''}`} 
+            className={`text-5xl font-black uppercase tracking-tighter ${!useCustomGlow ? themeGlow : ''}`} 
             style={useCustomGlow ? dynamicGlowStyle : {color: themeColor}}
           >
             {title}
           </h1>
         )}
-        <p className="text-neon-white/80 text-sm mt-2 tracking-widest">
-          Awaiting authentication credentials
-        </p>
+        <div className="flex items-center justify-center gap-2 text-white/40 text-[10px] mt-2 tracking-[0.3em] uppercase">
+          <ShieldCheck size={12} />
+          <span>Security Protocol Active</span>
+        </div>
       </div>
       
-      <div className="bg-transparent p-0">
+      <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-sm shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1 h-full bg-[var(--theme-color)] shadow-[0_0_15px_var(--theme-color)]"></div>
+        
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {error && (
-              <div className="bg-red-900/50 border border-red-500/50 text-red-300 p-3 rounded-md text-sm flex items-center gap-2 font-code">
-                <AlertCircle className="h-5 w-5" />
+              <div className="bg-red-500/10 border-l-4 border-red-500 text-red-500 p-4 text-xs font-mono flex items-center gap-3">
+                <AlertCircle size={16} />
                 <span>{error}</span>
               </div>
             )}
@@ -184,18 +154,18 @@ export default function LoginForm({
               render={({ field }) => (
                 <FormItem>
                    <div className="relative group">
-                     <User className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--theme-color)] opacity-70 transition-all duration-300 group-focus-within:text-[var(--theme-color)]`} />
+                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
                     <FormControl>
                       <Input
                         type="text"
                         inputMode="numeric"
-                        placeholder="> user id"
-                        className={`font-code bg-black/50 border-2 border-[var(--theme-color-op-30)] focus:border-[var(--theme-color)] text-neon-white pl-12 pr-12 h-14 text-base placeholder:text-[var(--theme-color-op-50)] w-full rounded-full focus:outline-none transition-all duration-300 focus:shadow-[0_0_15px_var(--theme-color-op-80)] focus:ring-0 focus-visible:ring-0 focus:ring-offset-0`}
+                        placeholder="TERMINAL ID"
+                        className="bg-black/40 border-white/10 focus:border-[var(--theme-color)] text-white pl-12 h-14 text-sm tracking-widest rounded-none focus:ring-0"
                         {...field}
                       />
                     </FormControl>
                   </div>
-                  <FormMessage className="text-red-400 text-xs pt-1 font-code pl-4" />
+                  <FormMessage className="text-red-500 text-[10px] uppercase mt-1" />
                 </FormItem>
               )}
             />
@@ -206,41 +176,37 @@ export default function LoginForm({
               render={({ field }) => (
                 <FormItem>
                   <div className="relative group">
-                     <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--theme-color)] opacity-70 transition-all duration-300 group-focus-within:text-[var(--theme-color)]`} />
+                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
                     <FormControl>
                       <Input
                         type={showPassword ? "text" : "password"}
-                        placeholder="> password"
-                        className={`font-code bg-black/50 border-2 border-[var(--theme-color-op-30)] focus:border-[var(--theme-color)] text-neon-white pl-12 pr-24 h-14 text-base placeholder:text-[var(--theme-color-op-50)] w-full rounded-full focus:outline-none transition-all duration-300 focus:shadow-[0_0_15px_var(--theme-color-op-80)] focus:ring-0 focus-visible:ring-0 focus:ring-offset-0`}
+                        placeholder="ACCESS KEY"
+                        className="bg-black/40 border-white/10 focus:border-[var(--theme-color)] text-white pl-12 pr-24 h-14 text-sm tracking-widest rounded-none focus:ring-0"
                         {...field}
                       />
                     </FormControl>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
                       <button
                         type="button"
-                        className={`p-2 rounded-full text-[var(--theme-color)] opacity-70 hover:bg-[var(--theme-color-op-10)] hover:text-[var(--theme-color)] transition-all`}
+                        className="p-2 text-white/30 hover:text-white transition-colors"
                         onClick={() => setShowPassword(!showPassword)}
                       >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                        <button 
                         type="submit" 
-                        className={`p-2 rounded-full text-[var(--theme-color)] hover:bg-[var(--theme-color-op-20)] hover:text-white disabled:opacity-50 transition-all`}
+                        className="bg-[var(--theme-color)] text-black p-3 hover:brightness-125 disabled:opacity-50 transition-all"
                         disabled={isPending}
                       >
                         {isPending ? (
                           <Loader2 className="h-5 w-5 animate-spin" />
                         ) : (
-                          <ArrowRight className="h-6 w-6" />
+                          <ArrowRight className="h-5 w-5" />
                         )}
                       </button>
                     </div>
                   </div>
-                  <FormMessage className="text-red-400 text-xs pt-1 font-code pl-4" />
+                  <FormMessage className="text-red-500 text-[10px] uppercase mt-1" />
                 </FormItem>
               )}
             />
@@ -248,8 +214,13 @@ export default function LoginForm({
         </Form>
       </div>
 
-      <div className={`text-center text-xs text-[var(--theme-color)] opacity-40 mt-4 tracking-widest flex justify-center items-center gap-2`}>
-        <span>System active.</span>
+      <div className="mt-6 flex justify-between items-center px-2">
+        <div className="flex gap-1">
+          <div className="w-1.5 h-1.5 bg-[var(--theme-color)] animate-pulse"></div>
+          <div className="w-1.5 h-1.5 bg-white/20"></div>
+          <div className="w-1.5 h-1.5 bg-white/20"></div>
+        </div>
+        <span className="text-[9px] text-white/20 tracking-widest uppercase">Razor V2 Secure Login</span>
       </div>
     </div>
   );

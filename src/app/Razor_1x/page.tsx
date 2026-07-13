@@ -4,23 +4,22 @@
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
-import { User } from 'lucide-react';
+import { User, Cpu, Clock, Hash } from 'lucide-react';
+import { database } from '@/lib/firebase';
+import { ref, onValue } from 'firebase/database';
 
 function WelcomeContent() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
-  const [prediction, setPrediction] = useState<number | null>(null);
   const [roundId, setRoundId] = useState<string>("—");
   const [publishedAt, setPublishedAt] = useState<string>("—");
   const [ago, setAgo] = useState<string>("—");
-  const [status, setStatus] = useState<"live" | "wait" | "err">("wait");
-  const [statusText, setStatusText] = useState("جارٍ الاتصال…");
+  const [crashValue, setCrashValue] = useState<string>("0.00");
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
   const lastPublishedMs = useRef<number | null>(null);
-  const stateRef = useRef<any>(null);
 
   const parseValidityToSeconds = (validity: string | null): number => {
     if (!validity) return 11 * 60;
@@ -49,34 +48,22 @@ function WelcomeContent() {
     return d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   };
 
-  const applyAtPath = (root: any, path: string, data: any) => {
-    if (path === "/" || path === "") return data;
-    const parts = path.split("/").filter(Boolean);
-    if (root === null || typeof root !== "object") root = {};
-    let node = root;
-    for (let i = 0; i < parts.length - 1; i++) {
-      const k = parts[i];
-      if (typeof node[k] !== "object" || node[k] === null) node[k] = {};
-      node = node[k];
-    }
-    const last = parts[parts.length - 1];
-    if (data === null) delete node[last]; else node[last] = data;
-    return root;
-  };
-
   const doGlitchThenSet = useCallback((newVal: any) => {
     const crashEl = crashValueRef.current;
     const lastRawEl = lastRawRef.current;
     if (!crashEl || !lastRawEl) return;
-    crashEl.classList.add('glitch');
+
+    crashEl.classList.add('glitch-v2');
     setTimeout(() => {
       const prev = crashEl.innerText;
-      if (prev && prev.trim() !== '' && prev !== '0.00') lastRawEl.innerText = prev;
+      if (prev && prev.trim() !== '' && prev !== '0.00') {
+        lastRawEl.innerText = prev;
+      }
       const t = (newVal === undefined || newVal === null) ? '0.00' : Number(newVal).toFixed(2);
-      crashEl.innerText = t;
+      setCrashValue(t);
       crashEl.setAttribute('data-text', t);
-    }, 220);
-    setTimeout(() => crashEl.classList.remove('glitch'), 560);
+    }, 200);
+    setTimeout(() => crashEl.classList.remove('glitch-v2'), 500);
   }, []);
 
   useEffect(() => {
@@ -89,93 +76,33 @@ function WelcomeContent() {
     }
     setUserId(storedUserId);
 
-    const DB_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com";
-    const NODE = "predictions/current";
-    const STREAM_URL = `${DB_URL}/${NODE}.json`;
-
-    let eventSource: EventSource | null = null;
-    let pollInterval: NodeJS.Timeout | null = null;
-
-    const onDataReceived = (newState: any) => {
-      stateRef.current = newState;
-      if (newState && newState.value != null) {
-        doGlitchThenSet(newState.value);
-        setRoundId(newState.roundId || "—");
-        setPublishedAt(fmtTime(newState.publishedAt));
-        lastPublishedMs.current = (typeof newState.publishedAt === "number") ? (newState.publishedAt < 1e12 ? newState.publishedAt * 1000 : newState.publishedAt) : Date.parse(newState.publishedAt);
-      }
-    };
-
-    const startSSE = () => {
-      if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
-      try {
-        eventSource = new EventSource(STREAM_URL);
-        
-        eventSource.onopen = () => {
-          setStatus("live");
-          setStatusText("connected — realtime");
-        };
-
-        const handleEvent = (ev: MessageEvent) => {
-          let payload;
-          try { payload = JSON.parse(ev.data); } catch (_) { return; }
-          if (!payload || typeof payload !== "object") return;
-          const path = payload.path != null ? payload.path : "/";
-          const data = payload.data;
-
-          let newState = stateRef.current;
-          if (ev.type === "patch") {
-            if (data && typeof data === "object") {
-              for (const k in data) newState = applyAtPath(newState, (path === "/" ? "" : path) + "/" + k, data[k]);
-            }
-          } else {
-            newState = applyAtPath(newState, path, data);
-          }
-          onDataReceived(newState);
-        };
-
-        eventSource.addEventListener('put', handleEvent as any);
-        eventSource.addEventListener('patch', handleEvent as any);
-
-        eventSource.onerror = () => {
-          eventSource?.close();
-          startPolling();
-        };
-      } catch (e) {
-        startPolling();
-      }
-    };
-
-    const startPolling = () => {
-      if (pollInterval) return;
-      setStatus("wait");
-      setStatusText("polling — fallback");
-      pollInterval = setInterval(async () => {
-        try {
-          const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
-          const data = await res.json();
-          onDataReceived(data);
-          setStatus("live");
-        } catch (e) {
-          setStatus("err");
-          setStatusText("connection error");
+    // Firebase RTDB Logic for Razor V2
+    const currentPredRef = ref(database, 'predictions/current');
+    const unsubscribe = onValue(currentPredRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        if (data.value != null) doGlitchThenSet(data.value);
+        if (data.roundId) setRoundId(data.roundId);
+        if (data.publishedAt) {
+          setPublishedAt(fmtTime(data.publishedAt));
+          lastPublishedMs.current = (typeof data.publishedAt === "number") 
+            ? (data.publishedAt < 1e12 ? data.publishedAt * 1000 : data.publishedAt) 
+            : Date.parse(data.publishedAt);
         }
-      }, 2000);
-    };
+      }
+    });
 
-    startSSE();
-
-    // Timer logic
+    // Session Timer
     let totalSeconds = parseValidityToSeconds(validity);
     const timerInterval = setInterval(() => {
       if (totalSeconds > 0) {
         totalSeconds--;
-        const timerEl = document.getElementById('timer');
+        const timerEl = document.getElementById('v2-timer');
         if (timerEl) {
           const h = Math.floor(totalSeconds / 3600);
           const m = Math.floor((totalSeconds % 3600) / 60);
           const s = totalSeconds % 60;
-          timerEl.innerText = `${String(h).padStart(2, '0')} : ${String(m).padStart(2, '0')} : ${String(s).padStart(2, '0')}`;
+          timerEl.innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
       } else {
         clearInterval(timerInterval);
@@ -184,38 +111,39 @@ function WelcomeContent() {
       }
     }, 1000);
 
-    // Matrix background
+    // Matrix background V2 (Electric White)
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
         let W = canvas.width = window.innerWidth;
         let H = canvas.height = window.innerHeight;
-        let cols = Math.floor(W / 10) + 1;
+        let cols = Math.floor(W / 15) + 1;
         let ypos = Array(cols).fill(0);
-        const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
+        const letters = '01・〇●■▲▼◆RAZORV2';
         const matrixInterval = setInterval(() => {
-          ctx.fillStyle = 'rgba(0,0,0,0.22)';
+          ctx.fillStyle = 'rgba(0,0,0,0.15)';
           ctx.fillRect(0, 0, W, H);
-          ctx.font = '12px monospace';
+          ctx.font = '14px monospace';
           ypos.forEach((y, ind) => {
             const text = letters.charAt(Math.floor(Math.random() * letters.length));
-            const x = ind * 10;
-            ctx.fillStyle = 'rgba(255, 255, 255,' + (0.18 + Math.random() * 0.6) + ')';
+            const x = ind * 15;
+            ctx.fillStyle = 'rgba(255, 255, 255,' + (0.1 + Math.random() * 0.3) + ')';
             ctx.fillText(text, x, y);
-            if (y > H + Math.random() * 700) ypos[ind] = 0;
-            else ypos[ind] = y + 12 + Math.random() * 8;
+            if (y > H + Math.random() * 800) ypos[ind] = 0;
+            else ypos[ind] = y + 15;
           });
-        }, 40);
-        (window as any).__matrixCleanup = () => clearInterval(matrixInterval);
+        }, 50);
+        return () => {
+            clearInterval(matrixInterval);
+            unsubscribe();
+            clearInterval(timerInterval);
+        };
       }
     }
-
     return () => {
-      eventSource?.close();
-      if (pollInterval) clearInterval(pollInterval);
-      clearInterval(timerInterval);
-      if ((window as any).__matrixCleanup) (window as any).__matrixCleanup();
+        unsubscribe();
+        clearInterval(timerInterval);
     };
   }, [router, doGlitchThenSet]);
 
@@ -231,95 +159,189 @@ function WelcomeContent() {
   return (
     <>
       <Head>
-        <title>RAZOR — Terminal</title>
-        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+        <title>RAZOR V2 — OBSIDIAN</title>
       </Head>
       <style jsx global>{`
-          :root{ --bg:#000; --neon-primary:#fff; --neon-white:#e6fff8; --neon-gray:#666; --accent:#fff; }
-          *{box-sizing:border-box}
-          html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
-          body, .font-orbitron, .timer-big, .last-box .value, .last-box .label, #crashValue { font-family: 'Orbitron', sans-serif !important; font-weight: 900 !important; }
-          .brand .logo-text, .brand h1, #username { font-family: 'Orbitron', sans-serif !important; font-weight: 900 !important; }
-          canvas#matrix{position:fixed;inset:0;z-index:0;display:block}
-          .wrap{position:relative;z-index:3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
-          .header-controls { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 9999; }
-          .panel{ width:min(920px,94%);max-width:920px;margin:0 auto; background: transparent; border-radius:14px;padding:28px; display:flex;flex-direction:column;gap:18px;align-items:center;overflow:visible; margin-top: 60px; }
-          .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
-          .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
-          #crashValue { color: var(--neon-primary); text-shadow: 0 0 2px rgba(255,255,255,0.7), 0 0 3px rgba(255,255,255,0.7), 0 0 5px rgba(255,255,255,0.7); }
-          .brand h1, .status-dot.connected { text-shadow: 0 0 2px rgba(255,255,255,0.7), 0 0 5px rgba(255,255,255,0.7), 0 0 8px rgba(255,255,255,0.7); }
-          .brand h1{ font-size:2rem;margin:0;color:var(--neon-primary);letter-spacing:4px;font-weight:900; }
-          .display-circle{ width:420px;height:420px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative; background: radial-gradient(ellipse at center, rgba(0,0,0,0.18), rgba(0,0,0,0.45)); border:1px solid rgba(255,255,255,0.04); overflow:hidden; }
-          #crashValue{ font-size:6rem;font-weight:900; letter-spacing: 1px;transition:transform .18s ease, opacity .18s ease; text-align:center;white-space:nowrap; -webkit-font-smoothing:antialiased; }
-          #crashValue.glitch{ animation: glitch-taz-taz 0.5s linear; }
-          @keyframes glitch-taz-taz {
-            0% { clip-path: inset(3% 0 94% 0); transform: translate(-10px, -5px); opacity: 0.8; }
-            20% { clip-path: inset(80% 0 3% 0); transform: translate(10px, 5px); }
-            40% { clip-path: inset(45% 0 45% 0); transform: translate(-5px, 0); opacity: 0.7; }
-            60% { clip-path: inset(90% 0 5% 0); transform: translate(5px, 0); }
-            80% { clip-path: inset(5% 0 88% 0); transform: translate(-10px, -5px); opacity: 0.9; }
-            100% { clip-path: inset(0 0 0 0); transform: translate(0, 0); opacity: 1; }
+          :root {
+            --v2-bg: #030303;
+            --v2-accent: #ffffff;
+            --v2-glass: rgba(255, 255, 255, 0.03);
+            --v2-border: rgba(255, 255, 255, 0.1);
+            --v2-glow: 0 0 15px rgba(255, 255, 255, 0.4);
           }
-          .meta-row{display:flex;gap:18px;align-items:center;justify-content:center;width:100%;flex-wrap:wrap;}
-          .timer-big{font-weight:800;color:var(--neon-white);background:transparent;padding:8px 12px;border-radius:10px;font-size:1.05rem;letter-spacing:0.6px;text-align:center;border:1px solid rgba(255,255,255,0.02);}
-          .last-box{background:transparent;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);min-width:140px;text-align:center}
-          .last-box .label{font-size:0.82rem;color:rgba(230,255,248,0.6)}
-          .last-box .value{font-weight:700;color:var(--neon-white);font-size:1.05rem}
-          .connection-status { display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 16px; color: white; }
-          .user-id-display { display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 16px; color: white; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
-          .status-dot{width:14px;height:14px;border-radius:50%;background:var(--neon-gray);box-shadow:0 0 6px rgba(0,0,0,0.6) inset;transition:all .28s ease;}
-          .status-dot.connected{background:var(--neon-primary);box-shadow: 0 0 10px var(--neon-primary);}
-          .chip { background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem; }
-          .chip b { margin-left: 6px; color: var(--neon-primary); }
+          body {
+            background-color: var(--v2-bg);
+            color: #ffffff;
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+          }
+          canvas#v2-matrix { position: fixed; inset: 0; z-index: 0; opacity: 0.5; }
+          .v2-wrapper {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+          }
+          .v2-header {
+            position: absolute;
+            top: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px;
+          }
+          .v2-user-badge {
+            background: var(--v2-glass);
+            border: 1px solid var(--v2-border);
+            padding: 10px 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+          }
+          .v2-main-display {
+            background: var(--v2-glass);
+            border: 1px solid var(--v2-border);
+            width: min(500px, 90vw);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 50px rgba(255,255,255,0.02);
+            position: relative;
+          }
+          .v2-main-display::after {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.05);
+            animation: pulse-ring 4s infinite;
+          }
+          @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.05); opacity: 0.2; }
+            100% { transform: scale(1); opacity: 0.5; }
+          }
+          .v2-value {
+            font-size: 7rem;
+            font-weight: 900;
+            letter-spacing: -2px;
+            text-shadow: var(--v2-glow);
+          }
+          .v2-label-small {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: -10px;
+          }
+          .v2-info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 40px;
+            width: min(600px, 95vw);
+          }
+          .v2-info-card {
+            background: var(--v2-glass);
+            border: 1px solid var(--v2-border);
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+          }
+          .v2-info-card label {
+            display: block;
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+          }
+          .v2-info-card span {
+            font-weight: 700;
+            font-size: 0.9rem;
+            word-break: break-all;
+          }
+          .v2-footer-meta {
+            margin-top: 30px;
+            display: flex;
+            gap: 30px;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.8rem;
+          }
+          .glitch-v2 {
+            animation: glitch-anim 0.3s cubic-bezier(.25,.46,.45,.94) both infinite;
+          }
+          @keyframes glitch-anim {
+            0% { transform: translate(0); text-shadow: -2px 0 #fff, 2px 0 #000; }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+          }
+          #v2-timer { font-family: monospace; font-weight: bold; font-size: 1.2rem; letter-spacing: 2px; }
         `}</style>
 
-      <canvas id="matrix" ref={canvasRef}></canvas>
+      <canvas id="v2-matrix" ref={canvasRef}></canvas>
 
-       <div className="header-controls">
-         <div className="user-id-display">
-          <User size={16} color="var(--neon-primary)" />
-          <span>{userId}</span>
+      <div className="v2-wrapper">
+        <div className="v2-header">
+          <div className="v2-user-badge">
+            <User size={16} />
+            <span style={{fontSize: '0.8rem', letterSpacing: '1px'}}>{userId}</span>
+          </div>
+          <div className="v2-user-badge">
+            <Clock size={16} />
+            <span id="v2-timer">00:00:00</span>
+          </div>
         </div>
-        <div className="connection-status">
-          <div className={`status-dot ${status === 'live' ? 'connected' : ''}`}></div>
-          <span>{statusText}</span>
+
+        <div className="v2-main-display">
+          <div className="v2-label-small">Multiplier</div>
+          <div className="v2-value" ref={crashValueRef}>{crashValue}</div>
+          <div style={{color: 'rgba(255,255,255,0.2)', fontSize: '0.8rem', marginTop: '10px'}}>
+            Last: <span ref={lastRawRef}>—</span>
+          </div>
         </div>
-       </div>
 
-      <div className="wrap">
-        <div className="panel">
-          <div className="brand">
-            <div className="logo-text">1XBET</div>
-            <h1 className="neon-label">RAZOR</h1>
+        <div className="v2-info-grid">
+          <div className="v2-info-card">
+            <label><Hash size={10} style={{display: 'inline', marginRight: '5px'}}/> Round</label>
+            <span>{roundId}</span>
           </div>
-            <a id="username" target="_blank" rel="noopener noreferrer">Telegram : @Razor_1x</a>
-          
-          <div className="display-circle">
-            <div id="crashValue" ref={crashValueRef} data-text="0.00">0.00</div>
+          <div className="v2-info-card">
+            <label><Cpu size={10} style={{display: 'inline', marginRight: '5px'}}/> Published</label>
+            <span>{publishedAt}</span>
           </div>
+          <div className="v2-info-card">
+            <label><Clock size={10} style={{display: 'inline', marginRight: '5px'}}/> Ago</label>
+            <span>{ago}</span>
+          </div>
+        </div>
 
-          <div className="meta-row">
-            <div className="chip">Round <b>{roundId}</b></div>
-            <div className="chip">Published <b>{publishedAt}</b></div>
-            <div className="chip">Ago <b>{ago}</b></div>
-          </div>
-
-          <div className="meta-row">
-            <div className="timer-big" id="timer">00 : 00 : 00</div>
-            <div className="last-box">
-              <div className="label">LastRaw</div>
-              <div className="value" id="lastRaw" ref={lastRawRef}>-</div>
-            </div>
-          </div>
+        <div className="v2-footer-meta">
+          <span>RAZOR V2.0.4</span>
+          <span>SYSTEM: ACTIVE</span>
+          <span>ENCRYPTION: AES-256</span>
         </div>
       </div>
     </>
   );
 }
 
-export default function WelcomePage() {
+export default function RazorV2Page() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="bg-black h-screen w-screen"></div>}>
       <WelcomeContent />
     </Suspense>
   );
