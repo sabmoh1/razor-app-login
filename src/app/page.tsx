@@ -31,9 +31,9 @@ export default function Home() {
                   className="w-48 md:w-56 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)] mb-4" 
                 />
                 <div className="relative group">
-                    <h1 className="text-4xl md:text-6xl font-normal tracking-tight" style={{ fontFamily: 'Shojumaru', color: '#fff', textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>
+                    <h1 className="text-4xl md:text-6xl font-black tracking-[0.1em] uppercase" style={{ fontFamily: 'Orbitron', color: '#fff', textShadow: '0 0 30px rgba(255,255,255,0.4)' }}>
                         RAZOR CRASH
-                        <span className="inline-block ml-4 text-white font-sans not-italic glitch-v2" style={{ fontFamily: 'Orbitron' }}>
+                        <span className="inline-block ml-6 text-white font-sans not-italic glitch-v2" style={{ fontFamily: 'Orbitron' }}>
                             V2
                         </span>
                     </h1>
@@ -62,7 +62,6 @@ export default function Home() {
             color: #fff;
           }
 
-          /* نحت النص الأساسي لجعله شفافاً وقت الانكسار لإظهار القطع المتحركة فقط */
           .glitch-v2::before, .glitch-v2::after {
             content: 'V2';
             position: absolute;
@@ -74,19 +73,16 @@ export default function Home() {
             pointer-events: none;
           }
 
-          /* الشريحة العلوية المنكسرة */
           .glitch-v2::before {
             animation: break-top 2.2s infinite steps(1);
             text-shadow: 2px 0 #888;
           }
 
-          /* الشريحة السفلية المنكسرة */
           .glitch-v2::after {
             animation: break-bottom 1.8s infinite steps(1);
             text-shadow: -2px 0 #fff;
           }
 
-          /* إخفاء النص الأساسي جزئياً لإبراز أثر التمزق */
           .glitch-v2 {
             color: rgba(255,255,255,0.1);
           }
