@@ -31,7 +31,7 @@ export default function Home() {
                   className="w-48 md:w-56 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)] mb-4" 
                 />
                 <div className="relative group">
-                    <h1 className="text-4xl md:text-6xl font-bold tracking-tight italic" style={{ fontFamily: 'Sedgwick Ave', color: '#fff', textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>
+                    <h1 className="text-4xl md:text-6xl font-normal tracking-tight" style={{ fontFamily: 'Shojumaru', color: '#fff', textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>
                         RAZOR CRASH
                         <span className="inline-block ml-4 text-white font-sans not-italic glitch-v2" style={{ fontFamily: 'Orbitron' }}>
                             V2
