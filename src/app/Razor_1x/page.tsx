@@ -4,14 +4,11 @@
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, Globe } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 
 function WelcomeContent() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
-  const [roundId, setRoundId] = useState<string>("—");
-  const [publishedAt, setPublishedAt] = useState<string>("—");
-  const [ago, setAgo] = useState<string>("—");
   const [crashValue, setCrashValue] = useState<string>("0.00");
   const [lastRaw, setLastRaw] = useState<string>("—");
   const [status, setStatus] = useState<"live" | "wait" | "err">("wait");
@@ -33,19 +30,6 @@ function WelcomeContent() {
     }
   };
 
-  const fmtTime = (v: any) => {
-    if (v == null) return "—";
-    let ms: number | null = null;
-    if (typeof v === "number") ms = v < 1e12 ? v * 1000 : v;
-    else if (typeof v === "string") {
-      const n = Number(v);
-      ms = Number.isFinite(n) ? (n < 1e12 ? n * 1000 : n) : Date.parse(v);
-    }
-    if (!ms || Number.isNaN(ms)) return String(v);
-    const d = new Date(ms);
-    return d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  };
-
   const applyAtPath = (root: any, path: string, data: any) => {
     if (path === "/" || path === "") return data;
     const parts = path.split("/").filter(Boolean);
@@ -64,15 +48,8 @@ function WelcomeContent() {
   const updateUI = useCallback((newState: any) => {
     if (newState && newState.value != null) {
       const newVal = Number(newState.value).toFixed(2);
-      setLastRaw(prev => (prev !== newVal ? crashValue : prev));
+      setLastRaw(prev => (prev !== newVal && crashValue !== "0.00" ? crashValue : prev));
       setCrashValue(newVal);
-      if (newState.roundId) setRoundId(newState.roundId);
-      if (newState.publishedAt) {
-        setPublishedAt(fmtTime(newState.publishedAt));
-        lastPublishedMs.current = (typeof newState.publishedAt === "number") 
-          ? (newState.publishedAt < 1e12 ? newState.publishedAt * 1000 : newState.publishedAt) 
-          : Date.parse(newState.publishedAt);
-      }
       
       // Trigger Flip Animation
       const valEl = document.getElementById('value-display');
@@ -164,15 +141,6 @@ function WelcomeContent() {
       clearInterval(timerInterval);
     };
   }, [router, updateUI]);
-
-  useEffect(() => {
-    const agoInterval = setInterval(() => {
-      if (lastPublishedMs.current == null) { setAgo("—"); return; }
-      const s = Math.max(0, Math.round((Date.now() - lastPublishedMs.current) / 1000));
-      setAgo(s < 60 ? s + "s" : Math.floor(s / 60) + "m " + (s % 60) + "s");
-    }, 1000);
-    return () => clearInterval(agoInterval);
-  }, []);
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -331,22 +299,6 @@ function WelcomeContent() {
             100% { transform: translateY(0); opacity: 1; }
           }
           .value::after { content: "x"; font-size: 28px; vertical-align: super; margin-left: 5px; opacity: 0.6; }
-          .meta-info {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-            align-items: center;
-          }
-          .info-row {
-            display: flex;
-            gap: 20px;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--muted);
-          }
-          .info-row span b { color: #fff; margin-left: 5px; }
           .footer {
             display: flex;
             align-items: flex-end;
@@ -383,16 +335,6 @@ function WelcomeContent() {
         <div className="stage">
           <div className="dial">
             <div className="value" id="value-display">{crashValue}</div>
-          </div>
-        </div>
-
-        <div className="meta-info">
-          <div className="info-row">
-            <span>ROUND <b>{roundId}</b></span>
-            <span>PUB <b>{publishedAt}</b></span>
-          </div>
-          <div className="info-row">
-            <span>ELAPSED <b>{ago}</b></span>
           </div>
         </div>
 
