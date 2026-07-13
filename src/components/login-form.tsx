@@ -94,16 +94,23 @@ export default function LoginForm({
           }
 
           if (isValid && passwordKey && passwordData) {
+            // Check usage limit
+            if (passwordData.uses !== undefined && passwordData.uses <= 0) {
+                setError("ACCESS DENIED: KEY USAGE DEPLETED");
+                return;
+            }
+
             sessionStorage.setItem('razor_user_id', values.userId);
             const validityValue = passwordData.validity || '11m';
             sessionStorage.setItem('razor_session_validity', validityValue);
 
-            const passwordRef = ref(database, `passwords/${passwordKey}`);
+            // Handle usage reduction
+            const keyRef = ref(database, `passwords/${passwordKey}`);
             if (passwordData.uses !== undefined) {
               if (passwordData.uses > 1) {
-                await update(passwordRef, { uses: passwordData.uses - 1 });
+                await update(keyRef, { uses: passwordData.uses - 1 });
               } else {
-                await remove(passwordRef);
+                await remove(keyRef);
               }
             }
             router.push(welcomePath);
@@ -114,6 +121,7 @@ export default function LoginForm({
           setError("SYSTEM ERROR: DATABASE UNREACHABLE");
         }
       } catch (error: any) {
+        console.error(error);
         setError("CONNECTION ERROR: RETRY LATER");
       }
     });

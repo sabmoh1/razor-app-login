@@ -13,7 +13,6 @@ function WelcomeContent() {
   const [lastRaw, setLastRaw] = useState<string>("—");
   const [status, setStatus] = useState<"live" | "wait" | "err">("wait");
   
-  const lastPublishedMs = useRef<number | null>(null);
   const stateRef = useRef<any>(null);
 
   const parseValidityToSeconds = (validity: string | null): number => {
