@@ -42,28 +42,27 @@ export default function Home() {
         </div>
         
         <style jsx global>{`
-          @keyframes scatter-glitch-top {
-            0%, 100% { clip-path: inset(0 0 70% 0); transform: translate(0); opacity: 1; }
-            20% { clip-path: inset(0 0 70% 0); transform: translate(-8px, 0); opacity: 0.8; }
-            40% { clip-path: inset(0 0 70% 0); transform: translate(6px, 0); opacity: 0.9; }
-            60% { clip-path: inset(0 0 70% 0); transform: translate(-4px, 0); opacity: 0.8; }
-            80% { clip-path: inset(0 0 70% 0); transform: translate(10px, 0); opacity: 0.7; }
+          @keyframes break-top {
+            0%, 100% { clip-path: inset(0 0 50% 0); transform: translate(0); opacity: 1; }
+            15% { clip-path: inset(0 0 50% 0); transform: translate(-12px, 0); color: #ccc; }
+            30% { clip-path: inset(0 0 50% 0); transform: translate(6px, 0); }
+            45% { clip-path: inset(0 0 50% 0); transform: translate(-4px, 0); }
           }
           
-          @keyframes scatter-glitch-bottom {
-            0%, 100% { clip-path: inset(70% 0 0 0); transform: translate(0); opacity: 1; }
-            25% { clip-path: inset(70% 0 0 0); transform: translate(8px, 0); opacity: 0.8; }
-            50% { clip-path: inset(70% 0 0 0); transform: translate(-6px, 0); opacity: 0.9; }
-            75% { clip-path: inset(70% 0 0 0); transform: translate(4px, 0); opacity: 0.8; }
+          @keyframes break-bottom {
+            0%, 100% { clip-path: inset(50% 0 0 0); transform: translate(0); opacity: 1; }
+            20% { clip-path: inset(50% 0 0 0); transform: translate(12px, 0); color: #999; }
+            40% { clip-path: inset(50% 0 0 0); transform: translate(-8px, 0); }
+            60% { clip-path: inset(50% 0 0 0); transform: translate(4px, 0); }
           }
 
           .glitch-v2 {
             display: inline-block;
             position: relative;
             color: #fff;
-            /* No animation on the main text to keep it fixed */
           }
 
+          /* نحت النص الأساسي لجعله شفافاً وقت الانكسار لإظهار القطع المتحركة فقط */
           .glitch-v2::before, .glitch-v2::after {
             content: 'V2';
             position: absolute;
@@ -75,16 +74,21 @@ export default function Home() {
             pointer-events: none;
           }
 
+          /* الشريحة العلوية المنكسرة */
           .glitch-v2::before {
-            left: 0;
-            text-shadow: 3px 0 #888;
-            animation: scatter-glitch-top 1.8s infinite step-end;
+            animation: break-top 2.2s infinite steps(1);
+            text-shadow: 2px 0 #888;
           }
 
+          /* الشريحة السفلية المنكسرة */
           .glitch-v2::after {
-            left: 0;
-            text-shadow: -3px 0 #fff;
-            animation: scatter-glitch-bottom 1.4s infinite step-end;
+            animation: break-bottom 1.8s infinite steps(1);
+            text-shadow: -2px 0 #fff;
+          }
+
+          /* إخفاء النص الأساسي جزئياً لإبراز أثر التمزق */
+          .glitch-v2 {
+            color: rgba(255,255,255,0.1);
           }
         `}</style>
 

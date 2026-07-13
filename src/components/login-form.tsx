@@ -263,24 +263,26 @@ export default function LoginForm({
               <FormItem>
                 <FormControl>
                   <div className="relative group">
-                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-white/20 group-focus-within:text-cyan-400 transition-all duration-300" />
-                    <Input 
-                      type="password" 
-                      placeholder="ACCESS KEY" 
-                      className="bg-black/40 backdrop-blur-xl border-2 border-white/5 hover:border-cyan-500/30 focus:border-cyan-500/60 text-white h-16 pl-14 pr-16 rounded-2xl tracking-[0.2em] font-black placeholder:text-white/10 transition-all text-lg shadow-2xl" 
-                      {...field} 
-                    />
-                    <button 
-                      type="submit" 
-                      disabled={isVerifying || isPending}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 flex items-center justify-center text-cyan-400/40 hover:text-cyan-400 active:scale-90 transition-all disabled:opacity-30 drop-shadow-[0_0_10px_rgba(34,211,238,0.3)]"
-                    >
-                      {isVerifying || isPending ? (
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                      ) : (
-                        <ArrowRightCircle className="h-10 w-10 stroke-[1px]" />
-                      )}
-                    </button>
+                    <div className="flex items-center">
+                      <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-white/20 group-focus-within:text-cyan-400 transition-all duration-300" />
+                      <Input 
+                        type="password" 
+                        placeholder="ACCESS KEY" 
+                        className="bg-black/40 backdrop-blur-xl border-2 border-white/5 hover:border-cyan-500/30 focus:border-cyan-500/60 text-white h-16 pl-14 pr-16 rounded-2xl tracking-[0.2em] font-black placeholder:text-white/10 transition-all text-lg shadow-2xl w-full" 
+                        {...field} 
+                      />
+                      <button 
+                        type="submit" 
+                        disabled={isVerifying || isPending}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 flex items-center justify-center text-cyan-400/40 hover:text-cyan-400 active:scale-90 transition-all disabled:opacity-30 drop-shadow-[0_0_10px_rgba(34,211,238,0.3)]"
+                      >
+                        {isVerifying || isPending ? (
+                          <Loader2 className="h-8 w-8 animate-spin" />
+                        ) : (
+                          <ArrowRightCircle className="h-10 w-10 stroke-[1px]" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </FormControl>
               </FormItem>
@@ -291,7 +293,7 @@ export default function LoginForm({
 
       <div className="pt-10 text-center opacity-30">
         <span className="text-[11px] text-white tracking-[0.5em] uppercase font-black" style={{ fontFamily: 'Orbitron' }}>
-           RAZOR SECURE PROTOCOL V2.0
+           RAZOR V2 CRASH
         </span>
       </div>
     </div>
