@@ -1,21 +1,28 @@
 
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight, User, ShieldCheck, CheckCircle2, Server, ShieldAlert } from "lucide-react";
+import { 
+  Loader2, 
+  ArrowRightCircle, 
+  ShieldCheck, 
+  CheckCircle2, 
+  Server, 
+  Lock, 
+  ShieldAlert,
+  User
+} from "lucide-react";
 import { database } from "@/lib/firebase";
 import { ref, get, remove, update } from "firebase/database";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,17 +48,15 @@ export type LoginFormProps = {
 
 export default function LoginForm({ 
     welcomePath = '/Razor_1x', 
-    title = 'RAZOR TERMINAL',
-    themeColor,
-    themeGlow,
-    useCustomGlow = false,
+    title = '',
+    themeColor = '#FFFFFF',
+    themeGlow = '',
+    useCustomGlow = true,
 }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyStep, setVerifyStep] = useState(0);
-  const [currentId, setCurrentId] = useState("");
+  const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -62,24 +67,12 @@ export default function LoginForm({
     },
   });
 
-  const formStyle = {
-    '--theme-color': themeColor,
-  } as React.CSSProperties;
-  
-  const dynamicGlowStyle = {
-      color: themeColor,
-      textShadow: `0 0 10px ${themeColor}, 0 0 20px ${themeColor}`
-  };
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
-    setCurrentId(values.userId);
     setIsVerifying(true);
-    setVerifyStep(0);
+    setVerifyStep(1); // Step 1: Verifying ID & Access Key
 
-    // Step 0: Analyzing Terminal ID
-    await new Promise(r => setTimeout(r, 1200));
-    setVerifyStep(1);
+    await new Promise(r => setTimeout(r, 1800));
 
     startTransition(async () => {
       try {
@@ -107,15 +100,18 @@ export default function LoginForm({
             if (currentUses !== undefined && currentUses <= 0) {
                 setVerifyStep(-1);
                 setError("ACCESS DENIED: KEY USAGE DEPLETED");
-                setTimeout(() => setIsVerifying(false), 2000);
+                setTimeout(() => setIsVerifying(false), 2500);
                 return;
             }
 
-            await new Promise(r => setTimeout(r, 1200));
-            setVerifyStep(2);
+            setVerifyStep(2); // Step 2: Establishing Server Connection
+            await new Promise(r => setTimeout(r, 2000));
+            
+            setVerifyStep(3); // Step 3: Encrypting Entry Data
             await new Promise(r => setTimeout(r, 1500));
-            setVerifyStep(3);
-            await new Promise(r => setTimeout(r, 1000));
+            
+            setVerifyStep(4); // Final Success
+            await new Promise(r => setTimeout(r, 800));
             
             sessionStorage.setItem('razor_user_id', values.userId);
             sessionStorage.setItem('razor_session_validity', passwordData.validity || '11m');
@@ -129,88 +125,164 @@ export default function LoginForm({
           } else {
             setVerifyStep(-1);
             setError("AUTHENTICATION FAILED: INVALID KEY");
-            setTimeout(() => setIsVerifying(false), 2000);
+            setTimeout(() => setIsVerifying(false), 2500);
           }
         } else {
           setVerifyStep(-1);
           setError("SYSTEM ERROR: DATABASE UNREACHABLE");
-          setTimeout(() => setIsVerifying(false), 2000);
+          setTimeout(() => setIsVerifying(false), 2500);
         }
       } catch (e) {
         setVerifyStep(-1);
         setError("CONNECTION ERROR: RETRY LATER");
-        setTimeout(() => setIsVerifying(false), 2000);
+        setTimeout(() => setIsVerifying(false), 2500);
       }
     });
   }
 
+  const dynamicGlowStyle = {
+      color: themeColor,
+      textShadow: `0 0 10px ${themeColor}, 0 0 20px ${themeColor}`
+  };
+
   return (
-    <div className="w-full max-w-md" style={formStyle}>
+    <div className="w-full max-w-sm space-y-6">
       <AnimatePresence>
         {isVerifying && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex items-center justify-center p-6"
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-3xl flex items-center justify-center p-6"
           >
-            <div className="w-full max-w-xs space-y-8">
-              <div className="text-center space-y-2">
+            <div className="w-full max-w-xs space-y-10">
+              <div className="text-center">
                 <div className="relative inline-block">
                   {verifyStep === -1 ? (
-                    <ShieldAlert className="relative h-16 w-16 text-red-500 mx-auto" />
-                  ) : verifyStep === 3 ? (
-                    <ShieldCheck className="relative h-16 w-16 text-green-500 mx-auto animate-pulse" />
+                    <ShieldAlert className="h-20 w-20 text-red-500 mx-auto" />
+                  ) : verifyStep === 4 ? (
+                    <ShieldCheck className="h-20 w-20 text-green-500 mx-auto animate-bounce" />
                   ) : (
-                    <Loader2 className="relative h-16 w-16 text-white/40 animate-spin mx-auto" />
+                    <div className="relative">
+                      <Loader2 className="h-20 w-20 text-white/20 animate-spin mx-auto" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                         <span className="text-[10px] font-bold text-white/40">{verifyStep * 25}%</span>
+                      </div>
+                    </div>
                   )}
                 </div>
-                <h2 className={`text-xl font-bold tracking-widest uppercase mt-4 ${verifyStep === -1 ? 'text-red-500' : 'text-white'}`}>
-                  {verifyStep === -1 ? 'Security Alert' : 'System Analysis'}
+                <h2 className={`text-lg font-black tracking-widest uppercase mt-6 ${verifyStep === -1 ? 'text-red-500' : 'text-white'}`}>
+                  {verifyStep === -1 ? 'Security Alert' : verifyStep === 4 ? 'Access Granted' : 'System Analysis'}
                 </h2>
               </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
+
+              <div className="space-y-6">
+                {/* Step 1: ID & Key */}
+                <div className={`flex items-center justify-between transition-all duration-500 ${verifyStep >= 1 ? 'opacity-100 translate-x-0' : 'opacity-20 -translate-x-4'}`}>
                   <div className="flex items-center gap-3">
-                    <User size={16} className={verifyStep >= 1 ? 'text-green-500' : 'text-white/20'} />
-                    <span className={`text-[10px] tracking-widest uppercase ${verifyStep >= 1 ? 'text-green-500' : 'text-white/40'}`}>Scanning Terminal ID</span>
+                    <User size={18} className={verifyStep > 1 ? 'text-green-500' : verifyStep === -1 ? 'text-red-500' : 'text-blue-400'} />
+                    <span className={`text-[10px] font-bold tracking-widest uppercase ${verifyStep > 1 ? 'text-green-500' : 'text-white/60'}`}>Verifying ID & Access Key</span>
                   </div>
-                  {verifyStep >= 1 ? <CheckCircle2 size={14} className="text-green-500" /> : <Loader2 size={12} className="animate-spin text-white/20" />}
+                  {verifyStep > 1 ? <CheckCircle2 size={16} className="text-green-500" /> : verifyStep === -1 ? <ShieldAlert size={16} className="text-red-500" /> : <Loader2 size={14} className="animate-spin text-blue-400" />}
                 </div>
-                <div className={`flex items-center justify-between ${verifyStep >= 1 ? 'opacity-100' : 'opacity-20'}`}>
+
+                {/* Step 2: Servers */}
+                <div className={`flex items-center justify-between transition-all duration-500 delay-100 ${verifyStep >= 2 ? 'opacity-100 translate-x-0' : 'opacity-20 -translate-x-4'}`}>
                   <div className="flex items-center gap-3">
-                    <Lock size={16} className={verifyStep >= 2 ? 'text-green-500' : verifyStep === -1 ? 'text-red-500' : 'text-white/20'} />
-                    <span className={`text-[10px] tracking-widest uppercase ${verifyStep >= 2 ? 'text-green-500' : verifyStep === -1 ? 'text-red-500' : 'text-white/40'}`}>Verifying Access Key</span>
+                    <Server size={18} className={verifyStep > 2 ? 'text-green-500' : 'text-blue-400'} />
+                    <span className={`text-[10px] font-bold tracking-widest uppercase ${verifyStep > 2 ? 'text-green-500' : 'text-white/60'}`}>Establishing Server Connection</span>
                   </div>
-                  {verifyStep >= 2 ? <CheckCircle2 size={14} className="text-green-500" /> : verifyStep === -1 ? <ShieldAlert size={14} className="text-red-500" /> : null}
+                  {verifyStep > 2 ? <CheckCircle2 size={16} className="text-green-500" /> : verifyStep >= 2 ? <Loader2 size={14} className="animate-spin text-blue-400" /> : null}
+                </div>
+
+                {/* Step 3: Encryption */}
+                <div className={`flex items-center justify-between transition-all duration-500 delay-200 ${verifyStep >= 3 ? 'opacity-100 translate-x-0' : 'opacity-20 -translate-x-4'}`}>
+                  <div className="flex items-center gap-3">
+                    <Lock size={18} className={verifyStep > 3 ? 'text-green-500' : 'text-blue-400'} />
+                    <span className={`text-[10px] font-bold tracking-widest uppercase ${verifyStep > 3 ? 'text-green-500' : 'text-white/60'}`}>Encrypting Entry Data</span>
+                  </div>
+                  {verifyStep > 3 ? <CheckCircle2 size={16} className="text-green-500" /> : verifyStep >= 3 ? <Loader2 size={14} className="animate-spin text-blue-400" /> : null}
                 </div>
               </div>
-              {verifyStep === 3 && <p className="text-green-500 text-center font-bold uppercase tracking-widest">Access Granted</p>}
+
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-sm text-center">
+                  <p className="text-[10px] text-red-500 font-bold tracking-tighter uppercase">{error}</p>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="text-center mb-10">
-        {title && <h1 className={`text-5xl font-black uppercase tracking-tighter ${!useCustomGlow ? themeGlow : ''}`} style={useCustomGlow ? dynamicGlowStyle : {color: themeColor}}>{title}</h1>}
+      <div className="text-center mb-12">
+        {title && <h1 className="text-4xl font-black uppercase tracking-tighter" style={dynamicGlowStyle}>{title}</h1>}
       </div>
-      <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-sm shadow-2xl relative overflow-hidden">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {/* ID Field - Floating Block */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="group"
+          >
             <FormField control={form.control} name="userId" render={({ field }) => (
-              <FormItem><FormControl><Input type="text" placeholder="TERMINAL ID" className="bg-black/40 border-white/10 text-white h-14" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem>
+                <FormControl>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-white/60 transition-colors" />
+                    <Input 
+                      type="text" 
+                      placeholder="TERMINAL ID" 
+                      className="bg-white/[0.03] backdrop-blur-md border-white/10 hover:border-white/20 focus:border-white/40 text-white h-16 pl-12 rounded-xl tracking-widest font-bold placeholder:text-white/10" 
+                      {...field} 
+                    />
+                  </div>
+                </FormControl>
+              </FormItem>
             )} />
+          </motion.div>
+
+          {/* Key Field with Integrated Circular Arrow Button */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="group"
+          >
             <FormField control={form.control} name="password" render={({ field }) => (
-              <FormItem><FormControl><Input type={showPassword ? "text" : "password"} placeholder="ACCESS KEY" className="bg-black/40 border-white/10 text-white h-14" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem>
+                <FormControl>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-white/60 transition-colors" />
+                    <Input 
+                      type="password" 
+                      placeholder="ACCESS KEY" 
+                      className="bg-white/[0.03] backdrop-blur-md border-white/10 hover:border-white/20 focus:border-white/40 text-white h-16 pl-12 pr-16 rounded-xl tracking-widest font-bold placeholder:text-white/10" 
+                      {...field} 
+                    />
+                    <button 
+                      type="submit" 
+                      disabled={isVerifying || isPending}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center text-white/40 hover:text-white active:scale-90 transition-all disabled:opacity-30"
+                    >
+                      {isVerifying || isPending ? (
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                      ) : (
+                        <ArrowRightCircle className="h-8 w-8 stroke-[1.5px]" />
+                      )}
+                    </button>
+                  </div>
+                </FormControl>
+              </FormItem>
             )} />
-            <Button type="submit" className="w-full h-14 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-200" disabled={isPending || isVerifying}>
-                {isPending || isVerifying ? <Loader2 className="animate-spin" /> : "Authorize Entry"}
-            </Button>
-          </form>
-        </Form>
-      </div>
-      <div className="mt-6 text-center">
-        <span className="text-[9px] text-white/20 tracking-widest uppercase">RAZOR V2 CRASH</span>
+          </motion.div>
+        </form>
+      </Form>
+
+      <div className="pt-6 text-center">
+        <span className="text-[9px] text-white/10 tracking-[0.3em] uppercase font-black">RAZOR V2 CRASH</span>
       </div>
     </div>
   );
