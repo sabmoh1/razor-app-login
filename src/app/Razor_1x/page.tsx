@@ -12,6 +12,7 @@ function WelcomeContent() {
   const [crashValue, setCrashValue] = useState<string>("0.00");
   const [lastRaw, setLastRaw] = useState<string>("—");
   const [status, setStatus] = useState<"live" | "wait" | "err">("wait");
+  const [timeLeft, setTimeLeft] = useState<string>("000 : 00 : 00");
   
   const stateRef = useRef<any>(null);
 
@@ -120,13 +121,10 @@ function WelcomeContent() {
     const timerInterval = setInterval(() => {
       if (totalSeconds > 0) {
         totalSeconds--;
-        const timerEl = document.getElementById('timer-display');
-        if (timerEl) {
-          const h = Math.floor(totalSeconds / 3600);
-          const m = Math.floor((totalSeconds % 3600) / 60);
-          const s = totalSeconds % 60;
-          timerEl.innerText = `${String(h).padStart(3, '0')} : ${String(m).padStart(2, '0')} : ${String(s).padStart(2, '0')}`;
-        }
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        setTimeLeft(`${String(h).padStart(3, '0')} : ${String(m).padStart(2, '0')} : ${String(s).padStart(2, '0')}`);
       } else {
         clearInterval(timerInterval);
         sessionStorage.clear();
@@ -150,6 +148,8 @@ function WelcomeContent() {
     <>
       <Head>
         <title>RAZOR — Predictor V2</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Acme&family=Amiri:wght@400;700&family=Sedgwick+Ave&display=swap" rel="stylesheet" />
       </Head>
       <style jsx global>{`
@@ -293,9 +293,9 @@ function WelcomeContent() {
           }
           .value.flip { animation: flip 0.4s ease; }
           @keyframes flip {
-            0% { transform: translateY(0); opacity: 1; }
-            50% { transform: translateY(-10px); opacity: 0.3; }
-            100% { transform: translateY(0); opacity: 1; }
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            45% { transform: translateY(-10px) scale(1.08); opacity: 0.3; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
           }
           .value::after { content: "x"; font-size: 28px; vertical-align: super; margin-left: 5px; opacity: 0.6; }
           .footer {
@@ -338,7 +338,7 @@ function WelcomeContent() {
         </div>
 
         <footer className="footer">
-          <div className="timer" id="timer-display">000 : 00 : 00</div>
+          <div className="timer">{timeLeft}</div>
           <div className="lastraw">
             <span className="label">LAST RAW</span>
             <span className="val">{lastRaw}</span>

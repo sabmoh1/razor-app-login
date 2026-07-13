@@ -84,8 +84,9 @@ export default function LoginForm({
           let passwordData: any = null;
 
           for (const key in allPasswords) {
-            // Read from 'rz' field as specified
-            if (allPasswords[key].rz === values.password) {
+            // Priority given to 'password' field as per user's latest example
+            const dbPass = allPasswords[key].password || allPasswords[key].rz;
+            if (dbPass === values.password) {
               isValid = true;
               passwordKey = key;
               passwordData = allPasswords[key];
@@ -95,7 +96,9 @@ export default function LoginForm({
 
           if (isValid && passwordKey && passwordData) {
             // Check usage limit
-            if (passwordData.uses !== undefined && passwordData.uses <= 0) {
+            const currentUses = typeof passwordData.uses === 'string' ? parseInt(passwordData.uses) : passwordData.uses;
+            
+            if (currentUses !== undefined && currentUses <= 0) {
                 setError("ACCESS DENIED: KEY USAGE DEPLETED");
                 return;
             }
@@ -106,9 +109,9 @@ export default function LoginForm({
 
             // Handle usage reduction
             const keyRef = ref(database, `passwords/${passwordKey}`);
-            if (passwordData.uses !== undefined) {
-              if (passwordData.uses > 1) {
-                await update(keyRef, { uses: passwordData.uses - 1 });
+            if (currentUses !== undefined) {
+              if (currentUses > 1) {
+                await update(keyRef, { uses: currentUses - 1 });
               } else {
                 await remove(keyRef);
               }
