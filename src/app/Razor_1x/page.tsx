@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef, Suspense, useState } from 'react';
+import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { User } from 'lucide-react';
@@ -9,27 +9,75 @@ import { User } from 'lucide-react';
 function WelcomeContent() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
+  const [prediction, setPrediction] = useState<number | null>(null);
+  const [roundId, setRoundId] = useState<string>("—");
+  const [publishedAt, setPublishedAt] = useState<string>("—");
+  const [ago, setAgo] = useState<string>("—");
+  const [status, setStatus] = useState<"live" | "wait" | "err">("wait");
+  const [statusText, setStatusText] = useState("جارٍ الاتصال…");
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
-  const statusDotRef = useRef<HTMLDivElement>(null);
-  const statusTextRef = useRef<HTMLSpanElement>(null);
-  const timerRef = useRef<HTMLDivElement>(null);
-  const lastValueRef = useRef<string | null>(null);
+  const lastPublishedMs = useRef<number | null>(null);
+  const stateRef = useRef<any>(null);
 
   const parseValidityToSeconds = (validity: string | null): number => {
-    if (!validity) return 60 * 60;
+    if (!validity) return 11 * 60;
     const value = parseInt(validity.slice(0, -1));
     const unit = validity.slice(-1).toLowerCase();
-    if (isNaN(value)) return 60 * 60;
+    if (isNaN(value)) return 11 * 60;
     switch (unit) {
       case 'h': return value * 3600;
       case 'd': return value * 86400;
       case 'm': return value * 60;
       case 's': return value;
-      default: return 60 * 60;
+      default: return value * 60;
     }
   };
+
+  const fmtTime = (v: any) => {
+    if (v == null) return "—";
+    let ms: number | null = null;
+    if (typeof v === "number") ms = v < 1e12 ? v * 1000 : v;
+    else if (typeof v === "string") {
+      const n = Number(v);
+      ms = Number.isFinite(n) ? (n < 1e12 ? n * 1000 : n) : Date.parse(v);
+    }
+    if (!ms || Number.isNaN(ms)) return String(v);
+    const d = new Date(ms);
+    return d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  };
+
+  const applyAtPath = (root: any, path: string, data: any) => {
+    if (path === "/" || path === "") return data;
+    const parts = path.split("/").filter(Boolean);
+    if (root === null || typeof root !== "object") root = {};
+    let node = root;
+    for (let i = 0; i < parts.length - 1; i++) {
+      const k = parts[i];
+      if (typeof node[k] !== "object" || node[k] === null) node[k] = {};
+      node = node[k];
+    }
+    const last = parts[parts.length - 1];
+    if (data === null) delete node[last]; else node[last] = data;
+    return root;
+  };
+
+  const doGlitchThenSet = useCallback((newVal: any) => {
+    const crashEl = crashValueRef.current;
+    const lastRawEl = lastRawRef.current;
+    if (!crashEl || !lastRawEl) return;
+    crashEl.classList.add('glitch');
+    setTimeout(() => {
+      const prev = crashEl.innerText;
+      if (prev && prev.trim() !== '' && prev !== '0.00') lastRawEl.innerText = prev;
+      const t = (newVal === undefined || newVal === null) ? '0.00' : Number(newVal).toFixed(2);
+      crashEl.innerText = t;
+      crashEl.setAttribute('data-text', t);
+    }, 220);
+    setTimeout(() => crashEl.classList.remove('glitch'), 560);
+  }, []);
 
   useEffect(() => {
     const validity = sessionStorage.getItem('razor_session_validity');
@@ -40,43 +88,21 @@ function WelcomeContent() {
       return;
     }
     setUserId(storedUserId);
-    
-    const crashEl = crashValueRef.current;
-    const lastRawEl = lastRawRef.current;
-    const statusDot = statusDotRef.current;
-    const statusText = statusTextRef.current;
-    const timerEl = timerRef.current;
 
-    function doGlitchThenSet(newVal: any){
-      if (!crashEl || !lastRawEl) return;
-      crashEl.classList.add('glitch');
-      setTimeout(()=>{
-        const prev = crashEl.innerText;
-        if(prev && prev.trim() !== '' && prev !== '0.00') lastRawEl.innerText = prev;
-        const t = (newVal===undefined||newVal===null) ? '0.00' : String(newVal);
-        crashEl.innerText = t;
-        crashEl.setAttribute('data-text', t);
-      }, 220);
-      setTimeout(()=> crashEl.classList.remove('glitch'), 560);
-    }
+    const DB_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com";
+    const NODE = "predictions/current";
+    const STREAM_URL = `${DB_URL}/${NODE}.json`;
 
-    function setStatusIndicator(status: 'live' | 'wait' | 'err', text: string){
-      if (!statusDot || !statusText) return;
-      statusDot.className = `status-dot ${status === 'live' ? 'connected' : ''}`;
-      statusText.textContent = text;
-    }
-
-    const STREAM_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com/predictions/current.json";
     let eventSource: EventSource | null = null;
     let pollInterval: NodeJS.Timeout | null = null;
 
-    const handleData = (data: any) => {
-      if (data && data.value) {
-        const val = String(data.value);
-        if (lastValueRef.current !== val) {
-          doGlitchThenSet(val);
-          lastValueRef.current = val;
-        }
+    const onDataReceived = (newState: any) => {
+      stateRef.current = newState;
+      if (newState && newState.value != null) {
+        doGlitchThenSet(newState.value);
+        setRoundId(newState.roundId || "—");
+        setPublishedAt(fmtTime(newState.publishedAt));
+        lastPublishedMs.current = (typeof newState.publishedAt === "number") ? (newState.publishedAt < 1e12 ? newState.publishedAt * 1000 : newState.publishedAt) : Date.parse(newState.publishedAt);
       }
     };
 
@@ -84,17 +110,33 @@ function WelcomeContent() {
       if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
       try {
         eventSource = new EventSource(STREAM_URL);
-        eventSource.addEventListener('put', (e) => {
-          const payload = JSON.parse(e.data);
-          handleData(payload.data);
-          setStatusIndicator('live', 'connected (live)');
-        });
-        eventSource.addEventListener('patch', (e) => {
-          const payload = JSON.parse(e.data);
-          handleData(payload.data);
-          setStatusIndicator('live', 'connected (live)');
-        });
-        eventSource.onopen = () => setStatusIndicator('live', 'connected (live)');
+        
+        eventSource.onopen = () => {
+          setStatus("live");
+          setStatusText("connected — realtime");
+        };
+
+        const handleEvent = (ev: MessageEvent) => {
+          let payload;
+          try { payload = JSON.parse(ev.data); } catch (_) { return; }
+          if (!payload || typeof payload !== "object") return;
+          const path = payload.path != null ? payload.path : "/";
+          const data = payload.data;
+
+          let newState = stateRef.current;
+          if (ev.type === "patch") {
+            if (data && typeof data === "object") {
+              for (const k in data) newState = applyAtPath(newState, (path === "/" ? "" : path) + "/" + k, data[k]);
+            }
+          } else {
+            newState = applyAtPath(newState, path, data);
+          }
+          onDataReceived(newState);
+        };
+
+        eventSource.addEventListener('put', handleEvent as any);
+        eventSource.addEventListener('patch', handleEvent as any);
+
         eventSource.onerror = () => {
           eventSource?.close();
           startPolling();
@@ -106,77 +148,67 @@ function WelcomeContent() {
 
     const startPolling = () => {
       if (pollInterval) return;
-      setStatusIndicator('wait', 'reconnecting...');
+      setStatus("wait");
+      setStatusText("polling — fallback");
       pollInterval = setInterval(async () => {
         try {
           const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
           const data = await res.json();
-          handleData(data);
-          setStatusIndicator('live', 'connected (polling)');
+          onDataReceived(data);
+          setStatus("live");
         } catch (e) {
-          setStatusIndicator('err', 'connection error');
+          setStatus("err");
+          setStatusText("connection error");
         }
       }, 2000);
     };
 
     startSSE();
 
+    // Timer logic
     let totalSeconds = parseValidityToSeconds(validity);
-    const handleSessionEnd = () => {
-      sessionStorage.removeItem('razor_session_validity');
-      sessionStorage.removeItem('razor_user_id');
-      router.push('/');
-    }
-    function updateTimer(){
-      if (!timerEl) return;
-      const h = Math.floor(totalSeconds/3600);
-      const m = Math.floor((totalSeconds%3600)/60);
-      const s = totalSeconds%60;
-      timerEl.innerText = `${String(h).padStart(2,'0')} : ${String(m).padStart(2,'0')} : ${String(s).padStart(2,'0')}`;
-    }
-    const timerInterval = setInterval(() => { 
-      if (totalSeconds > 0) { totalSeconds--; updateTimer(); }
-      else { clearInterval(timerInterval); handleSessionEnd(); }
+    const timerInterval = setInterval(() => {
+      if (totalSeconds > 0) {
+        totalSeconds--;
+        const timerEl = document.getElementById('timer');
+        if (timerEl) {
+          const h = Math.floor(totalSeconds / 3600);
+          const m = Math.floor((totalSeconds % 3600) / 60);
+          const s = totalSeconds % 60;
+          timerEl.innerText = `${String(h).padStart(2, '0')} : ${String(m).padStart(2, '0')} : ${String(s).padStart(2, '0')}`;
+        }
+      } else {
+        clearInterval(timerInterval);
+        sessionStorage.clear();
+        router.push('/');
+      }
     }, 1000);
-    updateTimer();
 
     // Matrix background
     const canvas = canvasRef.current;
-    let matrixInterval: NodeJS.Timeout;
     if (canvas) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            let W = canvas.width = window.innerWidth;
-            let H = canvas.height = window.innerHeight;
-            let cols = Math.floor(W / 10) + 1;
-            let ypos = Array(cols).fill(0);
-            const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
-            const matrixResize = () => {
-                W = canvas.width = window.innerWidth;
-                H = canvas.height = window.innerHeight;
-                cols = Math.floor(W / 10) + 1;
-                ypos = Array(cols).fill(0);
-            };
-            window.addEventListener('resize', matrixResize);
-            const drawMatrix = () => {
-                ctx.fillStyle = 'rgba(0,0,0,0.22)';
-                ctx.fillRect(0,0,W,H);
-                ctx.font = '12px monospace';
-                ypos.forEach((y, ind) => {
-                    const text = letters.charAt(Math.floor(Math.random() * letters.length));
-                    const x = ind * 10;
-                    ctx.fillStyle = 'rgba(255, 255, 255,'+ (0.18 + Math.random()*0.6) +')';
-                    ctx.fillText(text, x, y);
-                    if(y > H + Math.random()*700) ypos[ind] = 0;
-                    else ypos[ind] = y + 12 + Math.random()*8;
-                });
-            };
-            matrixInterval = setInterval(drawMatrix, 40);
-            (window as any).__matrixCleanup = () => {
-                window.removeEventListener('resize', matrixResize);
-                clearInterval(matrixInterval);
-            };
-        }
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        let W = canvas.width = window.innerWidth;
+        let H = canvas.height = window.innerHeight;
+        let cols = Math.floor(W / 10) + 1;
+        let ypos = Array(cols).fill(0);
+        const letters = '01・〇●■▲▼◆abcdefghijklmnopqrstuvwxyz0123456789';
+        const matrixInterval = setInterval(() => {
+          ctx.fillStyle = 'rgba(0,0,0,0.22)';
+          ctx.fillRect(0, 0, W, H);
+          ctx.font = '12px monospace';
+          ypos.forEach((y, ind) => {
+            const text = letters.charAt(Math.floor(Math.random() * letters.length));
+            const x = ind * 10;
+            ctx.fillStyle = 'rgba(255, 255, 255,' + (0.18 + Math.random() * 0.6) + ')';
+            ctx.fillText(text, x, y);
+            if (y > H + Math.random() * 700) ypos[ind] = 0;
+            else ypos[ind] = y + 12 + Math.random() * 8;
+          });
+        }, 40);
+        (window as any).__matrixCleanup = () => clearInterval(matrixInterval);
+      }
     }
 
     return () => {
@@ -185,7 +217,16 @@ function WelcomeContent() {
       clearInterval(timerInterval);
       if ((window as any).__matrixCleanup) (window as any).__matrixCleanup();
     };
-  }, [router]);
+  }, [router, doGlitchThenSet]);
+
+  useEffect(() => {
+    const agoInterval = setInterval(() => {
+      if (lastPublishedMs.current == null) { setAgo("—"); return; }
+      const s = Math.max(0, Math.round((Date.now() - lastPublishedMs.current) / 1000));
+      setAgo(s < 60 ? s + "s" : Math.floor(s / 60) + "m " + (s % 60) + "s");
+    }, 1000);
+    return () => clearInterval(agoInterval);
+  }, []);
 
   return (
     <>
@@ -227,7 +268,9 @@ function WelcomeContent() {
           .connection-status { display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 16px; color: white; }
           .user-id-display { display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 16px; color: white; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
           .status-dot{width:14px;height:14px;border-radius:50%;background:var(--neon-gray);box-shadow:0 0 6px rgba(0,0,0,0.6) inset;transition:all .28s ease;}
-          .status-dot.connected{background:var(--neon-primary);}
+          .status-dot.connected{background:var(--neon-primary);box-shadow: 0 0 10px var(--neon-primary);}
+          .chip { background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem; }
+          .chip b { margin-left: 6px; color: var(--neon-primary); }
         `}</style>
 
       <canvas id="matrix" ref={canvasRef}></canvas>
@@ -238,8 +281,8 @@ function WelcomeContent() {
           <span>{userId}</span>
         </div>
         <div className="connection-status">
-          <div id="statusDot" className="status-dot" ref={statusDotRef}></div>
-          <span id="statusText" ref={statusTextRef}>Disconnected</span>
+          <div className={`status-dot ${status === 'live' ? 'connected' : ''}`}></div>
+          <span>{statusText}</span>
         </div>
        </div>
 
@@ -247,16 +290,23 @@ function WelcomeContent() {
         <div className="panel">
           <div className="brand">
             <div className="logo-text">1XBET</div>
-            <h1 className="neon-label" style={{color: 'var(--neon-primary)', textShadow: '0 0 2px #fff, 0 0 3px #fff, 0 0 5px #fff'}}>RAZOR</h1>
+            <h1 className="neon-label">RAZOR</h1>
           </div>
             <a id="username" target="_blank" rel="noopener noreferrer">Telegram : @Razor_1x</a>
-          <div className="display-circle" aria-hidden="false">
-            <div className="inner-ring" style={{position: 'absolute', inset: '18px', borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'overlay'}}></div>
+          
+          <div className="display-circle">
             <div id="crashValue" ref={crashValueRef} data-text="0.00">0.00</div>
           </div>
+
           <div className="meta-row">
-            <div className="timer-big" id="timer" ref={timerRef}>00 : 00 : 00</div>
-            <div className="last-box" aria-hidden="false">
+            <div className="chip">Round <b>{roundId}</b></div>
+            <div className="chip">Published <b>{publishedAt}</b></div>
+            <div className="chip">Ago <b>{ago}</b></div>
+          </div>
+
+          <div className="meta-row">
+            <div className="timer-big" id="timer">00 : 00 : 00</div>
+            <div className="last-box">
               <div className="label">LastRaw</div>
               <div className="value" id="lastRaw" ref={lastRawRef}>-</div>
             </div>

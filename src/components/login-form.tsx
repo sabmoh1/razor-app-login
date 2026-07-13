@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Lock, Loader2, AlertCircle, ArrowRight, User } from "lucide-react";
 import { database } from "@/lib/firebase";
-import { ref, get, set, remove, update } from "firebase/database";
+import { ref, get, remove, update } from "firebase/database";
 
 const formSchema = z.object({
   userId: z
@@ -104,8 +104,8 @@ export default function LoginForm({
           let passwordData: any = null;
 
           for (const key in allPasswords) {
-            // Updated to use 'rz' field as per user request
-            if (allPasswords[key].rz === values.password) {
+            // Read from 'rz' field as specified
+            if (allPasswords[key].rz === values.password || allPasswords[key].password === values.password) {
               isValid = true;
               passwordKey = key;
               passwordData = allPasswords[key];
@@ -114,24 +114,10 @@ export default function LoginForm({
           }
 
           if (isValid && passwordKey && passwordData) {
-            
-            // Explicitly reject attempt-based keys for time-based pages
-            if (passwordData.attemps || passwordData.attempts) {
-                setError("This key is not valid for this page.");
-                return;
-            }
-            // Explicitly reject time-based keys if they are not expected
-            if (!isTimeBasedValidity(passwordData.validity)) {
-                setError("This key is not valid for this page.");
-                return;
-            }
-
-
             if (customValidation) {
               const validationError = customValidation(passwordData);
               if (validationError) {
                 setError(validationError);
-                form.reset({ password: "", userId: values.userId });
                 return; 
               }
             }
@@ -140,38 +126,28 @@ export default function LoginForm({
 
             const passwordRef = ref(database, `passwords/${passwordKey}`);
 
-            if (validityType === 'attempts') {
-                const attempts = passwordData.attempts || passwordData.attemps || '1'; // Default to 1 attempt if not specified
-                sessionStorage.setItem('razor_session_attempts', attempts);
-                sessionStorage.setItem('razor_key_id', passwordKey);
-                // For attempts-based keys, `uses` handles login sessions.
-                if (passwordData.uses && passwordData.uses > 1) {
-                    await update(passwordRef, { uses: passwordData.uses - 1 });
-                } else if (passwordData.uses) {
-                    await remove(passwordRef);
-                }
-            } else { // Time-based validity
-                const validityValue = passwordData.validity || '1h';
-                sessionStorage.setItem('razor_session_validity', validityValue);
-                if (passwordData.uses && passwordData.uses > 1) {
-                    await update(passwordRef, { uses: passwordData.uses - 1 });
-                } else if (passwordData.uses) {
-                     await remove(passwordRef);
-                }
+            // Handle uses and validity logic from the generator
+            const validityValue = passwordData.validity || '11m';
+            sessionStorage.setItem('razor_session_validity', validityValue);
+
+            // Handle Usage decrement
+            if (passwordData.uses !== undefined) {
+              if (passwordData.uses > 1) {
+                await update(passwordRef, { uses: passwordData.uses - 1 });
+              } else {
+                await remove(passwordRef);
+              }
             }
+
             router.push(welcomePath);
           } else {
             setError("ACCESS DENIED: Incorrect credentials");
-            form.reset({ password: "", userId: values.userId });
           }
         } else {
-          setError("ACCESS DENIED: No passwords found in database");
-          form.reset({ password: "", userId: "" });
+          setError("ACCESS DENIED: System error");
         }
       } catch (error: any) {
-        setError("SYSTEM ERROR: Could not connect to the server.");
-        console.error("Login error:", error);
-        form.reset({ password: "", userId: "" });
+        setError("SYSTEM ERROR: Check connection.");
       }
     });
   }
@@ -240,34 +216,28 @@ export default function LoginForm({
                       />
                     </FormControl>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className={`h-9 w-9 rounded-full text-[var(--theme-color)] opacity-70 hover:bg-[var(--theme-color-op-10)] hover:text-[var(--theme-color)]`}
+                        className={`p-2 rounded-full text-[var(--theme-color)] opacity-70 hover:bg-[var(--theme-color-op-10)] hover:text-[var(--theme-color)] transition-all`}
                         onClick={() => setShowPassword(!showPassword)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
                       >
                         {showPassword ? (
                           <EyeOff className="h-5 w-5" />
                         ) : (
                           <Eye className="h-5 w-5" />
                         )}
-                      </Button>
-                       <Button 
+                      </button>
+                       <button 
                         type="submit" 
-                        variant="ghost"
-                        size="icon"
-                        className={`h-10 w-10 rounded-full text-[var(--theme-color)] hover:bg-[var(--theme-color-op-20)] hover:text-white disabled:opacity-50`}
+                        className={`p-2 rounded-full text-[var(--theme-color)] hover:bg-[var(--theme-color-op-20)] hover:text-white disabled:opacity-50 transition-all`}
                         disabled={isPending}
-                        aria-label="Initiate Connection"
                       >
                         {isPending ? (
                           <Loader2 className="h-5 w-5 animate-spin" />
                         ) : (
                           <ArrowRight className="h-6 w-6" />
                         )}
-                      </Button>
+                      </button>
                     </div>
                   </div>
                   <FormMessage className="text-red-400 text-xs pt-1 font-code pl-4" />
