@@ -4,9 +4,7 @@
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
-import { User, Cpu, Clock, Hash } from 'lucide-react';
-import { database } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
+import { User, LogOut, Globe } from 'lucide-react';
 
 function WelcomeContent() {
   const router = useRouter();
@@ -15,11 +13,11 @@ function WelcomeContent() {
   const [publishedAt, setPublishedAt] = useState<string>("—");
   const [ago, setAgo] = useState<string>("—");
   const [crashValue, setCrashValue] = useState<string>("0.00");
+  const [lastRaw, setLastRaw] = useState<string>("—");
+  const [status, setStatus] = useState<"live" | "wait" | "err">("wait");
   
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const crashValueRef = useRef<HTMLDivElement>(null);
-  const lastRawRef = useRef<HTMLDivElement>(null);
   const lastPublishedMs = useRef<number | null>(null);
+  const stateRef = useRef<any>(null);
 
   const parseValidityToSeconds = (validity: string | null): number => {
     if (!validity) return 11 * 60;
@@ -48,23 +46,43 @@ function WelcomeContent() {
     return d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   };
 
-  const doGlitchThenSet = useCallback((newVal: any) => {
-    const crashEl = crashValueRef.current;
-    const lastRawEl = lastRawRef.current;
-    if (!crashEl || !lastRawEl) return;
+  const applyAtPath = (root: any, path: string, data: any) => {
+    if (path === "/" || path === "") return data;
+    const parts = path.split("/").filter(Boolean);
+    if (root === null || typeof root !== "object") root = {};
+    let node = root;
+    for (let i = 0; i < parts.length - 1; i++) {
+      const k = parts[i];
+      if (typeof node[k] !== "object" || node[k] === null) node[k] = {};
+      node = node[k];
+    }
+    const last = parts[parts.length - 1];
+    if (data === null) delete node[last]; else node[last] = data;
+    return root;
+  };
 
-    crashEl.classList.add('glitch-v2');
-    setTimeout(() => {
-      const prev = crashEl.innerText;
-      if (prev && prev.trim() !== '' && prev !== '0.00') {
-        lastRawEl.innerText = prev;
+  const updateUI = useCallback((newState: any) => {
+    if (newState && newState.value != null) {
+      const newVal = Number(newState.value).toFixed(2);
+      setLastRaw(prev => (prev !== newVal ? crashValue : prev));
+      setCrashValue(newVal);
+      if (newState.roundId) setRoundId(newState.roundId);
+      if (newState.publishedAt) {
+        setPublishedAt(fmtTime(newState.publishedAt));
+        lastPublishedMs.current = (typeof newState.publishedAt === "number") 
+          ? (newState.publishedAt < 1e12 ? newState.publishedAt * 1000 : newState.publishedAt) 
+          : Date.parse(newState.publishedAt);
       }
-      const t = (newVal === undefined || newVal === null) ? '0.00' : Number(newVal).toFixed(2);
-      setCrashValue(t);
-      crashEl.setAttribute('data-text', t);
-    }, 200);
-    setTimeout(() => crashEl.classList.remove('glitch-v2'), 500);
-  }, []);
+      
+      // Trigger Flip Animation
+      const valEl = document.getElementById('value-display');
+      if (valEl) {
+        valEl.classList.remove('flip');
+        void valEl.offsetWidth;
+        valEl.classList.add('flip');
+      }
+    }
+  }, [crashValue]);
 
   useEffect(() => {
     const validity = sessionStorage.getItem('razor_session_validity');
@@ -76,33 +94,62 @@ function WelcomeContent() {
     }
     setUserId(storedUserId);
 
-    // Firebase RTDB Logic for Razor V2
-    const currentPredRef = ref(database, 'predictions/current');
-    const unsubscribe = onValue(currentPredRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        if (data.value != null) doGlitchThenSet(data.value);
-        if (data.roundId) setRoundId(data.roundId);
-        if (data.publishedAt) {
-          setPublishedAt(fmtTime(data.publishedAt));
-          lastPublishedMs.current = (typeof data.publishedAt === "number") 
-            ? (data.publishedAt < 1e12 ? data.publishedAt * 1000 : data.publishedAt) 
-            : Date.parse(data.publishedAt);
-        }
+    const STREAM_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com/predictions/current.json";
+    let eventSource: EventSource | null = null;
+    let pollInterval: NodeJS.Timeout | null = null;
+
+    const startSSE = () => {
+      try {
+        eventSource = new EventSource(STREAM_URL);
+        eventSource.onopen = () => setStatus("live");
+        
+        const handleEvent = (ev: MessageEvent) => {
+          let payload;
+          try { payload = JSON.parse(ev.data); } catch (_) { return; }
+          if (!payload || typeof payload !== "object") return;
+          const path = payload.path != null ? payload.path : "/";
+          const data = payload.data;
+          stateRef.current = applyAtPath(stateRef.current, path, data);
+          updateUI(stateRef.current);
+        };
+
+        eventSource.addEventListener('put', handleEvent as any);
+        eventSource.addEventListener('patch', handleEvent as any);
+        eventSource.onerror = () => {
+          eventSource?.close();
+          startPolling();
+        };
+      } catch (e) {
+        startPolling();
       }
-    });
+    };
+
+    const startPolling = () => {
+      if (pollInterval) return;
+      pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
+          const data = await res.json();
+          stateRef.current = data;
+          updateUI(data);
+          setStatus("live");
+        } catch (e) { setStatus("err"); }
+      }, 2000);
+    };
+
+    startSSE();
 
     // Session Timer
     let totalSeconds = parseValidityToSeconds(validity);
     const timerInterval = setInterval(() => {
       if (totalSeconds > 0) {
         totalSeconds--;
-        const timerEl = document.getElementById('v2-timer');
+        const timerEl = document.getElementById('timer-display');
         if (timerEl) {
           const h = Math.floor(totalSeconds / 3600);
           const m = Math.floor((totalSeconds % 3600) / 60);
           const s = totalSeconds % 60;
-          timerEl.innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+          timerEl.innerText = `${String(h).padStart(3, '0')} : ${String(m).padStart(2, '0')} : ${String(s).padStart(2, '0')}`;
         }
       } else {
         clearInterval(timerInterval);
@@ -111,41 +158,12 @@ function WelcomeContent() {
       }
     }, 1000);
 
-    // Matrix background V2 (Electric White)
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        let W = canvas.width = window.innerWidth;
-        let H = canvas.height = window.innerHeight;
-        let cols = Math.floor(W / 15) + 1;
-        let ypos = Array(cols).fill(0);
-        const letters = '01・〇●■▲▼◆RAZORV2';
-        const matrixInterval = setInterval(() => {
-          ctx.fillStyle = 'rgba(0,0,0,0.15)';
-          ctx.fillRect(0, 0, W, H);
-          ctx.font = '14px monospace';
-          ypos.forEach((y, ind) => {
-            const text = letters.charAt(Math.floor(Math.random() * letters.length));
-            const x = ind * 15;
-            ctx.fillStyle = 'rgba(255, 255, 255,' + (0.1 + Math.random() * 0.3) + ')';
-            ctx.fillText(text, x, y);
-            if (y > H + Math.random() * 800) ypos[ind] = 0;
-            else ypos[ind] = y + 15;
-          });
-        }, 50);
-        return () => {
-            clearInterval(matrixInterval);
-            unsubscribe();
-            clearInterval(timerInterval);
-        };
-      }
-    }
     return () => {
-        unsubscribe();
-        clearInterval(timerInterval);
+      eventSource?.close();
+      if (pollInterval) clearInterval(pollInterval);
+      clearInterval(timerInterval);
     };
-  }, [router, doGlitchThenSet]);
+  }, [router, updateUI]);
 
   useEffect(() => {
     const agoInterval = setInterval(() => {
@@ -156,184 +174,235 @@ function WelcomeContent() {
     return () => clearInterval(agoInterval);
   }, []);
 
+  const handleLogout = () => {
+    sessionStorage.clear();
+    router.push('/');
+  };
+
   return (
     <>
       <Head>
-        <title>RAZOR V2 — OBSIDIAN</title>
+        <title>RAZOR — Predictor V2</title>
+        <link href="https://fonts.googleapis.com/css2?family=Acme&family=Amiri:wght@400;700&family=Sedgwick+Ave&display=swap" rel="stylesheet" />
       </Head>
       <style jsx global>{`
           :root {
-            --v2-bg: #030303;
-            --v2-accent: #ffffff;
-            --v2-glass: rgba(255, 255, 255, 0.03);
-            --v2-border: rgba(255, 255, 255, 0.1);
-            --v2-glow: 0 0 15px rgba(255, 255, 255, 0.4);
+            --bg: #000000;
+            --fg: #ffffff;
+            --muted: #6b6b6b;
+            --muted-2: #454545;
+            --green: #34d058;
+            --ring: rgba(255, 255, 255, 0.10);
+            --ring-glow: rgba(255, 255, 255, 0.4);
+            --font-main: 'Acme', sans-serif;
+            --font-accent: 'Sedgwick Ave', cursive;
           }
+          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
           body {
-            background-color: var(--v2-bg);
-            color: #ffffff;
-            font-family: 'Orbitron', sans-serif;
+            height: 100vh;
+            background: black url('https://cdn.dribbble.com/userupload/20787734/file/original-6a95ade3f7286f5da2b16669f6ff93c3.gif') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--fg);
+            font-family: var(--font-main);
             overflow: hidden;
+            position: relative;
           }
-          canvas#v2-matrix { position: fixed; inset: 0; z-index: 0; opacity: 0.5; }
-          .v2-wrapper {
+          body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: grayscale(1) brightness(2.5);
+            z-index: -1;
+          }
+          body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 42%, rgba(255,255,255,0.05), transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+          }
+          .app {
             position: relative;
             z-index: 10;
+            max-width: 600px;
+            margin: 0 auto;
             height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            padding: 25px;
           }
-          .v2-header {
-            position: absolute;
-            top: 30px;
-            width: 100%;
+          .topbar {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            padding: 0 40px;
+            gap: 10px;
           }
-          .v2-user-badge {
-            background: var(--v2-glass);
-            border: 1px solid var(--v2-border);
-            padding: 10px 20px;
-            border-radius: 4px;
-            display: flex;
+          .user-chip {
+            display: inline-flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
+            border: 1px solid var(--muted-2);
+            border-radius: 12px;
+            padding: 8px 15px;
+            font-size: 13px;
+            background: rgba(0,0,0,0.6);
             backdrop-filter: blur(10px);
           }
-          .v2-main-display {
-            background: var(--v2-glass);
-            border: 1px solid var(--v2-border);
-            width: min(500px, 90vw);
-            aspect-ratio: 1;
+          .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--green);
+            font-weight: bold;
+            text-transform: uppercase;
+          }
+          .status .dot {
+            width: 8px; height: 8px;
             border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+            animation: blink 1.6s ease-in-out infinite;
+          }
+          @keyframes blink { 0%,100% { opacity: 1 } 50% { opacity: .3 } }
+          .logout {
+            width: 40px; height: 40px;
+            border: 1px solid var(--muted-2);
+            border-radius: 10px;
+            background: rgba(0,0,0,0.6);
+            color: var(--fg);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          .logout:active { transform: scale(0.9); }
+          .brand { text-align: center; margin-top: 20px; }
+          .brand .sub-top { font-size: 14px; letter-spacing: 5px; opacity: 0.7; }
+          .brand .title { 
+            font-size: 56px; 
+            font-family: var(--font-accent);
+            margin: 5px 0;
+            text-shadow: 0 0 20px rgba(255,255,255,0.4);
+          }
+          .brand .telegram { font-size: 11px; letter-spacing: 2px; color: var(--muted); }
+          .stage {
+            flex: 1;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            box-shadow: inset 0 0 50px rgba(255,255,255,0.02);
+          }
+          .dial {
             position: relative;
-          }
-          .v2-main-display::after {
-            content: '';
-            position: absolute;
-            inset: -10px;
+            width: 320px;
+            height: 320px;
             border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.05);
-            animation: pulse-ring 4s infinite;
-          }
-          @keyframes pulse-ring {
-            0% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.05); opacity: 0.2; }
-            100% { transform: scale(1); opacity: 0.5; }
-          }
-          .v2-value {
-            font-size: 7rem;
-            font-weight: 900;
-            letter-spacing: -2px;
-            text-shadow: var(--v2-glow);
-          }
-          .v2-label-small {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            color: rgba(255,255,255,0.4);
-            margin-bottom: -10px;
-          }
-          .v2-info-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-top: 40px;
-            width: min(600px, 95vw);
-          }
-          .v2-info-card {
-            background: var(--v2-glass);
-            border: 1px solid var(--v2-border);
-            padding: 15px;
-            border-radius: 4px;
-            text-align: center;
-            backdrop-filter: blur(5px);
-          }
-          .v2-info-card label {
-            display: block;
-            font-size: 0.6rem;
-            color: rgba(255,255,255,0.4);
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-          }
-          .v2-info-card span {
-            font-weight: 700;
-            font-size: 0.9rem;
-            word-break: break-all;
-          }
-          .v2-footer-meta {
-            margin-top: 30px;
             display: flex;
-            gap: 30px;
-            color: rgba(255,255,255,0.3);
-            font-size: 0.8rem;
+            align-items: center;
+            justify-content: center;
           }
-          .glitch-v2 {
-            animation: glitch-anim 0.3s cubic-bezier(.25,.46,.45,.94) both infinite;
+          .dial::before {
+            content: "";
+            position: absolute; inset: 0;
+            border-radius: 50%;
+            border: 1px solid var(--ring);
+            box-shadow: inset 0 0 30px rgba(255,255,255,0.03);
           }
-          @keyframes glitch-anim {
-            0% { transform: translate(0); text-shadow: -2px 0 #fff, 2px 0 #000; }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
-            100% { transform: translate(0); }
+          .dial::after {
+            content: "";
+            position: absolute; inset: -2px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent 0deg, var(--ring-glow) 30deg, transparent 90deg);
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+            animation: spin 5s linear infinite;
           }
-          #v2-timer { font-family: monospace; font-weight: bold; font-size: 1.2rem; letter-spacing: 2px; }
-        `}</style>
+          @keyframes spin { to { transform: rotate(360deg); } }
+          .value {
+            position: relative;
+            font-size: 72px;
+            font-family: var(--font-accent);
+            text-shadow: 0 0 30px rgba(255,255,255,0.6);
+          }
+          .value.flip { animation: flip 0.4s ease; }
+          @keyframes flip {
+            0% { transform: translateY(0); opacity: 1; }
+            50% { transform: translateY(-10px); opacity: 0.3; }
+            100% { transform: translateY(0); opacity: 1; }
+          }
+          .value::after { content: "x"; font-size: 28px; vertical-align: super; margin-left: 5px; opacity: 0.6; }
+          .meta-info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+          }
+          .info-row {
+            display: flex;
+            gap: 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted);
+          }
+          .info-row span b { color: #fff; margin-left: 5px; }
+          .footer {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding-bottom: 10px;
+          }
+          .timer { font-size: 18px; letter-spacing: 2px; font-weight: bold; }
+          .lastraw { text-align: right; }
+          .lastraw .label { font-size: 10px; color: var(--muted); margin-bottom: 5px; display: block; }
+          .lastraw .val { font-size: 16px; font-weight: bold; font-family: var(--font-accent); }
+      `}</style>
 
-      <canvas id="v2-matrix" ref={canvasRef}></canvas>
-
-      <div className="v2-wrapper">
-        <div className="v2-header">
-          <div className="v2-user-badge">
-            <User size={16} />
-            <span style={{fontSize: '0.8rem', letterSpacing: '1px'}}>{userId}</span>
+      <div className="app">
+        <header className="topbar">
+          <div className="user-chip">
+            <User size={14} />
+            <span>{userId}</span>
           </div>
-          <div className="v2-user-badge">
-            <Clock size={16} />
-            <span id="v2-timer">00:00:00</span>
+          <div className="status">
+            <span className="dot"></span>
+            <span>{status === 'live' ? 'ACTIVE' : 'READY'}</span>
+          </div>
+          <button className="logout" onClick={handleLogout}>
+            <LogOut size={18} />
+          </button>
+        </header>
+
+        <div className="brand">
+          <div className="sub-top">OFFICIAL TERMINAL</div>
+          <div className="title">RAZOR</div>
+          <div className="telegram">TELEGRAM : @RAZOR_1X</div>
+        </div>
+
+        <div className="stage">
+          <div className="dial">
+            <div className="value" id="value-display">{crashValue}</div>
           </div>
         </div>
 
-        <div className="v2-main-display">
-          <div className="v2-label-small">Multiplier</div>
-          <div className="v2-value" ref={crashValueRef}>{crashValue}</div>
-          <div style={{color: 'rgba(255,255,255,0.2)', fontSize: '0.8rem', marginTop: '10px'}}>
-            Last: <span ref={lastRawRef}>—</span>
+        <div className="meta-info">
+          <div className="info-row">
+            <span>ROUND <b>{roundId}</b></span>
+            <span>PUB <b>{publishedAt}</b></span>
+          </div>
+          <div className="info-row">
+            <span>ELAPSED <b>{ago}</b></span>
           </div>
         </div>
 
-        <div className="v2-info-grid">
-          <div className="v2-info-card">
-            <label><Hash size={10} style={{display: 'inline', marginRight: '5px'}}/> Round</label>
-            <span>{roundId}</span>
+        <footer className="footer">
+          <div className="timer" id="timer-display">000 : 00 : 00</div>
+          <div className="lastraw">
+            <span className="label">LAST RAW</span>
+            <span className="val">{lastRaw}</span>
           </div>
-          <div className="v2-info-card">
-            <label><Cpu size={10} style={{display: 'inline', marginRight: '5px'}}/> Published</label>
-            <span>{publishedAt}</span>
-          </div>
-          <div className="v2-info-card">
-            <label><Clock size={10} style={{display: 'inline', marginRight: '5px'}}/> Ago</label>
-            <span>{ago}</span>
-          </div>
-        </div>
-
-        <div className="v2-footer-meta">
-          <span>RAZOR V2.0.4</span>
-          <span>SYSTEM: ACTIVE</span>
-          <span>ENCRYPTION: AES-256</span>
-        </div>
+        </footer>
       </div>
     </>
   );
