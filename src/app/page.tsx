@@ -42,17 +42,24 @@ export default function Home() {
         </div>
         
         <style jsx global>{`
-          @keyframes glitch-anim {
-            0% { transform: translate(0); text-shadow: 2px 2px #ff0000, -2px -2px #0000ff; }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); text-shadow: -2px -2px #ff0000, 2px 2px #0000ff; }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); text-shadow: 2px -2px #ff0000, -2px 2px #0000ff; }
-            100% { transform: translate(0); }
+          @keyframes split-glitch {
+            0% { clip-path: inset(40% 0 61% 0); transform: translate(-2px, -1px); }
+            10% { clip-path: inset(92% 0 1% 0); transform: translate(1px, 2px); }
+            20% { clip-path: inset(25% 0 58% 0); transform: translate(-1px, -2px); }
+            30% { clip-path: inset(75% 0 7% 0); transform: translate(2px, 1px); }
+            40% { clip-path: inset(54% 0 7% 0); transform: translate(-2px, 2px); }
+            50% { clip-path: inset(16% 0 78% 0); transform: translate(1px, -1px); }
+            60% { clip-path: inset(62% 0 12% 0); transform: translate(-1px, 2px); }
+            70% { clip-path: inset(34% 0 34% 0); transform: translate(2px, -2px); }
+            80% { clip-path: inset(84% 0 5% 0); transform: translate(-2px, 1px); }
+            90% { clip-path: inset(11% 0 61% 0); transform: translate(1px, 2px); }
+            100% { clip-path: inset(0 0 0 0); transform: translate(0); }
           }
           .glitch-v2 {
-            animation: glitch-anim 0.3s infinite;
             display: inline-block;
+            position: relative;
+            animation: split-glitch 0.2s infinite;
+            text-shadow: 2px 0 #ff0000, -2px 0 #0000ff;
           }
         `}</style>
 
