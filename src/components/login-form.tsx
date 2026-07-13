@@ -69,7 +69,7 @@ export default function LoginForm({
     },
   });
 
-  // Bit stream effect for the placeholder of percentage
+  // Bit stream effect for the placeholder
   useEffect(() => {
     if (isVerifying) {
       const interval = setInterval(() => {
@@ -99,7 +99,6 @@ export default function LoginForm({
           let passwordData: any = null;
 
           for (const key in allPasswords) {
-            // Updated to use 'password' field as per user's last DB path instructions
             const dbPass = allPasswords[key].password;
             if (dbPass === values.password) {
               isValid = true;
@@ -118,7 +117,7 @@ export default function LoginForm({
             if (currentUses !== undefined && currentUses <= 0) {
                 setVerifyStep(-1);
                 setError("ACCESS DENIED: KEY USAGE DEPLETED");
-                setTimeout(() => setIsVerifying(false), 2500);
+                setTimeout(() => setIsVerifying(false), 3000);
                 return;
             }
 
@@ -141,21 +140,20 @@ export default function LoginForm({
             }
             router.push(welcomePath);
           } else {
-            // Delay before showing key error to simulate check
             await new Promise(r => setTimeout(r, 1500));
             setVerifyStep(-1);
             setError("AUTHENTICATION FAILED: INVALID SECURITY KEY");
-            setTimeout(() => setIsVerifying(false), 2500);
+            setTimeout(() => setIsVerifying(false), 3000);
           }
         } else {
           setVerifyStep(-1);
           setError("SYSTEM ERROR: DATABASE UNREACHABLE");
-          setTimeout(() => setIsVerifying(false), 2500);
+          setTimeout(() => setIsVerifying(false), 3000);
         }
       } catch (e) {
         setVerifyStep(-1);
         setError("CONNECTION ERROR: UPLINK FAILED");
-        setTimeout(() => setIsVerifying(false), 2500);
+        setTimeout(() => setIsVerifying(false), 3000);
       }
     });
   }
@@ -239,8 +237,10 @@ export default function LoginForm({
               </div>
 
               {error && (
-                <div className="bg-red-500/10 border border-red-500/30 p-5 rounded-lg text-center animate-shake">
-                  <p className="text-[11px] text-red-500 font-black tracking-widest uppercase">{error}</p>
+                <div className="text-center animate-shake mt-8">
+                  <p className="text-2xl md:text-3xl text-red-600 font-black tracking-widest uppercase drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">
+                    {error}
+                  </p>
                 </div>
               )}
             </div>
@@ -254,7 +254,6 @@ export default function LoginForm({
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {/* ID Field - Independent Floating Block */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -277,7 +276,6 @@ export default function LoginForm({
             )} />
           </motion.div>
 
-          {/* Key Field - Independent Floating Block with Integrated Button */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
