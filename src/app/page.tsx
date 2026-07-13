@@ -42,26 +42,28 @@ export default function Home() {
         </div>
         
         <style jsx global>{`
-          @keyframes scatter-glitch {
-            0% { clip-path: inset(20% 0 50% 0); transform: translate(-5px, -2px); }
-            10% { clip-path: inset(10% 0 80% 0); transform: translate(5px, 2px); }
-            20% { clip-path: inset(50% 0 10% 0); transform: translate(-8px, -1px); }
-            30% { clip-path: inset(80% 0 5% 0); transform: translate(8px, 1px); }
-            40% { clip-path: inset(30% 0 30% 0); transform: translate(-4px, 2px); }
-            50% { clip-path: inset(60% 0 20% 0); transform: translate(4px, -2px); }
-            60% { clip-path: inset(15% 0 65% 0); transform: translate(-6px, 1px); }
-            70% { clip-path: inset(45% 0 45% 0); transform: translate(6px, -1px); }
-            80% { clip-path: inset(5% 0 90% 0); transform: translate(-3px, 2px); }
-            90% { clip-path: inset(70% 0 10% 0); transform: translate(3px, -2px); }
-            100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+          @keyframes scatter-glitch-top {
+            0%, 100% { clip-path: inset(0 0 70% 0); transform: translate(0); opacity: 1; }
+            20% { clip-path: inset(0 0 70% 0); transform: translate(-8px, 0); opacity: 0.8; }
+            40% { clip-path: inset(0 0 70% 0); transform: translate(6px, 0); opacity: 0.9; }
+            60% { clip-path: inset(0 0 70% 0); transform: translate(-4px, 0); opacity: 0.8; }
+            80% { clip-path: inset(0 0 70% 0); transform: translate(10px, 0); opacity: 0.7; }
           }
+          
+          @keyframes scatter-glitch-bottom {
+            0%, 100% { clip-path: inset(70% 0 0 0); transform: translate(0); opacity: 1; }
+            25% { clip-path: inset(70% 0 0 0); transform: translate(8px, 0); opacity: 0.8; }
+            50% { clip-path: inset(70% 0 0 0); transform: translate(-6px, 0); opacity: 0.9; }
+            75% { clip-path: inset(70% 0 0 0); transform: translate(4px, 0); opacity: 0.8; }
+          }
+
           .glitch-v2 {
             display: inline-block;
             position: relative;
-            animation: scatter-glitch 0.25s infinite linear;
-            text-shadow: 2px 0 #888, -2px 0 #fff;
             color: #fff;
+            /* No animation on the main text to keep it fixed */
           }
+
           .glitch-v2::before, .glitch-v2::after {
             content: 'V2';
             position: absolute;
@@ -70,18 +72,19 @@ export default function Home() {
             width: 100%;
             height: 100%;
             background: transparent;
+            pointer-events: none;
           }
+
           .glitch-v2::before {
-            left: 2px;
-            text-shadow: -2px 0 #ccc;
-            clip-path: inset(10% 0 80% 0);
-            animation: scatter-glitch 0.3s infinite reverse;
+            left: 0;
+            text-shadow: 3px 0 #888;
+            animation: scatter-glitch-top 1.8s infinite step-end;
           }
+
           .glitch-v2::after {
-            left: -2px;
-            text-shadow: 2px 0 #fff;
-            clip-path: inset(80% 0 10% 0);
-            animation: scatter-glitch 0.2s infinite;
+            left: 0;
+            text-shadow: -3px 0 #fff;
+            animation: scatter-glitch-bottom 1.4s infinite step-end;
           }
         `}</style>
 
