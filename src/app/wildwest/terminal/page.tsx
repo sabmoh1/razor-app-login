@@ -3,20 +3,73 @@
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, ShieldCheck, Clock } from 'lucide-react';
+import { User, LogOut, ShieldCheck, Clock, Loader2, Cpu, Zap, Search } from 'lucide-react';
 import KillSwitch from '@/components/kill-switch';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // --- Constants for Icons ---
-const GOLD_WIN = "https://iili.io/J2S8f0l.png"; // Pile of gold coins
-const GOLD_LOSE = "https://iili.io/J2S8Hnf.png"; // Empty slot or cross
+const GOLD_WIN = "https://iili.io/ChkCcMP.jpg"; 
+const GOLD_LOSE = "https://iili.io/ChkChtp.jpg";
+
+const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
+  const [step, setStep] = useState(0);
+  const steps = [
+    { text: "INTERCEPTING DATA STREAM...", icon: Search },
+    { text: "DECRYPTING GOLD PATH...", icon: Cpu },
+    { text: "SYNCING TERMINAL DATA...", icon: Zap },
+    { text: "ANALYSIS COMPLETE", icon: ShieldCheck }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStep(prev => {
+        if (prev < steps.length - 1) return prev + 1;
+        clearInterval(timer);
+        setTimeout(onComplete, 800);
+        return prev;
+      });
+    }, 1500);
+    return () => clearInterval(timer);
+  }, [onComplete, steps.length]);
+
+  return (
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-6">
+      <div className="w-full max-w-sm space-y-12 text-center">
+        <div className="relative inline-block">
+          <div className="h-32 w-32 flex items-center justify-center border-4 border-yellow-500/10 rounded-full">
+             <Loader2 className="h-16 w-16 text-yellow-500 animate-spin" />
+          </div>
+          <div className="absolute inset-0 rounded-full border-t-2 border-yellow-400 animate-spin-slow" />
+        </div>
+        <div className="space-y-6">
+          {steps.map((s, i) => (
+            <motion.div 
+              key={i}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: step >= i ? 1 : 0.1, x: step >= i ? 0 : -10 }}
+              className="flex items-center gap-4 justify-center"
+            >
+              <s.icon size={20} className={step === i ? "text-yellow-400 animate-pulse" : step > i ? "text-green-500" : "text-gray-600"} />
+              <span className={`text-sm font-black tracking-widest ${step === i ? "text-yellow-400" : step > i ? "text-white" : "text-gray-600"}`}>
+                {s.text}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 function WildWestTerminal() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
-  const [gameData, setGridData] = useState<any>(null);
+  const [gameData, setGameData] = useState<any>(null);
   const [status, setStatus] = useState<"live" | "wait">("wait");
   const [timeLeft, setTimeLeft] = useState<string>("00:00:00");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isPathVisible, setIsPathVisible] = useState(false);
   
   const stateRef = useRef<any>(null);
 
@@ -51,11 +104,14 @@ function WildWestTerminal() {
 
   const updateUI = useCallback((newState: any) => {
     if (newState) {
-      setGridData(newState);
+      setGameData(newState);
       setStatus("live");
+      // Reset visibility when new data arrives
+      setIsPathVisible(false);
     } else {
-      setGridData(null);
+      setGameData(null);
       setStatus("wait");
+      setIsPathVisible(false);
     }
   }, []);
 
@@ -134,6 +190,11 @@ function WildWestTerminal() {
     router.push('/wildwest');
   };
 
+  const handleStartAnalysis = () => {
+    if (!gameData) return;
+    setIsAnalyzing(true);
+  };
+
   return (
     <KillSwitch pageName="wildwest">
       <style jsx global>{`
@@ -147,7 +208,7 @@ function WildWestTerminal() {
             background-size: cover;
             color: white;
             font-family: 'Orbitron', sans-serif;
-            overflow-x: hidden;
+            overflow: hidden;
           }
           body::before {
             content: "";
@@ -158,86 +219,147 @@ function WildWestTerminal() {
             z-index: -1;
           }
           .terminal {
-            max-width: 500px;
+            max-width: 400px;
             margin: 0 auto;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: 20px;
+            padding: 10px 15px;
           }
           .grid-container {
             flex: 1;
             display: flex;
             flex-direction: column-reverse;
-            gap: 8px;
-            padding: 20px 0;
+            gap: 4px;
+            padding: 5px 0;
+            overflow-y: auto;
           }
           .row {
             display: grid;
-            gap: 8px;
-            background: rgba(255,255,255,0.03);
-            padding: 10px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,215,0,0.05);
+            gap: 4px;
+            background: rgba(255,255,255,0.02);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,215,0,0.03);
             transition: all 0.3s;
           }
-          .row.active { border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.05); }
+          .row.active { border-color: rgba(255,215,0,0.2); background: rgba(255,215,0,0.03); }
           .cell {
             aspect-ratio: 1/1;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(0,0,0,0.4);
-            border-radius: 8px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 6px;
             overflow: hidden;
+            position: relative;
           }
-          .gold-pulse { animation: gold-glow 2s infinite; }
-          @keyframes gold-glow { 0%, 100% { filter: drop-shadow(0 0 5px var(--gold)); opacity: 1; } 50% { filter: drop-shadow(0 0 15px var(--gold)); opacity: 0.8; } }
-          .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-          .chip { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
-          .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #444; }
-          .status-dot.live { background: #FFD700; box-shadow: 0 0 10px #FFD700; animation: pulse 1.5s infinite; }
+          .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+          .chip { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; font-size: 10px; display: flex; align-items: center; gap: 6px; }
+          .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #444; }
+          .status-dot.live { background: #FFD700; box-shadow: 0 0 8px #FFD700; animation: pulse 1.5s infinite; }
           @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+          
+          .btn-start {
+             background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%);
+             color: black;
+             font-weight: 900;
+             padding: 15px 30px;
+             border-radius: 12px;
+             letter-spacing: 2px;
+             text-transform: uppercase;
+             box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+             transition: all 0.3s;
+          }
+          .btn-start:active { transform: scale(0.95); }
+          .btn-start:disabled { opacity: 0.2; filter: grayscale(1); }
       `}</style>
       
+      <AnimatePresence>
+        {isAnalyzing && (
+          <AnalysisOverlay onComplete={() => {
+            setIsAnalyzing(false);
+            setIsPathVisible(true);
+          }} />
+        )}
+      </AnimatePresence>
+
       <div className="terminal">
         <header className="topbar">
           <div className="chip">
-            <User size={14} className="text-yellow-500" />
+            <User size={12} className="text-yellow-500" />
             <span>{userId}</span>
           </div>
           <div className="chip">
             <div className={`status-dot ${status === 'live' ? 'live' : ''}`}></div>
-            <span className="text-[10px] tracking-widest">{status === 'live' ? 'CONNECTED' : 'WAITING'}</span>
+            <span className="text-[9px] tracking-widest uppercase">{status === 'live' ? 'READY' : 'WAIT'}</span>
           </div>
           <button onClick={handleLogout} className="p-2 bg-white/5 border border-white/10 rounded-full hover:bg-red-500/20 transition-colors">
-            <LogOut size={16} />
+            <LogOut size={14} />
           </button>
         </header>
 
-        <div className="text-center mb-4">
-            <h2 className="text-2xl font-black text-yellow-500 tracking-wider">WILD WEST GOLD</h2>
-            <p className="text-[10px] text-gray-500 tracking-[0.4em]">PATH ANALYSIS TERMINAL</p>
+        <div className="text-center mb-2">
+            <h2 className="text-lg font-black text-yellow-500 tracking-wider">WILD WEST GOLD</h2>
+            <p className="text-[8px] text-gray-500 tracking-[0.3em] font-bold">V1 OFFICIAL TERMINAL</p>
         </div>
 
-        <div className="grid-container">
+        <div className="grid-container relative">
+          {gameData ? (
+             !isPathVisible ? (
+                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md rounded-2xl border border-yellow-500/10">
+                   <ShieldCheck className="text-yellow-500 mb-4 animate-bounce" size={48} />
+                   <h3 className="text-white text-sm font-black mb-6 tracking-widest">DATA DETECTED</h3>
+                   <button 
+                    onClick={handleStartAnalysis}
+                    className="btn-start"
+                   >
+                     START ANALYSIS
+                   </button>
+                </div>
+             ) : null
+          ) : (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+               <Loader2 className="text-white/10 animate-spin mb-4" size={40} />
+               <p className="text-[10px] text-white/20 font-bold tracking-[0.2em]">WAITING FOR BET...</p>
+            </div>
+          )}
+
           {Array.from({ length: 10 }).map((_, rowIndex) => {
-            const isDataReady = gameData && gameData.correct && gameData.correct[rowIndex] !== undefined;
-            const correctCol = isDataReady ? gameData.correct[rowIndex] : -1;
+            const correctCol = gameData?.correct ? gameData.correct[rowIndex] : -1;
             const mode = gameData?.mode || 2;
+            const isAnalyzed = isPathVisible;
 
             return (
               <div 
                 key={rowIndex} 
-                className={`row ${isDataReady ? 'active' : ''}`}
+                className={`row ${isAnalyzed ? 'active' : ''}`}
                 style={{ gridTemplateColumns: `repeat(${mode}, 1fr)` }}
               >
                 {Array.from({ length: mode }).map((_, colIndex) => (
                   <div key={colIndex} className="cell">
-                    {correctCol === colIndex ? (
-                      <img src={GOLD_WIN} alt="Gold" className="w-12 h-12 gold-pulse" />
+                    {isAnalyzed ? (
+                      correctCol === colIndex ? (
+                        <Image 
+                          src={GOLD_WIN} 
+                          alt="Win" 
+                          width={60} 
+                          height={60} 
+                          className="object-cover w-full h-full"
+                          unoptimized
+                        />
+                      ) : (
+                        <Image 
+                          src={GOLD_LOSE} 
+                          alt="Lose" 
+                          width={60} 
+                          height={60} 
+                          className="object-cover w-full h-full opacity-60 grayscale-[0.5]"
+                          unoptimized
+                        />
+                      )
                     ) : (
-                      <img src={GOLD_LOSE} alt="Empty" className="w-10 h-10 opacity-20 grayscale" />
+                      <div className="w-2 h-2 rounded-full bg-white/5" />
                     )}
                   </div>
                 ))}
@@ -246,14 +368,14 @@ function WildWestTerminal() {
           })}
         </div>
 
-        <footer className="flex justify-between items-center pt-4 border-t border-white/5 mt-4">
-          <div className="flex items-center gap-2 text-white/40">
-            <Clock size={16} />
-            <span className="text-sm font-bold tracking-widest">{timeLeft}</span>
+        <footer className="flex justify-between items-center py-2 border-t border-white/5 mt-2">
+          <div className="flex items-center gap-2 text-white/30">
+            <Clock size={12} />
+            <span className="text-xs font-bold font-mono tracking-tighter">{timeLeft}</span>
           </div>
-          <div className="flex items-center gap-2 text-green-500/50">
-            <ShieldCheck size={16} />
-            <span className="text-[10px] font-bold">SECURE ENCRYPTION</span>
+          <div className="flex items-center gap-2 text-green-500/30">
+            <ShieldCheck size={12} />
+            <span className="text-[8px] font-bold">V1.0.4 ENCRYPTED</span>
           </div>
         </footer>
       </div>
@@ -268,3 +390,4 @@ export default function WildWestPage() {
         </Suspense>
     );
 }
+
