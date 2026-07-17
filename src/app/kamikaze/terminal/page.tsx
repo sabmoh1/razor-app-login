@@ -181,7 +181,6 @@ function KamikazeTerminal() {
           }
           .cell {
             aspect-ratio: 1/1;
-            background: rgba(255,255,255,0.02);
             border: 1px solid rgba(255,255,77,0.05);
             border-radius: 2px;
             display: flex;
@@ -290,10 +289,18 @@ function KamikazeTerminal() {
                   return (
                     <div 
                       key={rowIndex} 
-                      className={cn(
-                        "cell transition-all duration-300",
-                        isPathVisible && colData && (isUnsafe ? "bg-red-600 border-red-400" : "bg-green-600 border-green-400 shadow-[inset_0_0_15px_rgba(0,0,0,0.3)]")
-                      )}
+                      className="cell"
+                      style={{
+                        backgroundColor: isPathVisible && colData 
+                            ? (isUnsafe ? '#dc2626' : '#16a34a') 
+                            : 'rgba(255,255,255,0.02)',
+                        borderColor: isPathVisible && colData 
+                            ? (isUnsafe ? '#ef4444' : '#22c55e') 
+                            : 'rgba(255,255,77,0.05)',
+                        boxShadow: isPathVisible && colData && !isUnsafe 
+                            ? 'inset 0 0 15px rgba(0,0,0,0.4)' 
+                            : 'none'
+                      }}
                     >
                       <AnimatePresence>
                         {isPathVisible && colData && isUnsafe && (
