@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 // --- Constants for Icons ---
-const BOMB_IMG = "https://iili.io/ChyAY5x.png"; // New Explosion Image
+const BOMB_IMG = "https://iili.io/ChyAY5x.png"; 
 
 const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
@@ -29,7 +29,7 @@ const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
         setTimeout(onComplete, 500);
         return prev;
       });
-    }, 700);
+    }, 600);
     return () => clearInterval(timer);
   }, [onComplete, steps.length]);
 
@@ -182,20 +182,19 @@ function KamikazeTerminal() {
           .cell {
             aspect-ratio: 1/1;
             background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,77,77,0.05);
+            border: 1px solid rgba(255,255,77,0.05);
             border-radius: 2px;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             position: relative;
-            transition: all 0.5s ease-in-out;
+            transition: all 0.4s ease;
           }
           .cell-img {
-            width: 100%;
-            height: 100%;
+            width: 90%;
+            height: 90%;
             object-fit: contain;
-            padding: 2px;
           }
           .col-label {
             text-align: center;
@@ -292,8 +291,8 @@ function KamikazeTerminal() {
                     <div 
                       key={rowIndex} 
                       className={cn(
-                        "cell transition-all duration-500",
-                        isPathVisible && colData && (isUnsafe ? "bg-red-600/80 border-red-500 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]" : "bg-green-600/80 border-green-500 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]")
+                        "cell transition-all duration-300",
+                        isPathVisible && colData && (isUnsafe ? "bg-red-600 border-red-400" : "bg-green-600 border-green-400 shadow-[inset_0_0_15px_rgba(0,0,0,0.3)]")
                       )}
                     >
                       <AnimatePresence>
@@ -301,12 +300,13 @@ function KamikazeTerminal() {
                           <motion.div 
                             initial={{ opacity: 0, scale: 0.2 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="w-full h-full relative"
+                            className="w-full h-full flex items-center justify-center p-0.5"
                           >
                             <Image 
                               src={BOMB_IMG} 
                               alt="Explosion" 
-                              fill
+                              width={40}
+                              height={40}
                               className="cell-img"
                               unoptimized
                             />
