@@ -11,6 +11,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 // --- Constants ---
 const BOMB_IMG = "https://iili.io/ChyAY5x.png"; 
 const RAZOR_LOGO = "https://iili.io/f9iNGFj.png";
+// Using the same reliable GIF from the login page
+const BG_GIF = "https://cdn.dribbble.com/userupload/20787734/file/original-6a95ade3f7286f5da2b16669f6ff93c3.gif";
 
 const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
@@ -148,7 +150,7 @@ function KamikazeTerminal() {
         <div 
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{
-            backgroundImage: "url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM2FkZGFlNGE5YzlmZjk5YjczYmU3ZmViYWI1ZGI0M2Y0ODFkNmRjZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/sWFYgYFj22T6g/giphy.gif')",
+            backgroundImage: `url('${BG_GIF}')`,
             filter: 'brightness(0.3) contrast(1.2)',
           }}
         ></div>
@@ -177,14 +179,15 @@ function KamikazeTerminal() {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 15px 0;
-            height: 140px;
+            padding: 20px 0;
+            height: 180px; /* Increased height */
+            margin-bottom: 10px;
           }
           .logo-gap img {
-            height: 100%;
+            height: 140%; /* Made logo significantly larger */
             width: auto;
-            opacity: 0.6;
-            filter: drop-shadow(0 0 30px rgba(255,77,77,0.6));
+            opacity: 0.8; /* More visibility */
+            filter: drop-shadow(0 0 40px rgba(255,77,77,0.7));
           }
           .grid-wrapper {
             flex: 1;
@@ -293,8 +296,8 @@ function KamikazeTerminal() {
         {/* Large Logo Gap */}
         <div className="logo-gap">
             <motion.img 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 0.6 }}
+              initial={{ scale: 0.8, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 0.8, y: 0 }}
               src={RAZOR_LOGO} 
               alt="Razor" 
             />
