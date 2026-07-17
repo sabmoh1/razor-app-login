@@ -47,6 +47,7 @@ export type LoginFormProps = {
   themeColor: string;
   themeGlow: string;
   useCustomGlow?: boolean;
+  versionLabel?: string; // Prop to handle V1 or V2
 };
 
 export default function LoginForm({ 
@@ -55,6 +56,7 @@ export default function LoginForm({
     themeColor = '#FFFFFF',
     themeGlow = '',
     useCustomGlow = true,
+    versionLabel = 'V2' // Default to V2
 }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -83,7 +85,7 @@ export default function LoginForm({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
     setIsVerifying(true);
-    setVerifyStep(1); // Step 1: Scanning ID & Access Key
+    setVerifyStep(1); 
 
     await new Promise(r => setTimeout(r, 3000));
 
@@ -117,13 +119,13 @@ export default function LoginForm({
                 return;
             }
 
-            setVerifyStep(2); // Step 2: Establishing Server Connection
+            setVerifyStep(2); 
             await new Promise(r => setTimeout(r, 2800));
 
-            setVerifyStep(3); // Step 3: Encrypting Entry Data
+            setVerifyStep(3); 
             await new Promise(r => setTimeout(r, 2500));
             
-            setVerifyStep(4); // Final Success
+            setVerifyStep(4); 
             await new Promise(r => setTimeout(r, 1200));
             
             sessionStorage.setItem('razor_user_id', values.userId);
@@ -181,12 +183,11 @@ export default function LoginForm({
                   )}
                 </div>
                 <h2 className={`text-3xl font-black tracking-[0.4em] uppercase ${verifyStep === -1 ? 'text-red-600' : 'text-white'}`} style={{ fontFamily: 'Orbitron' }}>
-                  {verifyStep === -1 ? 'System Breach' : verifyStep === 4 ? 'Access Granted' : 'V2 DEEP ANALYSIS'}
+                  {verifyStep === -1 ? 'System Breach' : verifyStep === 4 ? 'Access Granted' : `${versionLabel} DEEP ANALYSIS`}
                 </h2>
               </div>
 
               <div className="space-y-8 max-w-md mx-auto">
-                {/* Step 1: ID & Key Validation */}
                 <div className={`flex items-center justify-between transition-all duration-700 ${verifyStep >= 1 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
                   <div className="flex items-center gap-6">
                     <Fingerprint size={32} className={verifyStep > 1 ? 'text-green-500' : verifyStep === -1 ? 'text-red-600' : 'text-cyan-400 animate-pulse'} />
@@ -198,7 +199,6 @@ export default function LoginForm({
                   </div>
                 </div>
 
-                {/* Step 2: Server Connection */}
                 <div className={`flex items-center justify-between transition-all duration-700 delay-100 ${verifyStep >= 2 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
                   <div className="flex items-center gap-6">
                     <Server size={32} className={verifyStep > 2 ? 'text-green-500' : verifyStep === -1 ? 'text-red-600/30' : 'text-cyan-400'} />
@@ -207,7 +207,6 @@ export default function LoginForm({
                   {verifyStep > 2 ? <CheckCircle2 size={24} className="text-green-500" /> : verifyStep >= 2 ? <Loader2 size={22} className="animate-spin text-cyan-400" /> : null}
                 </div>
 
-                {/* Step 3: Data Encryption */}
                 <div className={`flex items-center justify-between transition-all duration-700 delay-200 ${verifyStep >= 3 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
                   <div className="flex items-center gap-6">
                     <Cpu size={32} className={verifyStep > 3 ? 'text-green-500' : verifyStep === -1 ? 'text-red-600/30' : 'text-cyan-400'} />
@@ -293,7 +292,7 @@ export default function LoginForm({
 
       <div className="pt-10 text-center opacity-30">
         <span className="text-[11px] text-white tracking-[0.5em] uppercase font-black" style={{ fontFamily: 'Orbitron' }}>
-           RAZOR V2 CRASH
+           RAZOR {versionLabel} SYSTEM
         </span>
       </div>
     </div>

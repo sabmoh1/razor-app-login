@@ -7,10 +7,10 @@ import { User, LogOut, ShieldCheck, Clock, Loader2, Cpu, Zap, Search, AlertTrian
 import KillSwitch from '@/components/kill-switch';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 
-// --- Constants for Icons ---
+// --- Constants ---
 const BOMB_IMG = "https://iili.io/ChyAY5x.png"; 
+const RAZOR_LOGO = "https://iili.io/f9iNGFj.png";
 
 const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
@@ -162,12 +162,25 @@ function KamikazeTerminal() {
             padding: 10px 12px;
             background: linear-gradient(to bottom, #0a0000 0%, #030303 100%);
           }
+          .logo-gap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 0;
+            height: 80px;
+          }
+          .logo-gap img {
+            height: 100%;
+            width: auto;
+            opacity: 0.3;
+            filter: drop-shadow(0 0 20px rgba(255,77,77,0.4));
+          }
           .grid-wrapper {
             flex: 1;
             display: grid;
             grid-template-columns: repeat(12, 1fr);
             gap: 2px;
-            padding: 10px 0;
+            padding: 5px 0;
             overflow-x: auto;
             scrollbar-width: none;
             -ms-overflow-style: none;
@@ -181,7 +194,7 @@ function KamikazeTerminal() {
           }
           .cell {
             aspect-ratio: 1/1;
-            border: 1px solid rgba(255,255,77,0.05);
+            border: 1px solid rgba(255,77,77,0.1);
             border-radius: 2px;
             display: flex;
             align-items: center;
@@ -236,15 +249,6 @@ function KamikazeTerminal() {
              gap: 8px;
              text-shadow: 0 0 15px rgba(255,77,77,0.5);
           }
-          .success-status {
-             color: #4ade80;
-             font-size: 11px;
-             font-weight: 900;
-             letter-spacing: 2px;
-             display: flex;
-             align-items: center;
-             gap: 6px;
-          }
       `}</style>
       
       <AnimatePresence>
@@ -258,7 +262,7 @@ function KamikazeTerminal() {
 
       <div className="terminal-container">
         {/* Top Header */}
-        <header className="flex justify-between items-center mb-6">
+        <header className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl">
             <User size={14} className="text-red-500" />
             <span className="text-[10px] font-black tracking-wider">{userId}</span>
@@ -270,9 +274,14 @@ function KamikazeTerminal() {
         </header>
 
         {/* Title */}
-        <div className="text-center mb-4">
+        <div className="text-center">
             <h1 className="text-[10px] font-black text-red-500 tracking-[0.4em] uppercase">Kamikaze Terminal</h1>
             <div className="h-px w-32 bg-gradient-to-r from-transparent via-red-500/40 to-transparent mx-auto mt-2" />
+        </div>
+
+        {/* Large Logo Gap */}
+        <div className="logo-gap">
+            <img src={RAZOR_LOGO} alt="Razor" />
         </div>
 
         {/* Main Grid Area */}
@@ -296,7 +305,7 @@ function KamikazeTerminal() {
                             : 'rgba(255,255,255,0.02)',
                         borderColor: isPathVisible && colData 
                             ? (isUnsafe ? '#ef4444' : '#22c55e') 
-                            : 'rgba(255,255,77,0.05)',
+                            : 'rgba(255,77,77,0.1)',
                         boxShadow: isPathVisible && colData && !isUnsafe 
                             ? 'inset 0 0 15px rgba(0,0,0,0.4)' 
                             : 'none'
@@ -350,10 +359,10 @@ function KamikazeTerminal() {
             <motion.div 
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="success-status"
+                className="text-[#4ade80] text-[11px] font-black tracking-widest flex items-center gap-2"
             >
                <ShieldCheck size={18} className="text-green-500" />
-               <span className="animate-pulse">TACTICAL PATH DECRYPTED</span>
+               <span className="animate-pulse uppercase">Tactical Path Decrypted</span>
             </motion.div>
           )}
         </div>

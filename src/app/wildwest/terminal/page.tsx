@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // --- Constants for Icons ---
 const GOLD_WIN = "https://iili.io/ChkCcMP.jpg"; 
 const GOLD_LOSE = "https://iili.io/ChkChtp.jpg";
+const RAZOR_LOGO = "https://iili.io/f9iNGFj.png";
 
 const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
@@ -139,8 +140,18 @@ function WildWestTerminal() {
 
   return (
     <KillSwitch pageName="wildwest">
+      <div className="fixed inset-0 -z-10">
+        <div 
+          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          style={{
+            backgroundImage: "url('https://cdn.dribbble.com/userupload/20787734/file/original-6a95ade3f7286f5da2b16669f6ff93c3.gif')",
+            filter: 'sepia(0.3) brightness(0.4) contrast(1.1)',
+          }}
+        ></div>
+        <div className="absolute inset-0 w-full h-full bg-black/60"></div>
+      </div>
       <style jsx global>{`
-          :root { --gold: #FFD700; --bg: #050505; }
+          :root { --gold: #FFD700; --bg: transparent; }
           body {
             background: var(--bg);
             color: white;
@@ -155,7 +166,8 @@ function WildWestTerminal() {
             display: flex;
             flex-direction: column;
             padding: 8px 16px;
-            background: radial-gradient(circle at top, #111 0%, #050505 100%);
+            position: relative;
+            z-index: 10;
           }
           .grid-wrapper {
             flex: 1;
@@ -172,8 +184,8 @@ function WildWestTerminal() {
             height: 9%;
           }
           .cell {
-            background: rgba(255,215,0,0.03);
-            border: 1px solid rgba(255,215,0,0.1);
+            background: rgba(255,215,0,0.05);
+            border: 1px solid rgba(255,215,0,0.15);
             border-radius: 4px;
             display: flex;
             align-items: center;
@@ -181,11 +193,12 @@ function WildWestTerminal() {
             overflow: hidden;
             position: relative;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(2px);
           }
           .cell.analyzed {
-            border-color: rgba(255,215,0,0.4);
-            background: rgba(255,215,0,0.08);
-            box-shadow: inset 0 0 10px rgba(255,215,0,0.1);
+            border-color: rgba(255,215,0,0.5);
+            background: rgba(255,215,0,0.1);
+            box-shadow: inset 0 0 15px rgba(255,215,0,0.1);
           }
           .cell-img {
             width: 100%;
@@ -209,26 +222,30 @@ function WildWestTerminal() {
              font-size: 14px;
              letter-spacing: 2px;
              text-transform: uppercase;
-             box-shadow: 0 0 20px rgba(255,215,0,0.2);
+             box-shadow: 0 0 25px rgba(255,215,0,0.3);
              transition: all 0.2s;
           }
           .btn-main:active { transform: scale(0.98); opacity: 0.9; }
-          .error-status {
-             color: #ef4444;
-             font-size: 11px;
-             font-weight: 900;
-             letter-spacing: 1px;
-             display: flex;
-             align-items: center;
-             gap: 8px;
-             text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+          .branding-corner {
+            position: absolute;
+            top: 70px;
+            right: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            opacity: 0.8;
           }
-          .success-status {
-             color: var(--gold);
-             font-size: 11px;
-             font-weight: 900;
-             letter-spacing: 2px;
-             animate: pulse 2s infinite;
+          .branding-corner img {
+            width: 32px;
+            height: auto;
+            filter: drop-shadow(0 0 10px rgba(255,215,0,0.5));
+          }
+          .branding-corner span {
+            font-size: 8px;
+            font-weight: 900;
+            color: var(--gold);
+            letter-spacing: 2px;
+            margin-top: 4px;
           }
       `}</style>
       
@@ -242,13 +259,19 @@ function WildWestTerminal() {
       </AnimatePresence>
 
       <div className="terminal-container">
+        {/* Branding Corner */}
+        <div className="branding-corner">
+            <img src={RAZOR_LOGO} alt="Razor" />
+            <span>RAZOR V1</span>
+        </div>
+
         {/* Top Header */}
         <header className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full">
             <User size={12} className="text-yellow-500" />
             <span className="text-[10px] font-bold tracking-tight">{userId}</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full">
             <div className={`w-2 h-2 rounded-full ${status === 'live' ? 'bg-yellow-500 animate-pulse shadow-[0_0_8px_#FFD700]' : 'bg-gray-600'}`}></div>
             <span className="text-[9px] font-black uppercase tracking-widest">{status === 'live' ? 'READY' : 'WAIT'}</span>
           </div>
@@ -260,7 +283,7 @@ function WildWestTerminal() {
             <div className="h-px w-24 bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent mx-auto mt-2" />
         </div>
 
-        {/* Main Grid Area - Always Visible Placeholder */}
+        {/* Main Grid Area */}
         <div className="grid-wrapper">
           {Array.from({ length: 10 }).map((_, rowIndex) => {
             const correctCol = gameData?.correct ? gameData.correct[rowIndex] : -1;
@@ -298,7 +321,7 @@ function WildWestTerminal() {
           })}
         </div>
 
-        {/* Controls Section - Moved to Bottom */}
+        {/* Controls Section */}
         <div className="controls-area">
           {!isPathVisible ? (
              <>
@@ -306,7 +329,7 @@ function WildWestTerminal() {
                  <motion.div 
                     initial={{ y: 10, opacity: 0 }} 
                     animate={{ y: 0, opacity: 1 }} 
-                    className="error-status"
+                    className="text-red-500 flex items-center gap-2 font-black text-[11px]"
                  >
                     <AlertTriangle size={14} />
                     <span>{errorMsg}</span>
@@ -316,9 +339,9 @@ function WildWestTerminal() {
                )}
              </>
           ) : (
-            <div className="success-status flex items-center gap-2">
+            <div className="text-yellow-500 font-black text-[11px] flex items-center gap-2 tracking-widest animate-pulse">
                <ShieldCheck size={14} />
-               <span>PATH DECRYPTED</span>
+               <span>GOLD PATH DECRYPTED</span>
             </div>
           )}
         </div>
@@ -331,7 +354,7 @@ function WildWestTerminal() {
           </div>
           <button 
             onClick={() => { sessionStorage.clear(); router.push('/wildwest'); }}
-            className="text-[10px] font-black text-gray-600 flex items-center gap-1.5 hover:text-red-500 transition-all uppercase tracking-widest"
+            className="text-[10px] font-black text-gray-400 flex items-center gap-1.5 hover:text-red-500 transition-all uppercase tracking-widest"
           >
             <LogOut size={12} /> Log Off
           </button>

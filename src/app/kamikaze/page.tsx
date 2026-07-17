@@ -89,6 +89,7 @@ export default function KamikazeLoginPage() {
           themeColor="#ff4d4d"
           themeGlow=""
           useCustomGlow={true}
+          versionLabel="V1"
         />
       </main>
     </KillSwitch>

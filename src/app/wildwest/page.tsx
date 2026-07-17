@@ -89,6 +89,7 @@ export default function WildWestLoginPage() {
           themeColor="#FFD700"
           themeGlow=""
           useCustomGlow={true}
+          versionLabel="V1"
         />
       </main>
     </KillSwitch>
