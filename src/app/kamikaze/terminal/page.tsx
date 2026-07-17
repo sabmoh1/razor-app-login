@@ -144,6 +144,16 @@ function KamikazeTerminal() {
 
   return (
     <KillSwitch pageName="kamikaze">
+      <div className="fixed inset-0 -z-10">
+        <div 
+          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          style={{
+            backgroundImage: "url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM2FkZGFlNGE5YzlmZjk5YjczYmU3ZmViYWI1ZGI0M2Y0ODFkNmRjZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/sWFYgYFj22T6g/giphy.gif')",
+            filter: 'brightness(0.3) contrast(1.2)',
+          }}
+        ></div>
+        <div className="absolute inset-0 w-full h-full bg-black/60"></div>
+      </div>
       <style jsx global>{`
           :root { --accent: #ff4d4d; --bg: #030303; }
           body {
@@ -154,26 +164,27 @@ function KamikazeTerminal() {
             height: 100vh;
           }
           .terminal-container {
+            position: relative;
+            z-index: 10;
             max-width: 500px;
             margin: 0 auto;
             height: 100vh;
             display: flex;
             flex-direction: column;
             padding: 10px 12px;
-            background: linear-gradient(to bottom, #0a0000 0%, #030303 100%);
           }
           .logo-gap {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 10px 0;
-            height: 80px;
+            padding: 15px 0;
+            height: 140px;
           }
           .logo-gap img {
             height: 100%;
             width: auto;
-            opacity: 0.3;
-            filter: drop-shadow(0 0 20px rgba(255,77,77,0.4));
+            opacity: 0.6;
+            filter: drop-shadow(0 0 30px rgba(255,77,77,0.6));
           }
           .grid-wrapper {
             flex: 1;
@@ -263,11 +274,11 @@ function KamikazeTerminal() {
       <div className="terminal-container">
         {/* Top Header */}
         <header className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl">
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
             <User size={14} className="text-red-500" />
             <span className="text-[10px] font-black tracking-wider">{userId}</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl">
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
             <div className={`w-2 h-2 rounded-full ${status === 'live' ? 'bg-red-500 animate-pulse shadow-[0_0_10px_#ff4d4d]' : 'bg-gray-700'}`}></div>
             <span className="text-[9px] font-black uppercase tracking-widest">{status === 'live' ? 'LIVE' : 'WAIT'}</span>
           </div>
@@ -281,7 +292,12 @@ function KamikazeTerminal() {
 
         {/* Large Logo Gap */}
         <div className="logo-gap">
-            <img src={RAZOR_LOGO} alt="Razor" />
+            <motion.img 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 0.6 }}
+              src={RAZOR_LOGO} 
+              alt="Razor" 
+            />
         </div>
 
         {/* Main Grid Area */}

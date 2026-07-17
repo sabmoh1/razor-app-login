@@ -226,26 +226,18 @@ function WildWestTerminal() {
              transition: all 0.2s;
           }
           .btn-main:active { transform: scale(0.98); opacity: 0.9; }
-          .branding-corner {
-            position: absolute;
-            top: 70px;
-            right: 16px;
+          
+          .central-branding {
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
-            opacity: 0.8;
+            align-items: center;
+            padding: 15px 0;
           }
-          .branding-corner img {
-            width: 32px;
+          .central-branding img {
+            width: 80px;
             height: auto;
-            filter: drop-shadow(0 0 10px rgba(255,215,0,0.5));
-          }
-          .branding-corner span {
-            font-size: 8px;
-            font-weight: 900;
-            color: var(--gold);
-            letter-spacing: 2px;
-            margin-top: 4px;
+            filter: drop-shadow(0 0 15px rgba(255,215,0,0.6));
+            margin-bottom: 5px;
           }
       `}</style>
       
@@ -259,26 +251,26 @@ function WildWestTerminal() {
       </AnimatePresence>
 
       <div className="terminal-container">
-        {/* Branding Corner */}
-        <div className="branding-corner">
-            <img src={RAZOR_LOGO} alt="Razor" />
-            <span>RAZOR V1</span>
-        </div>
-
         {/* Top Header */}
-        <header className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full">
+        <header className="flex justify-between items-center mb-2">
+          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-md">
             <User size={12} className="text-yellow-500" />
             <span className="text-[10px] font-bold tracking-tight">{userId}</span>
           </div>
-          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full">
+          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-md">
             <div className={`w-2 h-2 rounded-full ${status === 'live' ? 'bg-yellow-500 animate-pulse shadow-[0_0_8px_#FFD700]' : 'bg-gray-600'}`}></div>
             <span className="text-[9px] font-black uppercase tracking-widest">{status === 'live' ? 'READY' : 'WAIT'}</span>
           </div>
         </header>
 
-        {/* Title */}
-        <div className="text-center mb-2">
+        {/* Central Branding Above Title */}
+        <div className="central-branding">
+            <motion.img 
+              initial={{ y: -10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              src={RAZOR_LOGO} 
+              alt="Razor Logo" 
+            />
             <h1 className="text-xs font-black text-yellow-500 tracking-[0.3em] uppercase">Wild West Terminal</h1>
             <div className="h-px w-24 bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent mx-auto mt-2" />
         </div>

@@ -13,7 +13,7 @@ export default function KamikazeLoginPage() {
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{
             backgroundImage: "url('https://cdn.dribbble.com/userupload/20787734/file/original-6a95ade3f7286f5da2b16669f6ff93c3.gif')",
-            filter: 'hue-rotate(280deg) brightness(0.7) contrast(1.2)',
+            filter: 'brightness(0.7) contrast(1.2)', // Removed hue-rotate to keep original red color
           }}
         ></div>
         <div className="absolute inset-0 w-full h-full bg-black/75"></div>
