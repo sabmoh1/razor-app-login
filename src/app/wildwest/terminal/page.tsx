@@ -3,12 +3,13 @@
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, Coins, ShieldCheck } from 'lucide-react';
+import { User, LogOut, ShieldCheck, Clock } from 'lucide-react';
 import KillSwitch from '@/components/kill-switch';
 import Image from 'next/image';
 
-const GOLD_BAG = "https://iili.io/f50k5vf.png"; // Apple-like icon or gold bag
-const EMPTY_SLOT = "https://iili.io/f50v4f9.webp"; // Wood/Empty
+// --- Constants for Icons ---
+const GOLD_WIN = "https://iili.io/J2S8f0l.png"; // Pile of gold coins
+const GOLD_LOSE = "https://iili.io/J2S8Hnf.png"; // Empty slot or cross
 
 function WildWestTerminal() {
   const router = useRouter();
@@ -182,7 +183,7 @@ function WildWestTerminal() {
           }
           .row.active { border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.05); }
           .cell {
-            aspect-square: 1;
+            aspect-ratio: 1/1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -234,9 +235,9 @@ function WildWestTerminal() {
                 {Array.from({ length: mode }).map((_, colIndex) => (
                   <div key={colIndex} className="cell">
                     {correctCol === colIndex ? (
-                      <img src={GOLD_BAG} alt="Gold" className="w-10 h-10 gold-pulse" />
+                      <img src={GOLD_WIN} alt="Gold" className="w-12 h-12 gold-pulse" />
                     ) : (
-                      <img src={EMPTY_SLOT} alt="Empty" className="w-10 h-10 opacity-20 grayscale" />
+                      <img src={GOLD_LOSE} alt="Empty" className="w-10 h-10 opacity-20 grayscale" />
                     )}
                   </div>
                 ))}
@@ -246,14 +247,13 @@ function WildWestTerminal() {
         </div>
 
         <footer className="flex justify-between items-center pt-4 border-t border-white/5 mt-4">
-          <div className="flex items-center gap-2 text-yellow-500/50">
-            <Coins size={16} />
-            <span className="text-sm font-bold">{gameData?.bet || 0} <span className="text-[10px]">USDT</span></span>
+          <div className="flex items-center gap-2 text-white/40">
+            <Clock size={16} />
+            <span className="text-sm font-bold tracking-widest">{timeLeft}</span>
           </div>
-          <div className="text-lg font-mono tracking-widest font-bold text-white/40">{timeLeft}</div>
           <div className="flex items-center gap-2 text-green-500/50">
             <ShieldCheck size={16} />
-            <span className="text-[10px] font-bold">SECURE</span>
+            <span className="text-[10px] font-bold">SECURE ENCRYPTION</span>
           </div>
         </footer>
       </div>
