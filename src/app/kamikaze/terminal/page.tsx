@@ -7,10 +7,10 @@ import { User, LogOut, ShieldCheck, Clock, Loader2, Cpu, Zap, Search, AlertTrian
 import KillSwitch from '@/components/kill-switch';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 // --- Constants for Icons ---
-const SAFE_IMG = "https://iili.io/ChkCcMP.jpg"; 
-const BOMB_IMG = "https://iili.io/ChkChtp.jpg";
+const BOMB_IMG = "https://iili.io/ChyAY5x.png"; // New Explosion Image
 
 const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
@@ -189,16 +189,13 @@ function KamikazeTerminal() {
             justify-content: center;
             overflow: hidden;
             position: relative;
-            transition: all 0.3s;
-          }
-          .cell.analyzed {
-            border-color: rgba(255,77,77,0.2);
-            background: rgba(255,77,77,0.03);
+            transition: all 0.5s ease-in-out;
           }
           .cell-img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
+            padding: 2px;
           }
           .col-label {
             text-align: center;
@@ -288,27 +285,37 @@ function KamikazeTerminal() {
             
             return (
               <div key={colIndex} className="column">
-                {Array.from({ length: 5 }).map((_, rowIndex) => (
-                  <div key={rowIndex} className={`cell ${isPathVisible ? 'analyzed' : ''}`}>
-                    <AnimatePresence>
-                      {isPathVisible && colData && (
-                        <motion.div 
-                          initial={{ opacity: 0, scale: 0.2 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="w-full h-full relative"
-                        >
-                          <Image 
-                            src={unsafeRow === rowIndex ? BOMB_IMG : SAFE_IMG} 
-                            alt="Result" 
-                            fill
-                            className="cell-img"
-                            unoptimized
-                          />
-                        </motion.div>
+                {Array.from({ length: 5 }).map((_, rowIndex) => {
+                  const isUnsafe = unsafeRow === rowIndex;
+                  
+                  return (
+                    <div 
+                      key={rowIndex} 
+                      className={cn(
+                        "cell transition-all duration-500",
+                        isPathVisible && colData && (isUnsafe ? "bg-red-600/80 border-red-500 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]" : "bg-green-600/80 border-green-500 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]")
                       )}
-                    </AnimatePresence>
-                  </div>
-                ))}
+                    >
+                      <AnimatePresence>
+                        {isPathVisible && colData && isUnsafe && (
+                          <motion.div 
+                            initial={{ opacity: 0, scale: 0.2 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="w-full h-full relative"
+                          >
+                            <Image 
+                              src={BOMB_IMG} 
+                              alt="Explosion" 
+                              fill
+                              className="cell-img"
+                              unoptimized
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
                 <div className="col-label">C{colIndex + 1}</div>
               </div>
             );
