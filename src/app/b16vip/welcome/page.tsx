@@ -4,7 +4,7 @@
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
-import { User, Shield, Zap, Clock, ChevronRight } from 'lucide-react';
+import { User, Zap, LogOut } from 'lucide-react';
 
 function WelcomeContent() {
   const router = useRouter();
@@ -62,7 +62,7 @@ function WelcomeContent() {
         setCurrentIndex(0);
         doGlitchThenSet(predictions[0]);
         setIsInitialWait(false);
-      }, 8000); // 8 seconds initial lock
+      }, 5000); // 5 seconds initial wait
       return () => clearTimeout(initialTimeout);
     }
   }, [predictions, isInitialWait, doGlitchThenSet]);
@@ -76,9 +76,9 @@ function WelcomeContent() {
     });
   }, [isInitialWait, predictions, doGlitchThenSet]);
 
-  const handleAdminTriggerClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    router.push('/b16vip/admin');
+  const handleLogout = () => {
+    sessionStorage.clear();
+    router.push('/b16vip');
   };
 
   // Matrix Effect & Timer
@@ -123,7 +123,7 @@ function WelcomeContent() {
   return (
     <>
       <Head>
-        <title>B16VIP — SECURE TERMINAL</title>
+        <title>B16VIP — TERMINAL</title>
       </Head>
       <style jsx global>{`
           :root { --accent: #00bfff; --bg: #000000; }
@@ -131,15 +131,11 @@ function WelcomeContent() {
           #bg-matrix { position: fixed; inset: 0; z-index: 1; opacity: 0.6; pointer-events: none; }
           .main-wrap { position: relative; z-index: 10; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 20px; }
           .header-nav { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 25px 30px; z-index: 100; }
-          .user-badge { display: flex; align-items: center; gap: 12px; background: rgba(0, 191, 255, 0.05); border: 1px solid rgba(0, 191, 255, 0.2); padding: 8px 18px; border-radius: 100px; backdrop-blur: 20px; transition: all 0.3s; }
-          .user-badge:hover { border-color: var(--accent); background: rgba(0, 191, 255, 0.1); }
-          .admin-btn { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; transition: all 0.3s; }
-          .admin-btn:hover { border-color: var(--accent); color: var(--accent); transform: rotate(90deg); }
+          .user-badge { display: flex; align-items: center; gap: 12px; background: rgba(0, 191, 255, 0.05); border: 1px solid rgba(0, 191, 255, 0.2); padding: 8px 18px; border-radius: 100px; backdrop-blur: 20px; }
           
           .central-hub { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 30px; }
-          .brand-title { letter-spacing: 12px; font-weight: 900; font-size: 1.2rem; color: var(--accent); text-shadow: 0 0 15px var(--accent); margin-bottom: -10px; }
-          .prediction-circle { width: 320px; height: 320px; border-radius: 50%; border: 2px solid rgba(0, 191, 255, 0.1); display: flex; items-center: center; justify-content: center; position: relative; background: radial-gradient(circle, rgba(0, 191, 255, 0.05) 0%, transparent 70%); }
-          .prediction-circle::before { content: ""; position: absolute; inset: -15px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.03); }
+          .brand-title { letter-spacing: 12px; font-weight: 900; font-size: 1.2rem; color: var(--accent); text-shadow: 0 0 15px var(--accent); }
+          .prediction-circle { width: 320px; height: 320px; border-radius: 50%; border: 2px solid rgba(0, 191, 255, 0.2); display: flex; items-center: center; justify-content: center; position: relative; }
           
           #crashValue { font-size: 7rem; font-weight: 900; color: white; text-shadow: 0 0 25px rgba(0, 191, 255, 0.4); line-height: 1; }
           #crashValue.glitch { animation: glitch-fx 0.4s linear; }
@@ -156,25 +152,26 @@ function WelcomeContent() {
           .info-box .label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 3px; color: rgba(255,255,255,0.4); margin-bottom: 5px; }
           .info-box .value { font-weight: 900; font-size: 1.1rem; }
 
-          .status-footer { position: fixed; bottom: 30px; width: 100%; text-align: center; font-size: 0.7rem; color: rgba(255,255,255,0.2); letter-spacing: 5px; }
+          .logout-btn { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; transition: all 0.3s; color: #ff4d4d; }
+          .logout-btn:hover { background: rgba(255,0,0,0.1); border-color: #ff4d4d; }
       `}</style>
 
       <canvas id="bg-matrix" ref={canvasRef} />
 
       <header className="header-nav">
-        <div className="user-badge" onClick={handleAdminTriggerClick}>
+        <div className="user-badge">
           <User size={16} color="var(--accent)" />
           <span className="text-xs font-black tracking-widest">{userId}</span>
         </div>
-        <button className="admin-btn" onClick={handleAdminTriggerClick}>
-          <Zap size={20} />
+        <button className="logout-btn" onClick={handleLogout}>
+          <LogOut size={20} />
         </button>
       </header>
 
       <div className="main-wrap" onClick={handleScreenClick}>
         <div className="central-hub">
           <div className="brand-title">B16VIP</div>
-          <div className="text-[10px] text-white/40 tracking-[0.4em] uppercase font-bold">Quantum Prediction System</div>
+          <div className="text-[10px] text-white/40 tracking-[0.4em] uppercase font-bold">Predictor Terminal</div>
           
           <div className="prediction-circle">
             <div className="flex items-center justify-center">
@@ -188,23 +185,19 @@ function WelcomeContent() {
               <span className="value text-blue-400">{timerText}</span>
             </div>
             <div className="info-box">
-              <span className="label">Prev Analysis</span>
+              <span className="label">Previous</span>
               <span className="value" ref={lastRawRef}>---</span>
             </div>
           </div>
         </div>
       </div>
-
-      <footer className="status-footer uppercase font-black">
-        Terminal Synchronized — Security Level 4
-      </footer>
     </>
   );
 }
 
 export default function B16VipWelcomePage() {
   return (
-    <Suspense fallback={<div className="bg-black h-screen flex items-center justify-center font-orbitron text-blue-500 tracking-[1em] animate-pulse uppercase text-xs">Initializing Terminal...</div>}>
+    <Suspense fallback={<div className="bg-black h-screen flex items-center justify-center font-orbitron text-blue-500 tracking-[1em] animate-pulse uppercase text-xs">Initializing...</div>}>
       <WelcomeContent />
     </Suspense>
   );

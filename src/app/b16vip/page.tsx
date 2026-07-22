@@ -1,9 +1,91 @@
+
 "use client";
 
-import LoginForm from '@/components/login-form';
-import KillSwitch from '@/components/kill-switch';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { database } from "@/lib/firebase";
+import { ref, get, update, remove } from "firebase/database";
+import { Loader2, AlertCircle, User, KeyRound, ArrowRight } from "lucide-react";
+import KillSwitch from "@/components/kill-switch";
+
+const formSchema = z.object({
+  userId: z
+    .string()
+    .min(9, { message: "ID must be between 9 and 11 digits." })
+    .max(11, { message: "ID must be between 9 and 11 digits." })
+    .regex(/^[0-9]+$/, { message: "ID must contain only numbers." }),
+  password: z.string().min(1, { message: "Password is required." }),
+});
 
 export default function B16VipHome() {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      userId: "",
+      password: "",
+    },
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const passwordsRef = ref(database, 'passwords');
+      const snapshot = await get(passwordsRef);
+
+      if (!snapshot.exists()) {
+        setError("System error: Could not verify credentials.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const allPasswords = snapshot.val();
+      let isValid = false;
+      let passwordKey: string | null = null;
+      let passwordData: any = null;
+
+      for (const key in allPasswords) {
+        if (allPasswords[key].rz === values.password) {
+          isValid = true;
+          passwordKey = key;
+          passwordData = allPasswords[key];
+          break;
+        }
+      }
+
+      if (!isValid || !passwordKey || !passwordData) {
+        setError("Invalid credentials. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      sessionStorage.setItem('razor_user_id', values.userId);
+      sessionStorage.setItem('razor_session_validity', passwordData.validity || '1h');
+      
+      const passwordRef = ref(database, `passwords/${passwordKey}`);
+      if (typeof passwordData.uses !== 'undefined') {
+          if (passwordData.uses > 1) {
+            await update(passwordRef, { uses: passwordData.uses - 1 });
+          } else {
+            await remove(passwordRef);
+          }
+      }
+
+      router.push('/b16vip/welcome');
+
+    } catch (e) {
+      setError("Network error. Please check your connection.");
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <KillSwitch pageName="b16vip">
        <div className="fixed inset-0 -z-10">
@@ -17,12 +99,58 @@ export default function B16VipHome() {
         <div className="absolute inset-0 w-full h-full bg-black/60"></div>
       </div>
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 antialiased bg-transparent">
-        <LoginForm 
-            welcomePath="/b16vip/welcome" 
-            title="B16VIP TERMINAL"
-            themeColor="var(--neon-blue)"
-            themeGlow="text-glow-blue"
-        />
+        <div className="w-full max-w-sm">
+             <div className="text-center mb-8">
+                <h1 className="text-4xl font-black uppercase text-glow-blue" style={{color: 'var(--neon-blue)', fontFamily: 'Orbitron'}}>
+                    B16 VIP
+                </h1>
+             </div>
+             <div className="bg-black/40 backdrop-blur-sm border border-blue-500/20 rounded-2xl p-6 shadow-2xl shadow-blue-500/10">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    {error && (
+                        <div className="bg-red-900/30 border border-red-500/40 text-red-300 p-3 rounded-lg text-sm flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5" />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    <div className="relative">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-400/60" />
+                        <input
+                            {...form.register('userId')}
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="User ID"
+                            className="w-full bg-gray-900/50 border-2 border-blue-500/20 h-14 pl-12 pr-4 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/50"
+                        />
+                    </div>
+
+                     <div className="relative">
+                        <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-400/60" />
+                        <input
+                            {...form.register('password')}
+                            type="password"
+                            placeholder="Password"
+                            className="w-full bg-gray-900/50 border-2 border-blue-500/20 h-14 pl-12 pr-4 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/50"
+                        />
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold flex items-center justify-center gap-2 rounded-lg transition-all duration-300 transform active:scale-95 disabled:opacity-50"
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? (
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        ) : (
+                        <>
+                            Login <ArrowRight className="h-5 w-5" />
+                        </>
+                        )}
+                    </button>
+                </form>
+            </div>
+        </div>
       </main>
     </KillSwitch>
   );
