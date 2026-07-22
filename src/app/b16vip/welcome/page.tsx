@@ -4,7 +4,7 @@
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
-import { User, Settings } from 'lucide-react';
+import { User, Shield, Zap, Clock, ChevronRight } from 'lucide-react';
 
 function WelcomeContent() {
   const router = useRouter();
@@ -12,10 +12,11 @@ function WelcomeContent() {
   const [predictions, setPredictions] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isInitialWait, setIsInitialWait] = useState(true);
+  const [timerText, setTimerText] = useState("00:00:00");
 
   const crashValueRef = useRef<HTMLDivElement>(null);
   const lastRawRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const doGlitchThenSet = useCallback((newVal: any) => {
     const crashEl = crashValueRef.current;
@@ -35,12 +36,11 @@ function WelcomeContent() {
     setTimeout(() => crashEl.classList.remove('glitch'), 560);
   }, []);
 
-  // Load user ID and predictions from session/local storage
   useEffect(() => {
     const storedUserId = sessionStorage.getItem('razor_user_id');
     const validity = sessionStorage.getItem('razor_session_validity');
 
-    if (!storedUserId) {
+    if (!storedUserId || !validity) {
       router.push('/b16vip');
       return;
     }
@@ -56,23 +56,19 @@ function WelcomeContent() {
     }
   }, [router]);
 
-  // Handle the initial 10-second wait before showing the first prediction
   useEffect(() => {
     if (predictions.length > 0 && isInitialWait) {
       const initialTimeout = setTimeout(() => {
         setCurrentIndex(0);
         doGlitchThenSet(predictions[0]);
         setIsInitialWait(false);
-      }, 10000);
-
+      }, 8000); // 8 seconds initial lock
       return () => clearTimeout(initialTimeout);
     }
   }, [predictions, isInitialWait, doGlitchThenSet]);
 
-  // Handle screen clicks to show next prediction
   const handleScreenClick = useCallback(() => {
     if (isInitialWait || predictions.length === 0) return;
-
     setCurrentIndex(prevIndex => {
       const nextIndex = (prevIndex + 1) % predictions.length;
       doGlitchThenSet(predictions[nextIndex]);
@@ -85,98 +81,130 @@ function WelcomeContent() {
     router.push('/b16vip/admin');
   };
 
-  // Dummy timer
+  // Matrix Effect & Timer
   useEffect(() => {
-    const timerEl = timerRef.current;
     let seconds = 0;
     const timerInterval = setInterval(() => {
       seconds++;
       const h = Math.floor(seconds/3600);
       const m = Math.floor((seconds%3600)/60);
       const s = seconds%60;
-      if(timerEl) timerEl.innerText = `${String(h).padStart(2,'0')} : ${String(m).padStart(2,'0')} : ${String(s).padStart(2,'0')}`;
+      setTimerText(`${String(h).padStart(2,'0')} : ${String(m).padStart(2,'0')} : ${String(s).padStart(2,'0')}`);
     }, 1000);
 
-    return () => {
-        clearInterval(timerInterval);
-    };
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let cols = Math.floor(canvas.width / 15) + 1;
+        let ypos = Array(cols).fill(0);
+        const drawMatrix = () => {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.font = '15px monospace';
+          ypos.forEach((y, i) => {
+            const text = String.fromCharCode(Math.random() * 128);
+            const x = i * 15;
+            ctx.fillStyle = 'rgba(0, 191, 255, 0.25)';
+            ctx.fillText(text, x, y);
+            if (y > canvas.height + Math.random() * 10000) ypos[i] = 0;
+            else ypos[i] = y + 15;
+          });
+        };
+        const mInt = setInterval(drawMatrix, 50);
+        return () => { clearInterval(mInt); clearInterval(timerInterval); };
+      }
+    }
+    return () => clearInterval(timerInterval);
   }, []);
 
   return (
     <>
       <Head>
-        <title>B16VIP — Terminal</title>
-        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+        <title>B16VIP — SECURE TERMINAL</title>
       </Head>
       <style jsx global>{`
-          body {
-            background: black !important;
+          :root { --accent: #00bfff; --bg: #000000; }
+          body { background: var(--bg) !important; margin: 0; overflow: hidden; font-family: 'Orbitron', sans-serif; color: white; }
+          #bg-matrix { position: fixed; inset: 0; z-index: 1; opacity: 0.6; pointer-events: none; }
+          .main-wrap { position: relative; z-index: 10; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 20px; }
+          .header-nav { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 25px 30px; z-index: 100; }
+          .user-badge { display: flex; align-items: center; gap: 12px; background: rgba(0, 191, 255, 0.05); border: 1px solid rgba(0, 191, 255, 0.2); padding: 8px 18px; border-radius: 100px; backdrop-blur: 20px; transition: all 0.3s; }
+          .user-badge:hover { border-color: var(--accent); background: rgba(0, 191, 255, 0.1); }
+          .admin-btn { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; transition: all 0.3s; }
+          .admin-btn:hover { border-color: var(--accent); color: var(--accent); transform: rotate(90deg); }
+          
+          .central-hub { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 30px; }
+          .brand-title { letter-spacing: 12px; font-weight: 900; font-size: 1.2rem; color: var(--accent); text-shadow: 0 0 15px var(--accent); margin-bottom: -10px; }
+          .prediction-circle { width: 320px; height: 320px; border-radius: 50%; border: 2px solid rgba(0, 191, 255, 0.1); display: flex; items-center: center; justify-content: center; position: relative; background: radial-gradient(circle, rgba(0, 191, 255, 0.05) 0%, transparent 70%); }
+          .prediction-circle::before { content: ""; position: absolute; inset: -15px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.03); }
+          
+          #crashValue { font-size: 7rem; font-weight: 900; color: white; text-shadow: 0 0 25px rgba(0, 191, 255, 0.4); line-height: 1; }
+          #crashValue.glitch { animation: glitch-fx 0.4s linear; }
+          @keyframes glitch-fx {
+            0% { transform: translate(0); clip-path: inset(10% 0 80% 0); }
+            20% { transform: translate(-10px, 5px); clip-path: inset(50% 0 20% 0); }
+            40% { transform: translate(10px, -5px); }
+            100% { transform: translate(0); clip-path: inset(0); }
           }
-          :root{ --bg:#000; --neon-primary:#00bfff; --neon-white:#e6fff8; --neon-gray:#666; --accent:#00bfff; }
-          *{box-sizing:border-box}
-          html,body{height:100%;margin:0;font-family: 'Orbitron', sans-serif;background:var(--bg);color:var(--neon-white);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
-          body, .font-orbitron, .timer-big, .last-box .value, .last-box .label, #crashValue { font-family: 'Orbitron', sans-serif !important; font-weight: 900 !important; }
-          .brand .logo-text, .brand h1 { font-family: 'Orbitron', sans-serif !important; font-weight: 900 !important; }
-          .wrap{position:relative;z-index:3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px; cursor: pointer;}
-          .header-controls { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 9999; }
-          .panel{ width:min(920px,94%);max-width:920px;margin:0 auto; background: transparent; border-radius:14px;padding:28px; display:flex;flex-direction:column;gap:18px;align-items:center;overflow:visible; margin-top: 60px;}
-          .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
-          .brand .logo-text{font-size:1.1rem;color:var(--neon-white);font-weight:900;letter-spacing:2px;cursor:default}
-          #crashValue { color: var(--neon-primary); text-shadow: 0 0 8px var(--neon-primary); }
-          .brand h1{ font-size:2rem;margin:0;color:var(--neon-primary);letter-spacing:4px;font-weight:900; text-shadow: 0 0 5px var(--neon-primary), 0 0 10px var(--neon-primary), 0 0 15px var(--neon-primary), 0 0 20px var(--neon-primary); }
-          .display-circle{ width:420px;height:420px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative; background: radial-gradient(ellipse at center, rgba(0,0,0,0.18), rgba(0,0,0,0.45)); border:1px solid rgba(0,191,255,0.04); overflow:hidden; }
-          #crashValue{ font-size:6rem;font-weight:900; letter-spacing: 1px;transition:transform .18s ease, opacity .18s ease; text-align:center;white-space:nowrap; -webkit-font-smoothing:antialiased; }
-          #crashValue.glitch{ animation: glitch-taz-taz 0.5s linear; }
-          @keyframes glitch-taz-taz {
-            0% { clip-path: inset(3% 0 94% 0); transform: translate(-10px, -5px); opacity: 0.8; }
-            20% { clip-path: inset(80% 0 3% 0); transform: translate(10px, 5px); }
-            40% { clip-path: inset(45% 0 45% 0); transform: translate(-5px, 0); opacity: 0.7; }
-            60% { clip-path: inset(90% 0 5% 0); transform: translate(5px, 0); }
-            80% { clip-path: inset(5% 0 88% 0); transform: translate(-10px, -5px); opacity: 0.9; }
-            100% { clip-path: inset(0 0 0 0); transform: translate(0, 0); opacity: 1; }
-          }
-          .meta-row{display:flex;gap:18px;align-items:center;justify-content:center;width:100%;flex-wrap:wrap;}
-          .timer-big{font-weight:800;color:var(--neon-white);background:transparent;padding:8px 12px;border-radius:10px;font-size:1.05rem;letter-spacing:0.6px;text-align:center;border:1px solid rgba(255,255,255,0.02);}
-          .last-box{background:transparent;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);min-width:140px;text-align:center}
-          .last-box .label{font-size:0.82rem;color:rgba(230,255,248,0.6)}
-          .last-box .value{font-weight:700;color:var(--neon-white);font-size:1.05rem}
-          .user-id-display { display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', monospace; font-size: 16px; color: white; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(0,191,255,0.1); cursor: pointer; }
+
+          .meta-info { display: flex; gap: 25px; margin-top: 20px; }
+          .info-box { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 12px 25px; border-radius: 16px; text-align: center; min-width: 140px; }
+          .info-box span { display: block; }
+          .info-box .label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 3px; color: rgba(255,255,255,0.4); margin-bottom: 5px; }
+          .info-box .value { font-weight: 900; font-size: 1.1rem; }
+
+          .status-footer { position: fixed; bottom: 30px; width: 100%; text-align: center; font-size: 0.7rem; color: rgba(255,255,255,0.2); letter-spacing: 5px; }
       `}</style>
 
-       <div className="header-controls">
-         <div className="user-id-display" onClick={handleAdminTriggerClick}>
-          <User size={16} color="var(--neon-primary)" />
-          <span>{userId}</span>
-        </div>
-        <div className="connection-status" style={{visibility: 'hidden'}}>
-        </div>
-       </div>
+      <canvas id="bg-matrix" ref={canvasRef} />
 
-      <div className="wrap" onClick={handleScreenClick}>
-        <div className="panel">
-          <div className="brand">
-            <h1 className="neon-label">B16VIP</h1>
+      <header className="header-nav">
+        <div className="user-badge" onClick={handleAdminTriggerClick}>
+          <User size={16} color="var(--accent)" />
+          <span className="text-xs font-black tracking-widest">{userId}</span>
+        </div>
+        <button className="admin-btn" onClick={handleAdminTriggerClick}>
+          <Zap size={20} />
+        </button>
+      </header>
+
+      <div className="main-wrap" onClick={handleScreenClick}>
+        <div className="central-hub">
+          <div className="brand-title">B16VIP</div>
+          <div className="text-[10px] text-white/40 tracking-[0.4em] uppercase font-bold">Quantum Prediction System</div>
+          
+          <div className="prediction-circle">
+            <div className="flex items-center justify-center">
+              <div id="crashValue" ref={crashValueRef} data-text="0.00">0.00</div>
+            </div>
           </div>
-            <div className="prediction-system-label" style={{color: 'var(--neon-white)', fontWeight: 900, marginTop: '5px'}}>Prediction System</div>
-          <div className="display-circle" aria-hidden="false">
-            <div id="crashValue" ref={crashValueRef} data-text="0.00">0.00</div>
-          </div>
-          <div className="meta-row">
-            <div className="timer-big" id="timer" ref={timerRef}>00 : 00 : 00</div>
-            <div className="last-box" aria-hidden="false">
-              <div className="label">LastRaw</div>
-              <div className="value" id="lastRaw" ref={lastRawRef}>-</div>
+
+          <div className="meta-info">
+            <div className="info-box">
+              <span className="label">Live Runtime</span>
+              <span className="value text-blue-400">{timerText}</span>
+            </div>
+            <div className="info-box">
+              <span className="label">Prev Analysis</span>
+              <span className="value" ref={lastRawRef}>---</span>
             </div>
           </div>
         </div>
       </div>
+
+      <footer className="status-footer uppercase font-black">
+        Terminal Synchronized — Security Level 4
+      </footer>
     </>
   );
 }
 
 export default function B16VipWelcomePage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="bg-black h-screen flex items-center justify-center font-orbitron text-blue-500 tracking-[1em] animate-pulse uppercase text-xs">Initializing Terminal...</div>}>
       <WelcomeContent />
     </Suspense>
   );
