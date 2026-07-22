@@ -1,9 +1,10 @@
+
 import type { Metadata } from 'next';
 import '../globals.css';
 
 export const metadata: Metadata = {
-  title: 'B16VIP TERMINAL',
-  description: 'B16VIP Terminal',
+  title: 'DREEL BET TERMINAL',
+  description: 'DREEL BET Terminal',
 };
 
 export default function RootLayout({

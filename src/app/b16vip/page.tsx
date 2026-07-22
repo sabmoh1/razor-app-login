@@ -40,47 +40,46 @@ export default function B16VipHome() {
       const passwordsRef = ref(database, 'passwords');
       const snapshot = await get(passwordsRef);
 
-      if (!snapshot.exists()) {
+      if (snapshot.exists()) {
+        const allPasswords = snapshot.val();
+        let isValid = false;
+        let passwordKey: string | null = null;
+        let passwordData: any = null;
+
+        // Corrected to use 'password' field like the original Razor interface
+        for (const key in allPasswords) {
+          if (allPasswords[key].password === values.password) {
+            isValid = true;
+            passwordKey = key;
+            passwordData = allPasswords[key];
+            break;
+          }
+        }
+
+        if (!isValid || !passwordKey || !passwordData) {
+          setError("Invalid credentials. Please try again.");
+          setIsSubmitting(false);
+          return;
+        }
+      
+        sessionStorage.setItem('razor_user_id', values.userId);
+        sessionStorage.setItem('razor_session_validity', passwordData.validity || '1h');
+      
+        const passwordRef = ref(database, `passwords/${passwordKey}`);
+        if (typeof passwordData.uses !== 'undefined') {
+            if (passwordData.uses > 1) {
+              await update(passwordRef, { uses: passwordData.uses - 1 });
+            } else {
+              await remove(passwordRef);
+            }
+        }
+
+        router.push('/b16vip/welcome');
+
+      } else {
         setError("System error: Could not verify credentials.");
         setIsSubmitting(false);
-        return;
       }
-
-      const allPasswords = snapshot.val();
-      let isValid = false;
-      let passwordKey: string | null = null;
-      let passwordData: any = null;
-
-      // Corrected to use 'password' field like the original Razor interface
-      for (const key in allPasswords) {
-        if (allPasswords[key].password === values.password) {
-          isValid = true;
-          passwordKey = key;
-          passwordData = allPasswords[key];
-          break;
-        }
-      }
-
-      if (!isValid || !passwordKey || !passwordData) {
-        setError("Invalid credentials. Please try again.");
-        setIsSubmitting(false);
-        return;
-      }
-      
-      sessionStorage.setItem('razor_user_id', values.userId);
-      sessionStorage.setItem('razor_session_validity', passwordData.validity || '1h');
-      
-      const passwordRef = ref(database, `passwords/${passwordKey}`);
-      if (typeof passwordData.uses !== 'undefined') {
-          if (passwordData.uses > 1) {
-            await update(passwordRef, { uses: passwordData.uses - 1 });
-          } else {
-            await remove(passwordRef);
-          }
-      }
-
-      router.push('/b16vip/welcome');
-
     } catch (e) {
       setError("Network error. Please check your connection.");
       setIsSubmitting(false);
@@ -103,7 +102,7 @@ export default function B16VipHome() {
         <div className="w-full max-w-sm">
              <div className="text-center mb-8">
                 <h1 className="text-4xl font-black uppercase text-glow-blue" style={{color: 'var(--neon-blue)', fontFamily: 'Orbitron'}}>
-                    B16 VIP
+                    DREEL BET
                 </h1>
              </div>
              <div className="bg-black/40 backdrop-blur-sm border border-blue-500/20 rounded-2xl p-6 shadow-2xl shadow-blue-500/10">

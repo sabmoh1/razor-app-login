@@ -97,7 +97,7 @@ export default function B16VipAdminPage() {
                 
                 <div className="rounded-2xl bg-black/40 backdrop-blur-2xl border border-blue-500/20 p-6 md:p-10">
                     <div className="mb-10 text-center">
-                        <h1 className="text-3xl font-black text-white tracking-tighter mb-2">B16VIP SEQUENCE</h1>
+                        <h1 className="text-3xl font-black text-white tracking-tighter mb-2">DREEL BET SEQUENCE</h1>
                         <p className="text-gray-500 text-[10px] uppercase">Manual Prediction Input</p>
                     </div>
                     

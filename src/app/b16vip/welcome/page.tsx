@@ -146,7 +146,7 @@ function WelcomeContent() {
 
       <div className="main-wrap" onClick={handleScreenClick}>
         <div className="central-hub">
-          <div className="brand-title">B16VIP</div>
+          <div className="brand-title">DREEL BET</div>
           <div className="text-[10px] text-white/40 tracking-[0.4em] uppercase font-bold">Predictor Terminal</div>
           
           <div className="prediction-circle">
