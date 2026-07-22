@@ -51,8 +51,9 @@ export default function B16VipHome() {
       let passwordKey: string | null = null;
       let passwordData: any = null;
 
+      // Corrected to use 'password' field like the original Razor interface
       for (const key in allPasswords) {
-        if (allPasswords[key].rz === values.password) {
+        if (allPasswords[key].password === values.password) {
           isValid = true;
           passwordKey = key;
           passwordData = allPasswords[key];
