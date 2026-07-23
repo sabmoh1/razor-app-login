@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
@@ -35,23 +36,30 @@ function WelcomeContent() {
   const generateNewPrediction = useCallback(() => {
     setIsUpdating(true);
     
-    // Logic: Use DB value if exists, otherwise generate random
-    let finalVal = "0.00";
-    if (stateRef.current && stateRef.current.value) {
-      finalVal = Number(stateRef.current.value).toFixed(2);
+    // القيمة الحالية من قاعدة البيانات (إن وجدت)
+    const dbValue = stateRef.current?.value ? Number(stateRef.current.value).toFixed(2) : null;
+    let finalVal: string;
+
+    // المنطق: إذا كانت القيمة في قاعدة البيانات موجودة ومختلفة عما نعرضه حالياً (تحديث جديد)
+    if (dbValue && dbValue !== lastValueRef.current) {
+        finalVal = dbValue;
     } else {
-      // Random fallback between 1.10 and 3.50
-      finalVal = (Math.random() * (3.5 - 1.1) + 1.1).toFixed(2);
+        // إذا كانت القيمة مفقودة أو "ثابتة" لم تتغير، نقوم بتوليد رقم عشوائي إجباري
+        let randomVal;
+        do {
+            randomVal = (Math.random() * (3.50 - 1.10) + 1.10).toFixed(2);
+        } while (randomVal === lastValueRef.current); // ضمان أن الرقم الجديد يختلف عن الحالي
+        finalVal = randomVal;
     }
     
-    // If the value changed, update history and current
+    // تحديث السجل والواجهة
     if (finalVal !== lastValueRef.current) {
         setLastRaw(lastValueRef.current === "0.00" ? "—" : lastValueRef.current);
         setCrashValue(finalVal);
         lastValueRef.current = finalVal;
     }
 
-    // Small delay to show update status
+    // تأخير بسيط لإظهار حالة التحديث
     setTimeout(() => setIsUpdating(false), 800);
   }, []);
 
@@ -68,7 +76,7 @@ function WelcomeContent() {
 
     const STREAM_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com/predictions/current.json";
     
-    // Polling for DB data
+    // جلب البيانات بشكل مستمر من قاعدة البيانات
     let pollInterval = setInterval(async () => {
       try {
         const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
@@ -78,12 +86,12 @@ function WelcomeContent() {
       } catch (e) { setStatus("wait"); }
     }, 2000);
 
-    // Automated Prediction Cycle every 5 seconds
+    // دورة التحديث التلقائي كل 5 ثوانٍ
     const predictionInterval = setInterval(() => {
       generateNewPrediction();
     }, 5000);
 
-    // Session Timer
+    // مؤقت الجلسة
     let totalSeconds = parseValidityToSeconds(validity);
     const timerInterval = setInterval(() => {
       if (totalSeconds > 0) {
@@ -99,7 +107,7 @@ function WelcomeContent() {
       }
     }, 1000);
 
-    // Initial prediction
+    // التشغيل الأول فور الدخول
     generateNewPrediction();
 
     return () => {
