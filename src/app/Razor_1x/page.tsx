@@ -3,16 +3,61 @@
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Loader2, Search, Cpu, Zap, ShieldCheck } from 'lucide-react';
 import KillSwitch from '@/components/kill-switch';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
+  const [step, setStep] = useState(0);
+  const steps = [
+    { text: "INTERCEPTING DATA STREAM...", icon: Search },
+    { text: "DECRYPTING HASH VALUES...", icon: Cpu },
+    { text: "ESTABLISHING SECURE UPLINK...", icon: Zap },
+    { text: "ANALYSIS COMPLETE", icon: ShieldCheck }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStep(prev => {
+        if (prev < steps.length - 1) return prev + 1;
+        clearInterval(timer);
+        setTimeout(onComplete, 600);
+        return prev;
+      });
+    }, 700);
+    return () => clearInterval(timer);
+  }, [onComplete]);
+
+  return (
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-6 text-white font-bold">
+      <div className="w-full max-w-xs space-y-8 text-center">
+        <div className="relative h-20 w-20 mx-auto">
+            <Loader2 className="h-20 w-20 text-white animate-spin opacity-20" />
+            <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-2 w-2 bg-white rounded-full animate-ping" />
+            </div>
+        </div>
+        <div className="space-y-4">
+          {steps.map((s, i) => (
+            <div key={i} className={`flex items-center gap-3 justify-center transition-all duration-500 ${step >= i ? "opacity-100 scale-100" : "opacity-10 scale-95"}`}>
+               <span className="text-[10px] tracking-[0.2em] uppercase font-black">{s.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 function WelcomeContent() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [crashValue, setCrashValue] = useState<string>("0.00");
   const [lastRaw, setLastRaw] = useState<string>("—");
-  const [status, setStatus] = useState<"live" | "wait" | "err">("wait");
+  const [status, setStatus] = useState<"live" | "wait">("wait");
   const [timeLeft, setTimeLeft] = useState<string>("000 : 00 : 00");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isResultVisible, setIsResultVisible] = useState(false);
   
   const stateRef = useRef<any>(null);
 
@@ -30,36 +75,6 @@ function WelcomeContent() {
     }
   };
 
-  const applyAtPath = (root: any, path: string, data: any) => {
-    if (path === "/" || path === "") return data;
-    const parts = path.split("/").filter(Boolean);
-    if (root === null || typeof root !== "object") root = {};
-    let node = root;
-    for (let i = 0; i < parts.length - 1; i++) {
-      const k = parts[i];
-      if (typeof node[k] !== "object" || node[k] === null) node[k] = {};
-      node = node[k];
-    }
-    const last = parts[parts.length - 1];
-    if (data === null) delete node[last]; else node[last] = data;
-    return root;
-  };
-
-  const updateUI = useCallback((newState: any) => {
-    if (newState && newState.value != null) {
-      const newVal = Number(newState.value).toFixed(2);
-      setLastRaw(prev => (prev !== newVal && crashValue !== "0.00" ? crashValue : prev));
-      setCrashValue(newVal);
-      
-      const valEl = document.getElementById('value-display');
-      if (valEl) {
-        valEl.classList.remove('flip');
-        void valEl.offsetWidth;
-        valEl.classList.add('flip');
-      }
-    }
-  }, [crashValue]);
-
   useEffect(() => {
     document.title = "RAZOR — Predictor V2";
     const validity = sessionStorage.getItem('razor_session_validity');
@@ -72,42 +87,14 @@ function WelcomeContent() {
     setUserId(storedUserId);
 
     const STREAM_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com/predictions/current.json";
-    let eventSource: EventSource | null = null;
-    let pollInterval: NodeJS.Timeout | null = null;
-
-    const startSSE = () => {
+    let pollInterval = setInterval(async () => {
       try {
-        eventSource = new EventSource(STREAM_URL);
-        eventSource.onopen = () => setStatus("live");
-        const handleEvent = (ev: MessageEvent) => {
-          let payload;
-          try { payload = JSON.parse(ev.data); } catch (_) { return; }
-          if (!payload || typeof payload !== "object") return;
-          const path = payload.path != null ? payload.path : "/";
-          const data = payload.data;
-          stateRef.current = applyAtPath(stateRef.current, path, data);
-          updateUI(stateRef.current);
-        };
-        eventSource.addEventListener('put', handleEvent as any);
-        eventSource.addEventListener('patch', handleEvent as any);
-        eventSource.onerror = () => { eventSource?.close(); startPolling(); };
-      } catch (e) { startPolling(); }
-    };
-
-    const startPolling = () => {
-      if (pollInterval) return;
-      pollInterval = setInterval(async () => {
-        try {
-          const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
-          const data = await res.json();
-          stateRef.current = data;
-          updateUI(data);
-          setStatus("live");
-        } catch (e) { setStatus("err"); }
-      }, 2000);
-    };
-
-    startSSE();
+        const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
+        const data = await res.json();
+        stateRef.current = data;
+        setStatus("live");
+      } catch (e) { setStatus("wait"); }
+    }, 2000);
 
     let totalSeconds = parseValidityToSeconds(validity);
     const timerInterval = setInterval(() => {
@@ -125,11 +112,31 @@ function WelcomeContent() {
     }, 1000);
 
     return () => {
-      eventSource?.close();
-      if (pollInterval) clearInterval(pollInterval);
+      clearInterval(pollInterval);
       clearInterval(timerInterval);
     };
-  }, [router, updateUI]);
+  }, [router]);
+
+  const handleStartAnalysis = () => {
+    setIsAnalyzing(true);
+  };
+
+  const onAnalysisComplete = () => {
+    setIsAnalyzing(false);
+    setIsResultVisible(true);
+    
+    // Logic: Use DB value if exists, otherwise generate random
+    let finalVal = "0.00";
+    if (stateRef.current && stateRef.current.value) {
+      finalVal = Number(stateRef.current.value).toFixed(2);
+    } else {
+      // Random fallback between 1.10 and 3.50
+      finalVal = (Math.random() * (3.5 - 1.1) + 1.1).toFixed(2);
+    }
+    
+    setLastRaw(prev => (prev !== finalVal && crashValue !== "0.00" ? crashValue : prev));
+    setCrashValue(finalVal);
+  };
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -189,21 +196,39 @@ function WelcomeContent() {
           .brand { text-align: center; margin-top: 20px; }
           .brand .sub-top { font-size: 14px; letter-spacing: 5px; opacity: 0.7; }
           .brand .title { font-size: 56px; font-family: var(--font-accent); margin: 5px 0; text-shadow: 0 0 20px rgba(255,255,255,0.4); }
-          .stage { flex: 1; display: flex; align-items: center; justify-content: center; }
+          .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
           .dial { position: relative; width: 320px; height: 320px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
           .dial::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--ring); box-shadow: inset 0 0 30px rgba(255,255,255,0.03); }
           .dial::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, var(--ring-glow) 30deg, transparent 90deg); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); animation: spin 5s linear infinite; }
           @keyframes spin { to { transform: rotate(360deg); } }
           .value { position: relative; font-size: 72px; font-family: var(--font-accent); text-shadow: 0 0 30px rgba(255,255,255,0.6); }
-          .value.flip { animation: flip 0.4s ease; }
-          @keyframes flip { 0% { transform: translateY(0) scale(1); opacity: 1; } 45% { transform: translateY(-10px) scale(1.08); opacity: 0.3; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
           .value::after { content: "x"; font-size: 28px; vertical-align: super; margin-left: 5px; opacity: 0.6; }
+          .btn-analyze {
+            background: white;
+            color: black;
+            font-weight: 900;
+            padding: 18px 40px;
+            border-radius: 15px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.2);
+            transition: all 0.3s;
+            font-family: 'Orbitron', sans-serif;
+            border: none;
+            cursor: pointer;
+          }
+          .btn-analyze:active { transform: scale(0.95); }
           .footer { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 10px; }
           .timer { font-size: 18px; letter-spacing: 2px; font-weight: bold; }
           .lastraw { text-align: right; }
           .lastraw .label { font-size: 10px; color: var(--muted); margin-bottom: 5px; display: block; }
           .lastraw .val { font-size: 16px; font-weight: bold; font-family: var(--font-accent); }
       `}</style>
+      
+      <AnimatePresence>
+        {isAnalyzing && <AnalysisOverlay onComplete={onAnalysisComplete} />}
+      </AnimatePresence>
+
       <div className="app">
         <header className="topbar">
           <div className="user-chip">
@@ -212,7 +237,7 @@ function WelcomeContent() {
           </div>
           <div className="status">
             <span className="dot"></span>
-            <span>{status === 'live' ? 'ACTIVE' : 'READY'}</span>
+            <span>{status === 'live' ? 'READY' : 'WAIT'}</span>
           </div>
           <button className="logout" onClick={handleLogout}>
             <LogOut size={18} />
@@ -222,13 +247,18 @@ function WelcomeContent() {
         <div className="brand">
           <div className="sub-top">OFFICIAL TERMINAL</div>
           <div className="title">RAZOR</div>
-          <div className="telegram">TELEGRAM : @RAZOR_1X</div>
         </div>
 
         <div className="stage">
           <div className="dial">
-            <div className="value" id="value-display">{crashValue}</div>
+            <div className="value">{isResultVisible ? crashValue : "0.00"}</div>
           </div>
+          {!isResultVisible && (
+            <button onClick={handleStartAnalysis} className="btn-analyze">Start Analysis</button>
+          )}
+          {isResultVisible && (
+             <button onClick={() => setIsResultVisible(false)} className="text-[10px] text-white/30 uppercase tracking-[0.4em] hover:text-white transition-all">Reset Analysis</button>
+          )}
         </div>
 
         <footer className="footer">

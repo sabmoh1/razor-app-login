@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, ShieldCheck, Clock, Loader2, Cpu, Zap, Search, AlertTriangle } from 'lucide-react';
+import { User, LogOut, ShieldCheck, Clock, Loader2, Cpu, Zap, Search } from 'lucide-react';
 import KillSwitch from '@/components/kill-switch';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const GOLD_WIN = "https://iili.io/ChkCcMP.jpg"; 
 const GOLD_LOSE = "https://iili.io/ChkChtp.jpg";
 const RAZOR_LOGO = "https://iili.io/f9iNGFj.png";
+const BG_GIF = "https://cdn.dribbble.com/userupload/20787734/file/original-6a95ade3f7286f5da2b16669f6ff93c3.gif";
 
 const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
@@ -19,7 +20,7 @@ const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
     { text: "INTERCEPTING DATA...", icon: Search },
     { text: "DECRYPTING PATH...", icon: Cpu },
     { text: "SYNCING TERMINAL...", icon: Zap },
-    { text: "DONE", icon: ShieldCheck }
+    { text: "ANALYSIS DONE", icon: ShieldCheck }
   ];
 
   useEffect(() => {
@@ -32,10 +33,10 @@ const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
       });
     }, 800);
     return () => clearInterval(timer);
-  }, [onComplete, steps.length]);
+  }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-6 text-white font-bold">
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[100] flex items-center justify-center p-6 text-white font-bold">
       <div className="w-full max-w-xs space-y-8 text-center">
         <Loader2 className="h-12 w-12 text-yellow-500 animate-spin mx-auto mb-4" />
         <div className="space-y-4">
@@ -58,7 +59,7 @@ function WildWestTerminal() {
   const [timeLeft, setTimeLeft] = useState<string>("00:00:00");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPathVisible, setIsPathVisible] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [randomPath, setRandomPath] = useState<number[]>([]);
   
   const stateRef = useRef<any>(null);
 
@@ -79,12 +80,7 @@ function WildWestTerminal() {
   const updateUI = useCallback((newState: any) => {
     stateRef.current = newState;
     setGameData(newState);
-    if (!newState) {
-        setIsPathVisible(false);
-        setStatus("wait");
-    } else {
-        setStatus("live");
-    }
+    setStatus(newState ? "live" : "wait");
   }, []);
 
   useEffect(() => {
@@ -129,13 +125,18 @@ function WildWestTerminal() {
   }, [router, updateUI]);
 
   const handleStartAnalysis = () => {
-    setErrorMsg(null);
-    if (!gameData) {
-      setErrorMsg("NO DATA DETECTED");
-      setTimeout(() => setErrorMsg(null), 3000);
-      return;
-    }
     setIsAnalyzing(true);
+  };
+
+  const onAnalysisComplete = () => {
+    setIsAnalyzing(false);
+    setIsPathVisible(true);
+    
+    // If no real data, generate random path
+    if (!gameData) {
+      const mode = 2; // Default to 2-column mode for fallback
+      setRandomPath(Array.from({ length: 10 }, () => Math.floor(Math.random() * mode)));
+    }
   };
 
   return (
@@ -144,7 +145,7 @@ function WildWestTerminal() {
         <div 
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{
-            backgroundImage: "url('https://cdn.dribbble.com/userupload/20787734/file/original-6a95ade3f7286f5da2b16669f6ff93c3.gif')",
+            backgroundImage: `url('${BG_GIF}')`,
             filter: 'sepia(0.3) brightness(0.4) contrast(1.1)',
           }}
         ></div>
@@ -198,7 +199,6 @@ function WildWestTerminal() {
           .cell.analyzed {
             border-color: rgba(255,215,0,0.5);
             background: rgba(255,215,0,0.1);
-            box-shadow: inset 0 0 15px rgba(255,215,0,0.1);
           }
           .cell-img {
             width: 100%;
@@ -224,6 +224,8 @@ function WildWestTerminal() {
              text-transform: uppercase;
              box-shadow: 0 0 25px rgba(255,215,0,0.3);
              transition: all 0.2s;
+             border: none;
+             cursor: pointer;
           }
           .btn-main:active { transform: scale(0.98); opacity: 0.9; }
           
@@ -242,28 +244,21 @@ function WildWestTerminal() {
       `}</style>
       
       <AnimatePresence>
-        {isAnalyzing && (
-          <AnalysisOverlay onComplete={() => {
-            setIsAnalyzing(false);
-            setIsPathVisible(true);
-          }} />
-        )}
+        {isAnalyzing && <AnalysisOverlay onComplete={onAnalysisComplete} />}
       </AnimatePresence>
 
       <div className="terminal-container">
-        {/* Top Header */}
         <header className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-md">
             <User size={12} className="text-yellow-500" />
             <span className="text-[10px] font-bold tracking-tight">{userId}</span>
           </div>
           <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-md">
-            <div className={`w-2 h-2 rounded-full ${status === 'live' ? 'bg-yellow-500 animate-pulse shadow-[0_0_8px_#FFD700]' : 'bg-gray-600'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${status === 'live' ? 'bg-yellow-500 animate-pulse' : 'bg-gray-600'}`}></div>
             <span className="text-[9px] font-black uppercase tracking-widest">{status === 'live' ? 'READY' : 'WAIT'}</span>
           </div>
         </header>
 
-        {/* Central Branding Above Title */}
         <div className="central-branding">
             <motion.img 
               initial={{ y: -10, opacity: 0 }}
@@ -272,13 +267,11 @@ function WildWestTerminal() {
               alt="Razor Logo" 
             />
             <h1 className="text-xs font-black text-yellow-500 tracking-[0.3em] uppercase">Wild West Terminal</h1>
-            <div className="h-px w-24 bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent mx-auto mt-2" />
         </div>
 
-        {/* Main Grid Area */}
         <div className="grid-wrapper">
           {Array.from({ length: 10 }).map((_, rowIndex) => {
-            const correctCol = gameData?.correct ? gameData.correct[rowIndex] : -1;
+            const correctCol = gameData?.correct ? gameData.correct[rowIndex] : randomPath[rowIndex];
             const mode = gameData?.mode || 2;
             
             return (
@@ -290,7 +283,7 @@ function WildWestTerminal() {
                 {Array.from({ length: mode }).map((_, colIndex) => (
                   <div key={colIndex} className={`cell ${isPathVisible ? 'analyzed' : ''}`}>
                     <AnimatePresence>
-                      {isPathVisible && gameData && (
+                      {isPathVisible && (
                         <motion.div 
                           initial={{ opacity: 0, scale: 0.5 }}
                           animate={{ opacity: 1, scale: 1 }}
@@ -313,32 +306,17 @@ function WildWestTerminal() {
           })}
         </div>
 
-        {/* Controls Section */}
         <div className="controls-area">
           {!isPathVisible ? (
-             <>
-               {errorMsg ? (
-                 <motion.div 
-                    initial={{ y: 10, opacity: 0 }} 
-                    animate={{ y: 0, opacity: 1 }} 
-                    className="text-red-500 flex items-center gap-2 font-black text-[11px]"
-                 >
-                    <AlertTriangle size={14} />
-                    <span>{errorMsg}</span>
-                 </motion.div>
-               ) : (
-                 <button onClick={handleStartAnalysis} className="btn-main">Start Analysis</button>
-               )}
-             </>
+             <button onClick={handleStartAnalysis} className="btn-main">Start Analysis</button>
           ) : (
-            <div className="text-yellow-500 font-black text-[11px] flex items-center gap-2 tracking-widest animate-pulse">
+            <button onClick={() => setIsPathVisible(false)} className="text-yellow-500 font-black text-[11px] flex items-center gap-2 tracking-widest animate-pulse border-none bg-transparent cursor-pointer">
                <ShieldCheck size={14} />
                <span>GOLD PATH DECRYPTED</span>
-            </div>
+            </button>
           )}
         </div>
 
-        {/* Footer */}
         <footer className="flex justify-between items-center pt-4 border-t border-white/5 mb-2">
           <div className="flex items-center gap-2 text-white/30">
             <Clock size={14} />
@@ -346,7 +324,7 @@ function WildWestTerminal() {
           </div>
           <button 
             onClick={() => { sessionStorage.clear(); router.push('/wildwest'); }}
-            className="text-[10px] font-black text-gray-400 flex items-center gap-1.5 hover:text-red-500 transition-all uppercase tracking-widest"
+            className="text-[10px] font-black text-gray-400 flex items-center gap-1.5 hover:text-red-500 transition-all uppercase tracking-widest bg-transparent border-none cursor-pointer"
           >
             <LogOut size={12} /> Log Off
           </button>

@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, ShieldCheck, Clock, Loader2, Cpu, Zap, Search, AlertTriangle } from 'lucide-react';
+import { User, LogOut, ShieldCheck, Clock, Loader2, Cpu, Zap, Search } from 'lucide-react';
 import KillSwitch from '@/components/kill-switch';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,7 +11,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 // --- Constants ---
 const BOMB_IMG = "https://iili.io/ChyAY5x.png"; 
 const RAZOR_LOGO = "https://iili.io/f9iNGFj.png";
-// Using the same reliable GIF from the login page
 const BG_GIF = "https://cdn.dribbble.com/userupload/20787734/file/original-6a95ade3f7286f5da2b16669f6ff93c3.gif";
 
 const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
@@ -33,7 +32,7 @@ const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
       });
     }, 600);
     return () => clearInterval(timer);
-  }, [onComplete, steps.length]);
+  }, [onComplete]);
 
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[100] flex items-center justify-center p-6 text-white font-bold">
@@ -64,7 +63,7 @@ function KamikazeTerminal() {
   const [timeLeft, setTimeLeft] = useState<string>("00:00:00");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPathVisible, setIsPathVisible] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [randomColumns, setRandomColumns] = useState<any[]>([]);
   
   const stateRef = useRef<any>(null);
 
@@ -85,12 +84,7 @@ function KamikazeTerminal() {
   const updateUI = useCallback((newState: any) => {
     stateRef.current = newState;
     setGameData(newState);
-    if (!newState) {
-        setIsPathVisible(false);
-        setStatus("wait");
-    } else {
-        setStatus("live");
-    }
+    setStatus(newState ? "live" : "wait");
   }, []);
 
   useEffect(() => {
@@ -135,13 +129,20 @@ function KamikazeTerminal() {
   }, [router, updateUI]);
 
   const handleStartAnalysis = () => {
-    setErrorMsg(null);
-    if (!gameData) {
-      setErrorMsg("NO TACTICAL DATA DETECTED");
-      setTimeout(() => setErrorMsg(null), 3000);
-      return;
-    }
     setIsAnalyzing(true);
+  };
+
+  const onAnalysisComplete = () => {
+    setIsAnalyzing(false);
+    setIsPathVisible(true);
+    
+    // If no real data, generate random path for 12 columns
+    if (!gameData) {
+      setRandomColumns(Array.from({ length: 12 }, (_, i) => ({
+          col: i,
+          unsafe: Math.floor(Math.random() * 5)
+      })));
+    }
   };
 
   return (
@@ -180,13 +181,13 @@ function KamikazeTerminal() {
             justify-content: center;
             align-items: center;
             padding: 20px 0;
-            height: 180px; /* Increased height */
+            height: 180px;
             margin-bottom: 10px;
           }
           .logo-gap img {
-            height: 140%; /* Made logo significantly larger */
+            height: 140%;
             width: auto;
-            opacity: 0.8; /* More visibility */
+            opacity: 0.8;
             filter: drop-shadow(0 0 40px rgba(255,77,77,0.7));
           }
           .grid-wrapper {
@@ -196,8 +197,6 @@ function KamikazeTerminal() {
             gap: 2px;
             padding: 5px 0;
             overflow-x: auto;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
           }
           .grid-wrapper::-webkit-scrollbar { display: none; }
           
@@ -250,50 +249,32 @@ function KamikazeTerminal() {
              text-transform: uppercase;
              box-shadow: 0 10px 30px rgba(255,77,77,0.2);
              transition: all 0.3s;
-             border: 1px solid rgba(255,255,255,0.1);
+             border: none;
+             cursor: pointer;
           }
           .btn-main:active { transform: scale(0.95); opacity: 0.8; }
-          .error-status {
-             color: #ff4d4d;
-             font-size: 10px;
-             font-weight: 900;
-             letter-spacing: 1px;
-             display: flex;
-             align-items: center;
-             gap: 8px;
-             text-shadow: 0 0 15px rgba(255,77,77,0.5);
-          }
       `}</style>
       
       <AnimatePresence>
-        {isAnalyzing && (
-          <AnalysisOverlay onComplete={() => {
-            setIsAnalyzing(false);
-            setIsPathVisible(true);
-          }} />
-        )}
+        {isAnalyzing && <AnalysisOverlay onComplete={onAnalysisComplete} />}
       </AnimatePresence>
 
       <div className="terminal-container">
-        {/* Top Header */}
         <header className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
             <User size={14} className="text-red-500" />
             <span className="text-[10px] font-black tracking-wider">{userId}</span>
           </div>
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
-            <div className={`w-2 h-2 rounded-full ${status === 'live' ? 'bg-red-500 animate-pulse shadow-[0_0_10px_#ff4d4d]' : 'bg-gray-700'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${status === 'live' ? 'bg-red-500 animate-pulse' : 'bg-gray-700'}`}></div>
             <span className="text-[9px] font-black uppercase tracking-widest">{status === 'live' ? 'LIVE' : 'WAIT'}</span>
           </div>
         </header>
 
-        {/* Title */}
         <div className="text-center">
             <h1 className="text-[10px] font-black text-red-500 tracking-[0.4em] uppercase">Kamikaze Terminal</h1>
-            <div className="h-px w-32 bg-gradient-to-r from-transparent via-red-500/40 to-transparent mx-auto mt-2" />
         </div>
 
-        {/* Large Logo Gap */}
         <div className="logo-gap">
             <motion.img 
               initial={{ scale: 0.8, opacity: 0, y: 10 }}
@@ -303,10 +284,9 @@ function KamikazeTerminal() {
             />
         </div>
 
-        {/* Main Grid Area */}
         <div className="grid-wrapper">
           {Array.from({ length: 12 }).map((_, colIndex) => {
-            const colData = gameData?.columns?.find((c: any) => c.col === colIndex);
+            const colData = gameData?.columns?.find((c: any) => c.col === colIndex) || randomColumns.find((c: any) => c.col === colIndex);
             const unsafeRow = colData?.unsafe;
             
             return (
@@ -324,10 +304,7 @@ function KamikazeTerminal() {
                             : 'rgba(255,255,255,0.02)',
                         borderColor: isPathVisible && colData 
                             ? (isUnsafe ? '#ef4444' : '#22c55e') 
-                            : 'rgba(255,77,77,0.1)',
-                        boxShadow: isPathVisible && colData && !isUnsafe 
-                            ? 'inset 0 0 15px rgba(0,0,0,0.4)' 
-                            : 'none'
+                            : 'rgba(255,77,77,0.1)'
                       }}
                     >
                       <AnimatePresence>
@@ -357,36 +334,17 @@ function KamikazeTerminal() {
           })}
         </div>
 
-        {/* Controls Section */}
         <div className="controls-area">
           {!isPathVisible ? (
-             <>
-               {errorMsg ? (
-                 <motion.div 
-                    initial={{ y: 10, opacity: 0 }} 
-                    animate={{ y: 0, opacity: 1 }} 
-                    className="error-status"
-                 >
-                    <AlertTriangle size={16} />
-                    <span>{errorMsg}</span>
-                 </motion.div>
-               ) : (
-                 <button onClick={handleStartAnalysis} className="btn-main">Start Analysis</button>
-               )}
-             </>
+             <button onClick={handleStartAnalysis} className="btn-main">Start Analysis</button>
           ) : (
-            <motion.div 
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="text-[#4ade80] text-[11px] font-black tracking-widest flex items-center gap-2"
-            >
+            <button onClick={() => setIsPathVisible(false)} className="text-[#4ade80] text-[11px] font-black tracking-widest flex items-center gap-2 bg-transparent border-none cursor-pointer">
                <ShieldCheck size={18} className="text-green-500" />
                <span className="animate-pulse uppercase">Tactical Path Decrypted</span>
-            </motion.div>
+            </button>
           )}
         </div>
 
-        {/* Footer */}
         <footer className="flex justify-between items-center pt-4 border-t border-white/5 mt-auto pb-4">
           <div className="flex items-center gap-2 text-white/40">
             <Clock size={16} />
@@ -394,7 +352,7 @@ function KamikazeTerminal() {
           </div>
           <button 
             onClick={() => { sessionStorage.clear(); router.push('/kamikaze'); }}
-            className="text-[10px] font-black text-gray-500 flex items-center gap-1.5 hover:text-red-500 transition-all uppercase tracking-widest"
+            className="text-[10px] font-black text-gray-500 flex items-center gap-1.5 hover:text-red-500 transition-all uppercase tracking-widest bg-transparent border-none cursor-pointer"
           >
             <LogOut size={14} /> Disconnect
           </button>
