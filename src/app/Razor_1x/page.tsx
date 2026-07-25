@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
+import { useEffect, useRef, Suspense, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, Loader2, Search, Cpu, Zap, ShieldCheck, Activity } from 'lucide-react';
+import { User, LogOut, Activity } from 'lucide-react';
 import KillSwitch from '@/components/kill-switch';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 function WelcomeContent() {
   const router = useRouter();
@@ -14,9 +14,7 @@ function WelcomeContent() {
   const [lastRaw, setLastRaw] = useState<string>("—");
   const [status, setStatus] = useState<"live" | "wait">("wait");
   const [timeLeft, setTimeLeft] = useState<string>("000 : 00 : 00");
-  const [isUpdating, setIsUpdating] = useState(false);
   
-  const stateRef = useRef<any>(null);
   const lastValueRef = useRef<string>("0.00");
 
   const parseValidityToSeconds = (validity: string | null): number => {
@@ -33,36 +31,6 @@ function WelcomeContent() {
     }
   };
 
-  const generateNewPrediction = useCallback(() => {
-    setIsUpdating(true);
-    
-    // القيمة الحالية من قاعدة البيانات (إن وجدت)
-    const dbValue = stateRef.current?.value ? Number(stateRef.current.value).toFixed(2) : null;
-    let finalVal: string;
-
-    // المنطق: إذا كانت القيمة في قاعدة البيانات موجودة ومختلفة عما نعرضه حالياً (تحديث جديد)
-    if (dbValue && dbValue !== lastValueRef.current) {
-        finalVal = dbValue;
-    } else {
-        // إذا كانت القيمة مفقودة أو "ثابتة" لم تتغير، نقوم بتوليد رقم عشوائي إجباري
-        let randomVal;
-        do {
-            randomVal = (Math.random() * (3.50 - 1.10) + 1.10).toFixed(2);
-        } while (randomVal === lastValueRef.current); // ضمان أن الرقم الجديد يختلف عن الحالي
-        finalVal = randomVal;
-    }
-    
-    // تحديث السجل والواجهة
-    if (finalVal !== lastValueRef.current) {
-        setLastRaw(lastValueRef.current === "0.00" ? "—" : lastValueRef.current);
-        setCrashValue(finalVal);
-        lastValueRef.current = finalVal;
-    }
-
-    // تأخير بسيط لإظهار حالة التحديث
-    setTimeout(() => setIsUpdating(false), 800);
-  }, []);
-
   useEffect(() => {
     document.title = "RAZOR — Predictor V2";
     const validity = sessionStorage.getItem('razor_session_validity');
@@ -76,22 +44,25 @@ function WelcomeContent() {
 
     const STREAM_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com/predictions/current.json";
     
-    // جلب البيانات بشكل مستمر من قاعدة البيانات
-    let pollInterval = setInterval(async () => {
+    // Polling logic for direct database reading only
+    const pollInterval = setInterval(async () => {
       try {
         const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
         const data = await res.json();
-        stateRef.current = data;
+        
+        if (data && data.value) {
+            const currentVal = Number(data.value).toFixed(2);
+            if (currentVal !== lastValueRef.current) {
+                setLastRaw(lastValueRef.current === "0.00" ? "—" : lastValueRef.current);
+                setCrashValue(currentVal);
+                lastValueRef.current = currentVal;
+            }
+        }
         setStatus("live");
       } catch (e) { setStatus("wait"); }
     }, 2000);
 
-    // دورة التحديث التلقائي كل 5 ثوانٍ
-    const predictionInterval = setInterval(() => {
-      generateNewPrediction();
-    }, 5000);
-
-    // مؤقت الجلسة
+    // Session Timer
     let totalSeconds = parseValidityToSeconds(validity);
     const timerInterval = setInterval(() => {
       if (totalSeconds > 0) {
@@ -107,15 +78,11 @@ function WelcomeContent() {
       }
     }, 1000);
 
-    // التشغيل الأول فور الدخول
-    generateNewPrediction();
-
     return () => {
       clearInterval(pollInterval);
       clearInterval(timerInterval);
-      clearInterval(predictionInterval);
     };
-  }, [router, generateNewPrediction]);
+  }, [router]);
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -182,14 +149,12 @@ function WelcomeContent() {
           @keyframes spin { to { transform: rotate(360deg); } }
           .value { position: relative; font-size: 72px; font-family: var(--font-accent); text-shadow: 0 0 30px rgba(255,255,255,0.6); }
           .value::after { content: "x"; font-size: 28px; vertical-align: super; margin-left: 5px; opacity: 0.6; }
-          .pulse-fx { animation: pulse 0.4s ease-out; }
-          @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
           .footer { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 10px; }
           .timer { font-size: 18px; letter-spacing: 2px; font-weight: bold; }
           .lastraw { text-align: right; }
           .lastraw .label { font-size: 10px; color: var(--muted); margin-bottom: 5px; display: block; }
           .lastraw .val { font-size: 16px; font-weight: bold; font-family: var(--font-accent); }
-          .scanning-tag { font-size: 10px; letter-spacing: 4px; color: rgba(255,255,255,0.3); text-transform: uppercase; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+          .monitoring-tag { font-size: 10px; letter-spacing: 4px; color: rgba(255,255,255,0.3); text-transform: uppercase; font-weight: bold; display: flex; align-items: center; gap: 8px; }
       `}</style>
       
       <div className="app">
@@ -224,18 +189,9 @@ function WelcomeContent() {
             </motion.div>
           </div>
           
-          <div className="scanning-tag">
-             {isUpdating ? (
-               <>
-                 <Loader2 size={12} className="animate-spin text-white" />
-                 <span>Intercepting Stream...</span>
-               </>
-             ) : (
-               <>
-                 <Activity size={12} className="animate-pulse text-green-500" />
-                 <span>Monitoring Live Data</span>
-               </>
-             )}
+          <div className="monitoring-tag">
+             <Activity size={12} className="animate-pulse text-green-500" />
+             <span>Monitoring Live Data</span>
           </div>
         </div>
 

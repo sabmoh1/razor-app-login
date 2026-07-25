@@ -180,15 +180,16 @@ function KamikazeTerminal() {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px 0;
-            height: 180px;
-            margin-bottom: 10px;
+            padding: 10px 0;
+            height: 220px;
+            margin-bottom: 20px;
           }
           .logo-gap img {
-            height: 140%;
+            height: 150%;
             width: auto;
-            opacity: 0.8;
-            filter: drop-shadow(0 0 40px rgba(255,77,77,0.7));
+            opacity: 0.9;
+            filter: drop-shadow(0 0 50px rgba(255,77,77,0.8));
+            transform: translateY(20px);
           }
           .grid-wrapper {
             flex: 1;
@@ -277,8 +278,8 @@ function KamikazeTerminal() {
 
         <div className="logo-gap">
             <motion.img 
-              initial={{ scale: 0.8, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 0.8, y: 0 }}
+              initial={{ scale: 0.8, opacity: 0, y: 30 }}
+              animate={{ scale: 1.1, opacity: 1, y: 0 }}
               src={RAZOR_LOGO} 
               alt="Razor" 
             />
