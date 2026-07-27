@@ -138,15 +138,19 @@ function SwampTerminal() {
     setIsPathVisible(true);
     
     // Fallback random path generation (4 rows, 5 columns)
-    // Each row has one correct spot
+    // Row 0 is bottom, Row 3 is top
     if (!gameData) {
       const newRandom = Array.from({ length: 4 }, () => {
-          const correctIdx = Math.floor(Math.random() * 5);
-          return Array.from({ length: 5 }, (_, i) => i === correctIdx ? 1 : 0);
+          const correctCount = Math.floor(Math.random() * 2) + 1; // 1 or 2 correct spots
+          const columns = [0, 1, 2, 3, 4];
+          const shuffled = columns.sort(() => 0.5 - Math.random());
+          return shuffled.slice(0, correctCount);
       });
       setRandomPath(newRandom);
     }
   };
+
+  const multipliers = ["1.3", "2.17", "5.43", "27.16"];
 
   return (
     <KillSwitch pageName="swamp">
@@ -184,11 +188,11 @@ function SwampTerminal() {
             justify-content: center;
             align-items: center;
             padding: 10px 0;
-            height: 180px;
-            margin-bottom: 10px;
+            height: 160px;
+            margin-bottom: 5px;
           }
           .logo-gap img {
-            height: 120%;
+            height: 100%;
             width: auto;
             opacity: 0.9;
             filter: drop-shadow(0 0 50px rgba(34,197,94,0.8));
@@ -196,12 +200,26 @@ function SwampTerminal() {
           .grid-wrapper {
             flex: 1;
             display: flex;
-            flex-direction: column-reverse;
-            gap: 6px;
+            flex-direction: column-reverse; /* Row 0 at bottom, Row 3 at top */
+            gap: 8px;
             padding: 10px 0;
             justify-content: center;
           }
-          .row {
+          .row-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          .multiplier-label {
+            font-size: 10px;
+            font-weight: 900;
+            color: var(--accent);
+            width: 45px;
+            text-align: right;
+            opacity: 0.8;
+          }
+          .row-grid {
+            flex: 1;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 6px;
@@ -209,7 +227,7 @@ function SwampTerminal() {
           .cell {
             aspect-ratio: 1/1;
             border: 1px solid rgba(34,197,94,0.1);
-            border-radius: 8px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -224,7 +242,7 @@ function SwampTerminal() {
             object-fit: cover;
           }
           .controls-area {
-            padding: 20px 0;
+            padding: 15px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -261,13 +279,9 @@ function SwampTerminal() {
           </div>
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
             <div className={`w-2 h-2 rounded-full ${status === 'live' ? 'bg-green-500 animate-pulse' : 'bg-gray-700'}`}></div>
-            <span className="text-[9px] font-black uppercase tracking-widest">{status === 'live' ? 'ONLINE' : 'WAIT'}</span>
+            <span className="text-[9px] font-black uppercase tracking-widest">{status === 'live' ? 'CONNECTED' : 'WAIT'}</span>
           </div>
         </header>
-
-        <div className="text-center">
-            <h1 className="text-[10px] font-black text-green-500 tracking-[0.4em] uppercase">Swamp Land Terminal</h1>
-        </div>
 
         <div className="logo-gap">
             <motion.img 
@@ -281,47 +295,53 @@ function SwampTerminal() {
 
         <div className="grid-wrapper">
           {Array.from({ length: 4 }).map((_, rowIndex) => (
-            <div key={rowIndex} className="row">
-              {Array.from({ length: 5 }).map((_, colIndex) => {
-                // Determine if this spot is correct or wrong based on data
-                // Structure expected from DB: gameData.correct[level] = "row:col"
-                const levelData = gameData?.correct?.[rowIndex];
-                const isCorrectFromDB = levelData && (levelData === `${rowIndex}:${colIndex}` || Object.values(levelData).includes(`${rowIndex}:${colIndex}`));
-                
-                // Fallback to random path if no gameData
-                const isCorrectFromRandom = !gameData && randomPath[rowIndex]?.[colIndex] === 1;
-                
-                const isCorrect = isCorrectFromDB || isCorrectFromRandom;
-                const isWrong = gameData?.wrong?.[rowIndex]?.includes(colIndex); // Optional wrong path support
+            <div key={rowIndex} className="row-container">
+              <div className="multiplier-label">x{multipliers[rowIndex]}</div>
+              <div className="row-grid">
+                {Array.from({ length: 5 }).map((_, colIndex) => {
+                    // Logic to find if this spot is correct based on index 0-3 and 0-4
+                    let isCorrect = false;
+                    if (gameData?.correct) {
+                        const rowData = gameData.correct[rowIndex];
+                        // Handle array or object mapping
+                        if (Array.isArray(rowData)) {
+                            isCorrect = rowData.includes(colIndex);
+                        } else if (typeof rowData === 'object' && rowData !== null) {
+                            isCorrect = Object.values(rowData).includes(colIndex);
+                        }
+                    } else if (randomPath[rowIndex]) {
+                        isCorrect = randomPath[rowIndex].includes(colIndex);
+                    }
 
-                return (
-                  <div 
-                    key={colIndex} 
-                    className="cell"
-                    style={{
-                      borderColor: isPathVisible ? (isCorrect ? '#22c55e' : 'rgba(239,68,68,0.3)') : 'rgba(34,197,94,0.1)'
-                    }}
-                  >
-                    <AnimatePresence>
-                      {isPathVisible && (
-                        <motion.div 
-                          initial={{ opacity: 0, scale: 0.2 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="w-full h-full"
-                        >
-                          <Image 
-                            src={isCorrect ? SAFE_IMG : DANGER_IMG} 
-                            alt={isCorrect ? "Safe" : "Danger"} 
-                            fill
-                            className="cell-img"
-                            unoptimized
-                          />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
+                  return (
+                    <div 
+                      key={colIndex} 
+                      className="cell"
+                      style={{
+                        borderColor: isPathVisible ? (isCorrect ? '#22c55e' : 'rgba(239,68,68,0.5)') : 'rgba(34,197,94,0.1)'
+                      }}
+                    >
+                      <AnimatePresence>
+                        {isPathVisible && (
+                          <motion.div 
+                            initial={{ opacity: 0, scale: 0.2 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="w-full h-full"
+                          >
+                            <Image 
+                              src={isCorrect ? SAFE_IMG : DANGER_IMG} 
+                              alt={isCorrect ? "Safe" : "Danger"} 
+                              fill
+                              className="cell-img"
+                              unoptimized
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </div>
@@ -332,7 +352,7 @@ function SwampTerminal() {
           ) : (
             <button onClick={() => setIsPathVisible(false)} className="text-[#4ade80] text-[11px] font-black tracking-widest flex items-center gap-2 bg-transparent border-none cursor-pointer">
                <ShieldCheck size={18} className="text-green-500" />
-               <span className="animate-pulse uppercase">Swamp Path Decrypted</span>
+               <span className="animate-pulse uppercase">Tactical Path Secured</span>
             </button>
           )}
         </div>
