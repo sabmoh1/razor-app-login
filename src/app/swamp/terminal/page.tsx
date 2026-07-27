@@ -3,10 +3,12 @@
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, ShieldCheck, Clock, Loader2, Cpu, Zap, Search } from 'lucide-react';
+import { User, LogOut, ShieldCheck, Clock, Loader2, Cpu, Zap, Search, Wifi, WifiOff } from 'lucide-react';
 import KillSwitch from '@/components/kill-switch';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { database } from "@/lib/firebase";
+import { ref, onValue } from "firebase/database";
 
 // --- Constants ---
 const SAFE_IMG = "https://iili.io/CkIXmua.png"; 
@@ -17,10 +19,10 @@ const BG_GIF = "https://cdn.dribbble.com/userupload/20787734/file/original-6a95a
 const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
   const steps = [
-    { text: "SCANNING MARSHLAND...", icon: Search },
-    { text: "DECRYPTING COORDINATES...", icon: Cpu },
-    { text: "ESTABLISHING UPLINK...", icon: Zap },
-    { text: "PATH SECURED", icon: ShieldCheck }
+    { text: "INTERCEPTING DATA...", icon: Search },
+    { text: "DECRYPTING PATH...", icon: Cpu },
+    { text: "SYNCING TERMINAL...", icon: Zap },
+    { text: "ANALYSIS DONE", icon: ShieldCheck }
   ];
 
   useEffect(() => {
@@ -38,12 +40,7 @@ const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[100] flex items-center justify-center p-6 text-white font-bold">
       <div className="w-full max-w-xs space-y-8 text-center">
-        <div className="relative h-20 w-20 mx-auto">
-            <Loader2 className="h-20 w-20 text-green-500 animate-spin" />
-            <div className="absolute inset-0 flex items-center justify-center">
-                <div className="h-2 w-2 bg-white rounded-full animate-ping" />
-            </div>
-        </div>
+        <Loader2 className="h-12 w-12 text-green-500 animate-spin mx-auto mb-4" />
         <div className="space-y-4">
           {steps.map((s, i) => (
             <div key={i} className={`flex items-center gap-3 justify-center transition-all duration-500 ${step >= i ? "opacity-100 scale-100" : "opacity-10 scale-95"}`}>
@@ -66,7 +63,7 @@ function SwampTerminal() {
   const [isPathVisible, setIsPathVisible] = useState(false);
   const [randomPath, setRandomPath] = useState<any>(null);
   
-  const stateRef = useRef<any>(null);
+  const lastStartedAtRef = useRef<number>(0);
 
   const parseValidityToSeconds = (validity: string | null): number => {
     if (!validity) return 11 * 60;
@@ -82,16 +79,6 @@ function SwampTerminal() {
     }
   };
 
-  const updateUI = useCallback((newState: any) => {
-    stateRef.current = newState;
-    if (newState && newState.current_game) {
-        setGameData(newState.current_game);
-        setStatus("live");
-    } else {
-        setStatus("wait");
-    }
-  }, []);
-
   useEffect(() => {
     document.title = "SWAMP LAND — Tactical Terminal";
     const validity = sessionStorage.getItem('razor_session_validity');
@@ -103,18 +90,23 @@ function SwampTerminal() {
     }
     setUserId(storedUserId);
 
-    const STREAM_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com/swamp.json";
-    
-    let pollInterval = setInterval(async () => {
-      try {
-        const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
-        const data = await res.json();
-        updateUI(data);
-      } catch (e) { 
-          console.error("Fetch error:", e);
-          setStatus("wait"); 
+    // Real-time Database Listener
+    const gameRef = ref(database, 'swamp/current_game');
+    const unsubscribe = onValue(gameRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setGameData(data);
+        setStatus("live");
+        
+        // Auto-reset visibility if a new game starts
+        if (data.startedAt && data.startedAt !== lastStartedAtRef.current) {
+          setIsPathVisible(false);
+          lastStartedAtRef.current = data.startedAt;
+        }
+      } else {
+        setStatus("wait");
       }
-    }, 2000);
+    });
 
     let totalSeconds = parseValidityToSeconds(validity);
     const timerInterval = setInterval(() => {
@@ -132,10 +124,10 @@ function SwampTerminal() {
     }, 1000);
 
     return () => {
-      clearInterval(pollInterval);
+      unsubscribe();
       clearInterval(timerInterval);
     };
-  }, [router, updateUI]);
+  }, [router]);
 
   const handleStartAnalysis = () => {
     setIsAnalyzing(true);
@@ -145,8 +137,8 @@ function SwampTerminal() {
     setIsAnalyzing(false);
     setIsPathVisible(true);
     
-    // Fallback logic if database is empty
     if (!gameData) {
+      // Intelligent Random Fallback if DB is empty
       const fallbackCorrect = [
           Math.floor(Math.random() * 5),
           Math.floor(Math.random() * 5),
@@ -154,8 +146,8 @@ function SwampTerminal() {
           Math.floor(Math.random() * 5)
       ];
       const fallbackWrong = fallbackCorrect.map(c => {
-          const w = [0,1,2,3,4].filter(v => v !== c);
-          return [w[Math.floor(Math.random()*w.length)]];
+          const possible = [0,1,2,3,4].filter(v => v !== c);
+          return [possible[Math.floor(Math.random()*possible.length)]];
       });
       setRandomPath({ correct: fallbackCorrect, wrong: fallbackWrong });
     }
@@ -170,10 +162,10 @@ function SwampTerminal() {
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{
             backgroundImage: `url('${BG_GIF}')`,
-            filter: 'hue-rotate(60deg) brightness(0.3) contrast(1.2)',
+            filter: 'hue-rotate(60deg) brightness(0.2) contrast(1.2)',
           }}
         ></div>
-        <div className="absolute inset-0 w-full h-full bg-black/60"></div>
+        <div className="absolute inset-0 w-full h-full bg-black/70"></div>
       </div>
       <style jsx global>{`
           :root { --accent: #22c55e; --bg: #030303; }
@@ -199,52 +191,53 @@ function SwampTerminal() {
             justify-content: center;
             align-items: center;
             padding: 5px 0;
-            height: 120px;
+            height: 100px;
             margin-bottom: 5px;
           }
           .logo-gap img {
             height: 100%;
             width: auto;
             opacity: 0.9;
-            filter: drop-shadow(0 0 50px rgba(34,197,94,0.8));
+            filter: drop-shadow(0 0 40px rgba(34,197,94,0.6));
           }
           .grid-wrapper {
             flex: 1;
             display: flex;
-            flex-direction: column-reverse; /* Row 0 bottom, Row 3 top */
-            gap: 8px;
+            flex-direction: column-reverse; /* Bottom row index 0 */
+            gap: 6px;
             padding: 5px 0;
             justify-content: center;
           }
           .row-container {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
           }
           .multiplier-label {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 900;
             color: var(--accent);
-            width: 40px;
+            width: 35px;
             text-align: right;
             opacity: 0.8;
+            font-family: monospace;
           }
           .row-grid {
             flex: 1;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
+            gap: 4px;
           }
           .cell {
             aspect-ratio: 1/1;
             border: 1px solid rgba(34,197,94,0.1);
-            border-radius: 6px;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             position: relative;
-            background: rgba(255,255,255,0.02);
+            background: rgba(255,255,255,0.015);
             transition: all 0.3s ease;
           }
           .cell-img {
@@ -253,24 +246,24 @@ function SwampTerminal() {
             object-fit: cover;
           }
           .controls-area {
-            padding: 15px 0;
+            padding: 10px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 80px;
+            min-height: 70px;
           }
           .btn-main {
-             background: linear-gradient(135deg, #22c55e 0%, #14532d 100%);
+             background: linear-gradient(135deg, #22c55e 0%, #064e3b 100%);
              color: white;
              font-weight: 900;
              width: 100%;
-             max-width: 300px;
-             padding: 16px;
+             max-width: 280px;
+             padding: 14px;
              border-radius: 12px;
-             font-size: 13px;
+             font-size: 12px;
              letter-spacing: 3px;
              text-transform: uppercase;
-             box-shadow: 0 10px 30px rgba(34,197,94,0.2);
+             box-shadow: 0 0 30px rgba(34,197,94,0.2);
              transition: all 0.3s;
              border: none;
              cursor: pointer;
@@ -289,8 +282,10 @@ function SwampTerminal() {
             <span className="text-[10px] font-black tracking-wider">{userId}</span>
           </div>
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
-            <div className={`w-2 h-2 rounded-full ${status === 'live' ? 'bg-green-500 animate-pulse' : 'bg-gray-700'}`}></div>
-            <span className="text-[9px] font-black uppercase tracking-widest">{status === 'live' ? 'CONNECTED' : 'WAIT'}</span>
+            {status === 'live' ? <Wifi size={14} className="text-green-500" /> : <WifiOff size={14} className="text-gray-500" />}
+            <span className={`text-[9px] font-black uppercase tracking-widest ${status === 'live' ? 'text-green-500' : 'text-gray-500'}`}>
+              {status === 'live' ? 'CONNECTED' : 'WAIT'}
+            </span>
           </div>
         </header>
 
@@ -310,14 +305,12 @@ function SwampTerminal() {
               <div className="multiplier-label">x{multipliers[rowIndex]}</div>
               <div className="row-grid">
                 {[0, 1, 2, 3, 4].map((colIndex) => {
-                    // Logic to check if this cell is safe or danger based on database sample
                     const dataCorrect = gameData?.correct;
                     const dataWrong = gameData?.wrong;
                     
                     const correctVal = dataCorrect ? dataCorrect[rowIndex] : randomPath?.correct[rowIndex];
                     const wrongVals = dataWrong ? dataWrong[rowIndex] : randomPath?.wrong[rowIndex];
 
-                    // Check if current col matches safe or danger
                     const isCorrect = correctVal === colIndex;
                     const isWrong = Array.isArray(wrongVals) ? wrongVals.includes(colIndex) : wrongVals === colIndex;
 
@@ -326,7 +319,8 @@ function SwampTerminal() {
                       key={colIndex} 
                       className="cell"
                       style={{
-                        borderColor: isPathVisible ? (isCorrect ? '#22c55e' : (isWrong ? '#ef4444' : 'rgba(34,197,94,0.1)')) : 'rgba(34,197,94,0.1)'
+                        borderColor: isPathVisible ? (isCorrect ? '#22c55e' : (isWrong ? '#ef4444' : 'rgba(34,197,94,0.1)')) : 'rgba(34,197,94,0.1)',
+                        backgroundColor: isPathVisible && isWrong ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.015)'
                       }}
                     >
                       <AnimatePresence>
@@ -358,9 +352,9 @@ function SwampTerminal() {
           {!isPathVisible ? (
              <button onClick={handleStartAnalysis} className="btn-main">Start Analysis</button>
           ) : (
-            <button onClick={() => setIsPathVisible(false)} className="text-[#4ade80] text-[11px] font-black tracking-widest flex items-center gap-2 bg-transparent border-none cursor-pointer">
-               <ShieldCheck size={18} className="text-green-500" />
-               <span className="animate-pulse uppercase">Tactical Path Secured</span>
+            <button onClick={() => setIsPathVisible(false)} className="text-[#4ade80] text-[10px] font-black tracking-widest flex items-center gap-2 bg-transparent border-none cursor-pointer">
+               <ShieldCheck size={16} className="text-green-500" />
+               <span className="animate-pulse uppercase">Tactical Path Decrypted</span>
             </button>
           )}
         </div>
