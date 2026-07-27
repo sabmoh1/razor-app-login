@@ -28,7 +28,7 @@ export default function SwampLoginPage() {
                 <div className="relative group">
                     <h1 className="text-4xl md:text-6xl font-black tracking-[0.1em] uppercase" style={{ fontFamily: 'Orbitron', color: '#22c55e', textShadow: '0 0 30px rgba(34,197,94,0.4)' }}>
                         SWAMP LAND
-                        <span className="inline-block ml-6 text-white font-sans not-italic glitch-v1" style={{ fontFamily: 'Orbitron' }}>
+                        <span className="inline-block ml-6 text-white font-sans not-italic" style={{ fontFamily: 'Orbitron' }}>
                             V1
                         </span>
                     </h1>
@@ -37,53 +37,6 @@ export default function SwampLoginPage() {
             </motion.div>
         </div>
         
-        <style jsx global>{`
-          @keyframes break-top {
-            0%, 100% { clip-path: inset(0 0 50% 0); transform: translate(0); opacity: 1; }
-            15% { clip-path: inset(0 0 50% 0); transform: translate(-12px, 0); color: #ccc; }
-            30% { clip-path: inset(0 0 50% 0); transform: translate(6px, 0); }
-            45% { clip-path: inset(0 0 50% 0); transform: translate(-4px, 0); }
-          }
-          
-          @keyframes break-bottom {
-            0%, 100% { clip-path: inset(50% 0 0 0); transform: translate(0); opacity: 1; }
-            20% { clip-path: inset(50% 0 0 0); transform: translate(12px, 0); color: #999; }
-            40% { clip-path: inset(50% 0 0 0); transform: translate(-8px, 0); }
-            60% { clip-path: inset(50% 0 0 0); transform: translate(4px, 0); }
-          }
-
-          .glitch-v1 {
-            display: inline-block;
-            position: relative;
-            color: #fff;
-          }
-
-          .glitch-v1::before, .glitch-v1::after {
-            content: 'V1';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            pointer-events: none;
-          }
-
-          .glitch-v1::before {
-            animation: break-top 2.5s infinite steps(1);
-            text-shadow: 2px 0 #888;
-          }
-
-          .glitch-v1::after {
-            animation: break-bottom 2s infinite steps(1);
-            text-shadow: -2px 0 #fff;
-          }
-
-          .glitch-v1 {
-            color: rgba(255,255,255,0.1);
-          }
-        `}</style>
-
         <LoginForm 
           welcomePath="/swamp/terminal" 
           themeColor="#22c55e"

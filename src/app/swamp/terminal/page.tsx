@@ -64,7 +64,7 @@ function SwampTerminal() {
   const [timeLeft, setTimeLeft] = useState<string>("00:00:00");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPathVisible, setIsPathVisible] = useState(false);
-  const [randomPath, setRandomPath] = useState<{ correct: number[], wrong: number[][] } | null>(null);
+  const [randomPath, setRandomPath] = useState<any>(null);
   
   const stateRef = useRef<any>(null);
 
@@ -84,8 +84,12 @@ function SwampTerminal() {
 
   const updateUI = useCallback((newState: any) => {
     stateRef.current = newState;
-    setGameData(newState);
-    setStatus(newState ? "live" : "wait");
+    if (newState && newState.current_game) {
+        setGameData(newState.current_game);
+        setStatus("live");
+    } else {
+        setStatus("wait");
+    }
   }, []);
 
   useEffect(() => {
@@ -99,13 +103,17 @@ function SwampTerminal() {
     }
     setUserId(storedUserId);
 
-    const STREAM_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com/swamp/current_game.json";
+    const STREAM_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com/swamp.json";
+    
     let pollInterval = setInterval(async () => {
       try {
         const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
         const data = await res.json();
         updateUI(data);
-      } catch (e) { setStatus("wait"); }
+      } catch (e) { 
+          console.error("Fetch error:", e);
+          setStatus("wait"); 
+      }
     }, 2000);
 
     let totalSeconds = parseValidityToSeconds(validity);
@@ -137,14 +145,19 @@ function SwampTerminal() {
     setIsAnalyzing(false);
     setIsPathVisible(true);
     
-    // Fallback random path generation (4 rows, 5 columns)
+    // Fallback logic if database is empty
     if (!gameData) {
-      const newCorrect = Array.from({ length: 4 }, () => Math.floor(Math.random() * 5));
-      const newWrong = newCorrect.map(c => {
-          const possible = [0, 1, 2, 3, 4].filter(idx => idx !== c);
-          return possible.sort(() => 0.5 - Math.random()).slice(0, 2);
+      const fallbackCorrect = [
+          Math.floor(Math.random() * 5),
+          Math.floor(Math.random() * 5),
+          Math.floor(Math.random() * 5),
+          Math.floor(Math.random() * 5)
+      ];
+      const fallbackWrong = fallbackCorrect.map(c => {
+          const w = [0,1,2,3,4].filter(v => v !== c);
+          return [w[Math.floor(Math.random()*w.length)]];
       });
-      setRandomPath({ correct: newCorrect, wrong: newWrong });
+      setRandomPath({ correct: fallbackCorrect, wrong: fallbackWrong });
     }
   };
 
@@ -185,8 +198,8 @@ function SwampTerminal() {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 10px 0;
-            height: 140px;
+            padding: 5px 0;
+            height: 120px;
             margin-bottom: 5px;
           }
           .logo-gap img {
@@ -198,21 +211,21 @@ function SwampTerminal() {
           .grid-wrapper {
             flex: 1;
             display: flex;
-            flex-direction: column-reverse; /* Row 0 at bottom, Row 3 at top */
-            gap: 12px;
-            padding: 10px 0;
+            flex-direction: column-reverse; /* Row 0 bottom, Row 3 top */
+            gap: 8px;
+            padding: 5px 0;
             justify-content: center;
           }
           .row-container {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
           }
           .multiplier-label {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 900;
             color: var(--accent);
-            width: 45px;
+            width: 40px;
             text-align: right;
             opacity: 0.8;
           }
@@ -220,19 +233,19 @@ function SwampTerminal() {
             flex: 1;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
+            gap: 6px;
           }
           .cell {
             aspect-ratio: 1/1;
             border: 1px solid rgba(34,197,94,0.1);
-            border-radius: 8px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             position: relative;
             background: rgba(255,255,255,0.02);
-            transition: all 0.4s ease;
+            transition: all 0.3s ease;
           }
           .cell-img {
             width: 100%;
@@ -240,7 +253,7 @@ function SwampTerminal() {
             object-fit: cover;
           }
           .controls-area {
-            padding: 20px 0;
+            padding: 15px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -252,8 +265,8 @@ function SwampTerminal() {
              font-weight: 900;
              width: 100%;
              max-width: 300px;
-             padding: 18px;
-             border-radius: 14px;
+             padding: 16px;
+             border-radius: 12px;
              font-size: 13px;
              letter-spacing: 3px;
              text-transform: uppercase;
@@ -297,13 +310,16 @@ function SwampTerminal() {
               <div className="multiplier-label">x{multipliers[rowIndex]}</div>
               <div className="row-grid">
                 {[0, 1, 2, 3, 4].map((colIndex) => {
-                    const isCorrect = gameData?.correct 
-                        ? (Array.isArray(gameData.correct[rowIndex]) ? gameData.correct[rowIndex].includes(colIndex) : gameData.correct[rowIndex] === colIndex)
-                        : randomPath?.correct[rowIndex] === colIndex;
+                    // Logic to check if this cell is safe or danger based on database sample
+                    const dataCorrect = gameData?.correct;
+                    const dataWrong = gameData?.wrong;
+                    
+                    const correctVal = dataCorrect ? dataCorrect[rowIndex] : randomPath?.correct[rowIndex];
+                    const wrongVals = dataWrong ? dataWrong[rowIndex] : randomPath?.wrong[rowIndex];
 
-                    const isWrong = gameData?.wrong
-                        ? (gameData.wrong[rowIndex]?.includes(colIndex))
-                        : randomPath?.wrong[rowIndex]?.includes(colIndex);
+                    // Check if current col matches safe or danger
+                    const isCorrect = correctVal === colIndex;
+                    const isWrong = Array.isArray(wrongVals) ? wrongVals.includes(colIndex) : wrongVals === colIndex;
 
                   return (
                     <div 
@@ -314,13 +330,12 @@ function SwampTerminal() {
                       }}
                     >
                       <AnimatePresence>
-                        {isPathVisible && (
+                        {isPathVisible && (isCorrect || isWrong) && (
                           <motion.div 
                             initial={{ opacity: 0, scale: 0.2 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="w-full h-full"
+                            className="w-full h-full relative"
                           >
-                            {(isCorrect || isWrong) && (
                                 <Image 
                                     src={isCorrect ? SAFE_IMG : DANGER_IMG} 
                                     alt={isCorrect ? "Safe" : "Danger"} 
@@ -328,7 +343,6 @@ function SwampTerminal() {
                                     className="cell-img"
                                     unoptimized
                                 />
-                            )}
                           </motion.div>
                         )}
                       </AnimatePresence>
