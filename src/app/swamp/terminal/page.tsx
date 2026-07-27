@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
@@ -88,22 +89,29 @@ function SwampTerminal() {
     }
     setUserId(storedUserId);
 
-    // --- Real-time database listener (current_game) ---
+    // --- Real-time database listener (Listen for ANY change in current_game) ---
     const gameRef = ref(database, 'current_game');
     const unsubscribe = onValue(gameRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         setGameData(data);
         setStatus("live");
+        
+        // Reset path visibility if a NEW game session starts
         if (data.startedAt && data.startedAt !== lastStartedAtRef.current) {
           setIsPathVisible(false);
           lastStartedAtRef.current = data.startedAt;
         }
       } else {
         setStatus("wait");
+        setGameData(null);
       }
+    }, (error) => {
+      console.error("Database read error:", error);
+      setStatus("wait");
     });
 
+    // Session Timer
     let totalSeconds = parseValidityToSeconds(validity);
     const timerInterval = setInterval(() => {
       if (totalSeconds > 0) {
@@ -136,19 +144,19 @@ function SwampTerminal() {
 
   const multipliers = ["1.3", "2.17", "5.43", "27.16"];
 
-  const checkIsCorrect = (row: number, col: number) => {
+  const checkIsCorrect = useCallback((row: number, col: number) => {
       if (!gameData || !gameData.correct) return false;
       const val = gameData.correct[row];
       if (Array.isArray(val)) return val.includes(col);
       return val === col;
-  }
+  }, [gameData]);
 
-  const checkIsWrong = (row: number, col: number) => {
+  const checkIsWrong = useCallback((row: number, col: number) => {
       if (!gameData || !gameData.wrong) return false;
       const val = gameData.wrong[row];
       if (Array.isArray(val)) return val.includes(col);
       return val === col;
-  }
+  }, [gameData]);
 
   return (
     <KillSwitch pageName="swamp">
@@ -196,20 +204,20 @@ function SwampTerminal() {
             flex: 1;
             display: flex;
             flex-direction: column-reverse; /* Bottom row is index 0 */
-            gap: 5px;
+            gap: 6px;
             justify-content: center;
             padding: 10px 0;
           }
           .row-container {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
           }
           .multiplier-label {
-            font-size: 8px;
+            font-size: 9px;
             font-weight: 900;
             color: var(--accent);
-            width: 35px;
+            width: 40px;
             text-align: right;
             opacity: 0.8;
           }
@@ -217,12 +225,12 @@ function SwampTerminal() {
             flex: 1;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
+            gap: 6px;
           }
           .cell {
             aspect-ratio: 1/1;
             border: 1px solid rgba(34,197,94,0.2);
-            border-radius: 4px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -241,7 +249,7 @@ function SwampTerminal() {
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 70px;
+            min-height: 80px;
           }
           .btn-main {
              background: linear-gradient(135deg, #22c55e 0%, #064e3b 100%);
@@ -249,9 +257,9 @@ function SwampTerminal() {
              font-weight: 900;
              width: 100%;
              max-width: 280px;
-             padding: 14px;
-             border-radius: 12px;
-             font-size: 12px;
+             padding: 16px;
+             border-radius: 14px;
+             font-size: 13px;
              letter-spacing: 3px;
              text-transform: uppercase;
              border: none;
@@ -303,7 +311,9 @@ function SwampTerminal() {
                       key={colIndex} 
                       className="cell"
                       style={{
-                        borderColor: isPathVisible ? (isCorrect ? '#22c55e' : (isWrong ? '#ef4444' : 'rgba(34,197,94,0.1)')) : 'rgba(34,197,94,0.15)',
+                        borderColor: isPathVisible && (isCorrect || isWrong) 
+                            ? (isCorrect ? '#22c55e' : '#ef4444') 
+                            : 'rgba(34,197,94,0.15)',
                         backgroundColor: isPathVisible && isWrong ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255,255,255,0.03)'
                       }}
                     >
