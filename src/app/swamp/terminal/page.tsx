@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, ShieldCheck, Clock, Loader2, Cpu, Zap, Search, Wifi, WifiOff } from 'lucide-react';
+import { User, LogOut, ShieldCheck, Clock, Loader2, Wifi, WifiOff } from 'lucide-react';
 import KillSwitch from '@/components/kill-switch';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,10 +19,10 @@ const BG_GIF = "https://cdn.dribbble.com/userupload/20787734/file/original-6a95a
 const AnalysisOverlay = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
   const steps = [
-    { text: "INTERCEPTING DATA...", icon: Search },
-    { text: "DECRYPTING PATH...", icon: Cpu },
-    { text: "SYNCING TERMINAL...", icon: Zap },
-    { text: "ANALYSIS DONE", icon: ShieldCheck }
+    { text: "INTERCEPTING DATA..." },
+    { text: "DECRYPTING PATH..." },
+    { text: "SYNCING TERMINAL..." },
+    { text: "ANALYSIS DONE" }
   ];
 
   useEffect(() => {
@@ -90,15 +90,15 @@ function SwampTerminal() {
     }
     setUserId(storedUserId);
 
-    // Real-time Database Listener
-    const gameRef = ref(database, 'swamp/current_game');
+    // Real-time Database Listener - Corrected Path to current_game
+    const gameRef = ref(database, 'current_game');
     const unsubscribe = onValue(gameRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         setGameData(data);
         setStatus("live");
         
-        // Auto-reset visibility if a new game starts
+        // Auto-reset visibility if a new game session is detected
         if (data.startedAt && data.startedAt !== lastStartedAtRef.current) {
           setIsPathVisible(false);
           lastStartedAtRef.current = data.startedAt;
@@ -137,14 +137,9 @@ function SwampTerminal() {
     setIsAnalyzing(false);
     setIsPathVisible(true);
     
+    // Fallback if DB is empty
     if (!gameData) {
-      // Intelligent Random Fallback if DB is empty
-      const fallbackCorrect = [
-          Math.floor(Math.random() * 5),
-          Math.floor(Math.random() * 5),
-          Math.floor(Math.random() * 5),
-          Math.floor(Math.random() * 5)
-      ];
+      const fallbackCorrect = [Math.floor(Math.random() * 5), Math.floor(Math.random() * 5), Math.floor(Math.random() * 5), Math.floor(Math.random() * 5)];
       const fallbackWrong = fallbackCorrect.map(c => {
           const possible = [0,1,2,3,4].filter(v => v !== c);
           return [possible[Math.floor(Math.random()*possible.length)]];
@@ -154,6 +149,22 @@ function SwampTerminal() {
   };
 
   const multipliers = ["1.3", "2.17", "5.43", "27.16"];
+
+  const checkIsCorrect = (row: number, col: number) => {
+      const correct = gameData?.correct || randomPath?.correct;
+      if (!correct) return false;
+      const val = correct[row];
+      if (Array.isArray(val)) return val.includes(col);
+      return val === col;
+  }
+
+  const checkIsWrong = (row: number, col: number) => {
+      const wrong = gameData?.wrong || randomPath?.wrong;
+      if (!wrong) return false;
+      const val = wrong[row];
+      if (Array.isArray(val)) return val.includes(col);
+      return val === col;
+  }
 
   return (
     <KillSwitch pageName="swamp">
@@ -179,48 +190,44 @@ function SwampTerminal() {
           .terminal-container {
             position: relative;
             z-index: 10;
-            max-width: 500px;
+            max-width: 480px;
             margin: 0 auto;
             height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: 10px 12px;
+            padding: 5px 10px;
           }
-          .logo-gap {
+          .logo-area {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 5px 0;
-            height: 100px;
-            margin-bottom: 5px;
+            height: 80px;
           }
-          .logo-gap img {
+          .logo-area img {
             height: 100%;
             width: auto;
-            opacity: 0.9;
-            filter: drop-shadow(0 0 40px rgba(34,197,94,0.6));
+            filter: drop-shadow(0 0 30px rgba(34,197,94,0.6));
           }
           .grid-wrapper {
             flex: 1;
             display: flex;
             flex-direction: column-reverse; /* Bottom row index 0 */
-            gap: 6px;
-            padding: 5px 0;
+            gap: 4px;
             justify-content: center;
+            padding: 10px 0;
           }
           .row-container {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
           }
           .multiplier-label {
-            font-size: 9px;
+            font-size: 8px;
             font-weight: 900;
             color: var(--accent);
-            width: 35px;
+            width: 30px;
             text-align: right;
-            opacity: 0.8;
-            font-family: monospace;
+            opacity: 0.7;
           }
           .row-grid {
             flex: 1;
@@ -230,45 +237,44 @@ function SwampTerminal() {
           }
           .cell {
             aspect-ratio: 1/1;
-            border: 1px solid rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.15);
             border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             position: relative;
-            background: rgba(255,255,255,0.015);
+            background: rgba(255,255,255,0.02);
             transition: all 0.3s ease;
           }
           .cell-img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
           }
           .controls-area {
             padding: 10px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 70px;
+            min-height: 60px;
           }
           .btn-main {
              background: linear-gradient(135deg, #22c55e 0%, #064e3b 100%);
              color: white;
              font-weight: 900;
              width: 100%;
-             max-width: 280px;
-             padding: 14px;
-             border-radius: 12px;
-             font-size: 12px;
+             max-width: 260px;
+             padding: 12px;
+             border-radius: 10px;
+             font-size: 11px;
              letter-spacing: 3px;
              text-transform: uppercase;
-             box-shadow: 0 0 30px rgba(34,197,94,0.2);
-             transition: all 0.3s;
              border: none;
              cursor: pointer;
+             box-shadow: 0 0 20px rgba(34,197,94,0.3);
           }
-          .btn-main:active { transform: scale(0.95); opacity: 0.8; }
+          .btn-main:active { transform: scale(0.95); }
       `}</style>
       
       <AnimatePresence>
@@ -276,22 +282,22 @@ function SwampTerminal() {
       </AnimatePresence>
 
       <div className="terminal-container">
-        <header className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
-            <User size={14} className="text-green-500" />
-            <span className="text-[10px] font-black tracking-wider">{userId}</span>
+        <header className="flex justify-between items-center py-2">
+          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1 rounded-full backdrop-blur-md">
+            <User size={12} className="text-green-500" />
+            <span className="text-[10px] font-bold">{userId}</span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
-            {status === 'live' ? <Wifi size={14} className="text-green-500" /> : <WifiOff size={14} className="text-gray-500" />}
-            <span className={`text-[9px] font-black uppercase tracking-widest ${status === 'live' ? 'text-green-500' : 'text-gray-500'}`}>
+          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1 rounded-full backdrop-blur-md">
+            {status === 'live' ? <Wifi size={12} className="text-green-500" /> : <WifiOff size={12} className="text-gray-500" />}
+            <span className={`text-[9px] font-black uppercase ${status === 'live' ? 'text-green-500' : 'text-gray-500'}`}>
               {status === 'live' ? 'CONNECTED' : 'WAIT'}
             </span>
           </div>
         </header>
 
-        <div className="logo-gap">
+        <div className="logo-area">
             <motion.img 
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               src={RAZOR_LOGO} 
               alt="Razor" 
@@ -305,14 +311,8 @@ function SwampTerminal() {
               <div className="multiplier-label">x{multipliers[rowIndex]}</div>
               <div className="row-grid">
                 {[0, 1, 2, 3, 4].map((colIndex) => {
-                    const dataCorrect = gameData?.correct;
-                    const dataWrong = gameData?.wrong;
-                    
-                    const correctVal = dataCorrect ? dataCorrect[rowIndex] : randomPath?.correct[rowIndex];
-                    const wrongVals = dataWrong ? dataWrong[rowIndex] : randomPath?.wrong[rowIndex];
-
-                    const isCorrect = correctVal === colIndex;
-                    const isWrong = Array.isArray(wrongVals) ? wrongVals.includes(colIndex) : wrongVals === colIndex;
+                    const isCorrect = checkIsCorrect(rowIndex, colIndex);
+                    const isWrong = checkIsWrong(rowIndex, colIndex);
 
                   return (
                     <div 
@@ -320,19 +320,19 @@ function SwampTerminal() {
                       className="cell"
                       style={{
                         borderColor: isPathVisible ? (isCorrect ? '#22c55e' : (isWrong ? '#ef4444' : 'rgba(34,197,94,0.1)')) : 'rgba(34,197,94,0.1)',
-                        backgroundColor: isPathVisible && isWrong ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.015)'
+                        backgroundColor: isPathVisible && isWrong ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.02)'
                       }}
                     >
                       <AnimatePresence>
                         {isPathVisible && (isCorrect || isWrong) && (
                           <motion.div 
-                            initial={{ opacity: 0, scale: 0.2 }}
+                            initial={{ opacity: 0, scale: 0.5 }}
                             animate={{ opacity: 1, scale: 1 }}
                             className="w-full h-full relative"
                           >
                                 <Image 
                                     src={isCorrect ? SAFE_IMG : DANGER_IMG} 
-                                    alt={isCorrect ? "Safe" : "Danger"} 
+                                    alt="Result" 
                                     fill
                                     className="cell-img"
                                     unoptimized
@@ -352,23 +352,23 @@ function SwampTerminal() {
           {!isPathVisible ? (
              <button onClick={handleStartAnalysis} className="btn-main">Start Analysis</button>
           ) : (
-            <button onClick={() => setIsPathVisible(false)} className="text-[#4ade80] text-[10px] font-black tracking-widest flex items-center gap-2 bg-transparent border-none cursor-pointer">
+            <div className="text-[#4ade80] text-[10px] font-black tracking-widest flex items-center gap-2 animate-pulse uppercase">
                <ShieldCheck size={16} className="text-green-500" />
-               <span className="animate-pulse uppercase">Tactical Path Decrypted</span>
-            </button>
+               <span>Tactical Path Decrypted</span>
+            </div>
           )}
         </div>
 
-        <footer className="flex justify-between items-center pt-4 border-t border-white/5 mt-auto pb-4">
+        <footer className="flex justify-between items-center py-2 border-t border-white/5">
           <div className="flex items-center gap-2 text-white/40">
-            <Clock size={16} />
-            <span className="text-xs font-black font-mono tracking-tighter">{timeLeft}</span>
+            <Clock size={14} />
+            <span className="text-xs font-mono">{timeLeft}</span>
           </div>
           <button 
             onClick={() => { sessionStorage.clear(); router.push('/swamp'); }}
-            className="text-[10px] font-black text-gray-500 flex items-center gap-1.5 hover:text-red-500 transition-all uppercase tracking-widest bg-transparent border-none cursor-pointer"
+            className="text-[9px] font-black text-gray-500 flex items-center gap-1 hover:text-red-500 transition-all uppercase bg-transparent border-none cursor-pointer"
           >
-            <LogOut size={14} /> Disconnect
+            Disconnect
           </button>
         </footer>
       </div>
