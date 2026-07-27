@@ -64,7 +64,7 @@ function SwampTerminal() {
   const [timeLeft, setTimeLeft] = useState<string>("00:00:00");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPathVisible, setIsPathVisible] = useState(false);
-  const [randomPath, setRandomPath] = useState<number[][]>([]);
+  const [randomPath, setRandomPath] = useState<{ correct: number[], wrong: number[][] } | null>(null);
   
   const stateRef = useRef<any>(null);
 
@@ -138,15 +138,13 @@ function SwampTerminal() {
     setIsPathVisible(true);
     
     // Fallback random path generation (4 rows, 5 columns)
-    // Row 0 is bottom, Row 3 is top
     if (!gameData) {
-      const newRandom = Array.from({ length: 4 }, () => {
-          const correctCount = Math.floor(Math.random() * 2) + 1; // 1 or 2 correct spots
-          const columns = [0, 1, 2, 3, 4];
-          const shuffled = columns.sort(() => 0.5 - Math.random());
-          return shuffled.slice(0, correctCount);
+      const newCorrect = Array.from({ length: 4 }, () => Math.floor(Math.random() * 5));
+      const newWrong = newCorrect.map(c => {
+          const possible = [0, 1, 2, 3, 4].filter(idx => idx !== c);
+          return possible.sort(() => 0.5 - Math.random()).slice(0, 2);
       });
-      setRandomPath(newRandom);
+      setRandomPath({ correct: newCorrect, wrong: newWrong });
     }
   };
 
@@ -188,7 +186,7 @@ function SwampTerminal() {
             justify-content: center;
             align-items: center;
             padding: 10px 0;
-            height: 160px;
+            height: 140px;
             margin-bottom: 5px;
           }
           .logo-gap img {
@@ -201,17 +199,17 @@ function SwampTerminal() {
             flex: 1;
             display: flex;
             flex-direction: column-reverse; /* Row 0 at bottom, Row 3 at top */
-            gap: 8px;
+            gap: 12px;
             padding: 10px 0;
             justify-content: center;
           }
           .row-container {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
           }
           .multiplier-label {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 900;
             color: var(--accent);
             width: 45px;
@@ -222,12 +220,12 @@ function SwampTerminal() {
             flex: 1;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
+            gap: 8px;
           }
           .cell {
             aspect-ratio: 1/1;
             border: 1px solid rgba(34,197,94,0.1);
-            border-radius: 6px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -242,7 +240,7 @@ function SwampTerminal() {
             object-fit: cover;
           }
           .controls-area {
-            padding: 15px 0;
+            padding: 20px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -294,31 +292,25 @@ function SwampTerminal() {
         </div>
 
         <div className="grid-wrapper">
-          {Array.from({ length: 4 }).map((_, rowIndex) => (
+          {[0, 1, 2, 3].map((rowIndex) => (
             <div key={rowIndex} className="row-container">
               <div className="multiplier-label">x{multipliers[rowIndex]}</div>
               <div className="row-grid">
-                {Array.from({ length: 5 }).map((_, colIndex) => {
-                    // Logic to find if this spot is correct based on index 0-3 and 0-4
-                    let isCorrect = false;
-                    if (gameData?.correct) {
-                        const rowData = gameData.correct[rowIndex];
-                        // Handle array or object mapping
-                        if (Array.isArray(rowData)) {
-                            isCorrect = rowData.includes(colIndex);
-                        } else if (typeof rowData === 'object' && rowData !== null) {
-                            isCorrect = Object.values(rowData).includes(colIndex);
-                        }
-                    } else if (randomPath[rowIndex]) {
-                        isCorrect = randomPath[rowIndex].includes(colIndex);
-                    }
+                {[0, 1, 2, 3, 4].map((colIndex) => {
+                    const isCorrect = gameData?.correct 
+                        ? (Array.isArray(gameData.correct[rowIndex]) ? gameData.correct[rowIndex].includes(colIndex) : gameData.correct[rowIndex] === colIndex)
+                        : randomPath?.correct[rowIndex] === colIndex;
+
+                    const isWrong = gameData?.wrong
+                        ? (gameData.wrong[rowIndex]?.includes(colIndex))
+                        : randomPath?.wrong[rowIndex]?.includes(colIndex);
 
                   return (
                     <div 
                       key={colIndex} 
                       className="cell"
                       style={{
-                        borderColor: isPathVisible ? (isCorrect ? '#22c55e' : 'rgba(239,68,68,0.5)') : 'rgba(34,197,94,0.1)'
+                        borderColor: isPathVisible ? (isCorrect ? '#22c55e' : (isWrong ? '#ef4444' : 'rgba(34,197,94,0.1)')) : 'rgba(34,197,94,0.1)'
                       }}
                     >
                       <AnimatePresence>
@@ -328,13 +320,15 @@ function SwampTerminal() {
                             animate={{ opacity: 1, scale: 1 }}
                             className="w-full h-full"
                           >
-                            <Image 
-                              src={isCorrect ? SAFE_IMG : DANGER_IMG} 
-                              alt={isCorrect ? "Safe" : "Danger"} 
-                              fill
-                              className="cell-img"
-                              unoptimized
-                            />
+                            {(isCorrect || isWrong) && (
+                                <Image 
+                                    src={isCorrect ? SAFE_IMG : DANGER_IMG} 
+                                    alt={isCorrect ? "Safe" : "Danger"} 
+                                    fill
+                                    className="cell-img"
+                                    unoptimized
+                                />
+                            )}
                           </motion.div>
                         )}
                       </AnimatePresence>
