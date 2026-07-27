@@ -3,6 +3,8 @@
 import LoginForm from '@/components/login-form';
 import KillSwitch from '@/components/kill-switch';
 import { motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function SwampLoginPage() {
   return (
@@ -17,6 +19,14 @@ export default function SwampLoginPage() {
         ></div>
         <div className="absolute inset-0 w-full h-full bg-black/75"></div>
       </div>
+
+      <div className="absolute top-6 left-6 z-20">
+        <Link href="/" className="flex items-center gap-2 text-white/50 hover:text-green-400 transition-colors group">
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-xs font-bold uppercase tracking-widest">Back to Hub</span>
+        </Link>
+      </div>
+
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center p-6 antialiased bg-transparent">
         <div className="text-center mb-6">
             <motion.div

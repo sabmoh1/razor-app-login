@@ -60,7 +60,6 @@ function SwampTerminal() {
   const [timeLeft, setTimeLeft] = useState<string>("00:00:00");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPathVisible, setIsPathVisible] = useState(false);
-  const [randomPath, setRandomPath] = useState<any>(null);
   
   const lastStartedAtRef = useRef<number>(0);
 
@@ -89,7 +88,7 @@ function SwampTerminal() {
     }
     setUserId(storedUserId);
 
-    // --- Real-time database listener ---
+    // --- Real-time database listener (current_game) ---
     const gameRef = ref(database, 'current_game');
     const unsubscribe = onValue(gameRef, (snapshot) => {
       const data = snapshot.val();
@@ -133,32 +132,20 @@ function SwampTerminal() {
   const onAnalysisComplete = () => {
     setIsAnalyzing(false);
     setIsPathVisible(true);
-    
-    // Fallback logic for random path
-    if (!gameData) {
-      const fallbackCorrect = [Math.floor(Math.random() * 5), Math.floor(Math.random() * 5), Math.floor(Math.random() * 5), Math.floor(Math.random() * 5)];
-      const fallbackWrong = fallbackCorrect.map(c => {
-          const possible = [0,1,2,3,4].filter(v => v !== c);
-          return [possible[Math.floor(Math.random()*possible.length)]];
-      });
-      setRandomPath({ correct: fallbackCorrect, wrong: fallbackWrong });
-    }
   };
 
   const multipliers = ["1.3", "2.17", "5.43", "27.16"];
 
   const checkIsCorrect = (row: number, col: number) => {
-      const correct = gameData?.correct || randomPath?.correct;
-      if (!correct) return false;
-      const val = correct[row];
+      if (!gameData || !gameData.correct) return false;
+      const val = gameData.correct[row];
       if (Array.isArray(val)) return val.includes(col);
       return val === col;
   }
 
   const checkIsWrong = (row: number, col: number) => {
-      const wrong = gameData?.wrong || randomPath?.wrong;
-      if (!wrong) return false;
-      const val = wrong[row];
+      if (!gameData || !gameData.wrong) return false;
+      const val = gameData.wrong[row];
       if (Array.isArray(val)) return val.includes(col);
       return val === col;
   }
@@ -170,10 +157,10 @@ function SwampTerminal() {
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{
             backgroundImage: `url('${BG_GIF}')`,
-            filter: 'hue-rotate(60deg) brightness(0.2) contrast(1.2)',
+            filter: 'hue-rotate(60deg) brightness(0.4) contrast(1.1)',
           }}
         ></div>
-        <div className="absolute inset-0 w-full h-full bg-black/70"></div>
+        <div className="absolute inset-0 w-full h-full bg-black/60"></div>
       </div>
       <style jsx global>{`
           :root { --accent: #22c55e; --bg: #030303; }
@@ -192,7 +179,7 @@ function SwampTerminal() {
             height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: 5px 10px;
+            padding: 5px 12px;
           }
           .logo-area {
             display: flex;
@@ -208,40 +195,40 @@ function SwampTerminal() {
           .grid-wrapper {
             flex: 1;
             display: flex;
-            flex-direction: column-reverse; /* Bottom row index 0 */
-            gap: 4px;
+            flex-direction: column-reverse; /* Bottom row is index 0 */
+            gap: 5px;
             justify-content: center;
             padding: 10px 0;
           }
           .row-container {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
           }
           .multiplier-label {
             font-size: 8px;
             font-weight: 900;
             color: var(--accent);
-            width: 30px;
+            width: 35px;
             text-align: right;
-            opacity: 0.7;
+            opacity: 0.8;
           }
           .row-grid {
             flex: 1;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 4px;
+            gap: 5px;
           }
           .cell {
             aspect-ratio: 1/1;
-            border: 1px solid rgba(34,197,94,0.15);
+            border: 1px solid rgba(34,197,94,0.2);
             border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             position: relative;
-            background: rgba(255,255,255,0.02);
+            background: rgba(255,255,255,0.03);
             transition: all 0.3s ease;
           }
           .cell-img {
@@ -250,28 +237,28 @@ function SwampTerminal() {
             object-fit: contain;
           }
           .controls-area {
-            padding: 10px 0;
+            padding: 15px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 60px;
+            min-height: 70px;
           }
           .btn-main {
              background: linear-gradient(135deg, #22c55e 0%, #064e3b 100%);
              color: white;
              font-weight: 900;
              width: 100%;
-             max-width: 260px;
-             padding: 12px;
-             border-radius: 10px;
-             font-size: 11px;
+             max-width: 280px;
+             padding: 14px;
+             border-radius: 12px;
+             font-size: 12px;
              letter-spacing: 3px;
              text-transform: uppercase;
              border: none;
              cursor: pointer;
-             box-shadow: 0 0 20px rgba(34,197,94,0.3);
+             box-shadow: 0 0 25px rgba(34,197,94,0.4);
           }
-          .btn-main:active { transform: scale(0.95); }
+          .btn-main:active { transform: scale(0.96); }
       `}</style>
       
       <AnimatePresence>
@@ -279,14 +266,14 @@ function SwampTerminal() {
       </AnimatePresence>
 
       <div className="terminal-container">
-        <header className="flex justify-between items-center py-2">
-          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1 rounded-full backdrop-blur-md">
-            <User size={12} className="text-green-500" />
-            <span className="text-[10px] font-bold">{userId}</span>
+        <header className="flex justify-between items-center py-3">
+          <div className="flex items-center gap-2 bg-black/50 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md">
+            <User size={14} className="text-green-500" />
+            <span className="text-[10px] font-black tracking-widest">{userId}</span>
           </div>
-          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3 py-1 rounded-full backdrop-blur-md">
-            {status === 'live' ? <Wifi size={12} className="text-green-500" /> : <WifiOff size={12} className="text-gray-500" />}
-            <span className={`text-[9px] font-black uppercase ${status === 'live' ? 'text-green-500' : 'text-gray-500'}`}>
+          <div className="flex items-center gap-2 bg-black/50 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md">
+            {status === 'live' ? <Wifi size={14} className="text-green-500 animate-pulse" /> : <WifiOff size={14} className="text-gray-500" />}
+            <span className={`text-[9px] font-black uppercase tracking-widest ${status === 'live' ? 'text-green-500' : 'text-gray-500'}`}>
               {status === 'live' ? 'CONNECTED' : 'WAIT'}
             </span>
           </div>
@@ -316,14 +303,14 @@ function SwampTerminal() {
                       key={colIndex} 
                       className="cell"
                       style={{
-                        borderColor: isPathVisible ? (isCorrect ? '#22c55e' : (isWrong ? '#ef4444' : 'rgba(34,197,94,0.1)')) : 'rgba(34,197,94,0.1)',
-                        backgroundColor: isPathVisible && isWrong ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.02)'
+                        borderColor: isPathVisible ? (isCorrect ? '#22c55e' : (isWrong ? '#ef4444' : 'rgba(34,197,94,0.1)')) : 'rgba(34,197,94,0.15)',
+                        backgroundColor: isPathVisible && isWrong ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255,255,255,0.03)'
                       }}
                     >
                       <AnimatePresence>
                         {isPathVisible && (isCorrect || isWrong) && (
                           <motion.div 
-                            initial={{ opacity: 0, scale: 0.5 }}
+                            initial={{ opacity: 0, scale: 0.4 }}
                             animate={{ opacity: 1, scale: 1 }}
                             className="w-full h-full relative"
                           >
@@ -349,23 +336,23 @@ function SwampTerminal() {
           {!isPathVisible ? (
              <button onClick={handleStartAnalysis} className="btn-main">Start Analysis</button>
           ) : (
-            <div className="text-[#4ade80] text-[10px] font-black tracking-widest flex items-center gap-2 animate-pulse uppercase">
-               <ShieldCheck size={16} className="text-green-500" />
+            <div className="text-[#4ade80] text-[11px] font-black tracking-[0.2em] flex items-center gap-2 animate-pulse uppercase">
+               <ShieldCheck size={18} className="text-green-500" />
                <span>Tactical Path Decrypted</span>
             </div>
           )}
         </div>
 
-        <footer className="flex justify-between items-center py-2 border-t border-white/5">
-          <div className="flex items-center gap-2 text-white/40">
-            <Clock size={14} />
-            <span className="text-xs font-mono">{timeLeft}</span>
+        <footer className="flex justify-between items-center py-4 border-t border-white/10 mt-auto">
+          <div className="flex items-center gap-2 text-white/50">
+            <Clock size={16} />
+            <span className="text-xs font-mono font-bold tracking-tighter">{timeLeft}</span>
           </div>
           <button 
-            onClick={() => { sessionStorage.clear(); router.push('/swamp'); }}
-            className="text-[9px] font-black text-gray-500 flex items-center gap-1 hover:text-red-500 transition-all uppercase bg-transparent border-none cursor-pointer"
+            onClick={() => { sessionStorage.clear(); router.push('/'); }}
+            className="text-[10px] font-black text-gray-500 flex items-center gap-2 hover:text-red-500 transition-all uppercase tracking-widest bg-transparent border-none cursor-pointer"
           >
-            Disconnect
+            <LogOut size={14} /> Disconnect
           </button>
         </footer>
       </div>
