@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
@@ -90,15 +89,13 @@ function SwampTerminal() {
     }
     setUserId(storedUserId);
 
-    // Real-time Database Listener - Corrected Path to current_game
+    // --- Real-time database listener ---
     const gameRef = ref(database, 'current_game');
     const unsubscribe = onValue(gameRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         setGameData(data);
         setStatus("live");
-        
-        // Auto-reset visibility if a new game session is detected
         if (data.startedAt && data.startedAt !== lastStartedAtRef.current) {
           setIsPathVisible(false);
           lastStartedAtRef.current = data.startedAt;
@@ -137,7 +134,7 @@ function SwampTerminal() {
     setIsAnalyzing(false);
     setIsPathVisible(true);
     
-    // Fallback if DB is empty
+    // Fallback logic for random path
     if (!gameData) {
       const fallbackCorrect = [Math.floor(Math.random() * 5), Math.floor(Math.random() * 5), Math.floor(Math.random() * 5), Math.floor(Math.random() * 5)];
       const fallbackWrong = fallbackCorrect.map(c => {

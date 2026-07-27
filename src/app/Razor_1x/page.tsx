@@ -1,11 +1,12 @@
-
 "use client";
 
-import { useEffect, useRef, Suspense, useState } from 'react';
+import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, LogOut, Activity } from 'lucide-react';
 import KillSwitch from '@/components/kill-switch';
 import { motion } from 'framer-motion';
+import { database } from '@/lib/firebase';
+import { ref, onValue } from 'firebase/database';
 
 function WelcomeContent() {
   const router = useRouter();
@@ -16,6 +17,8 @@ function WelcomeContent() {
   const [timeLeft, setTimeLeft] = useState<string>("000 : 00 : 00");
   
   const lastValueRef = useRef<string>("0.00");
+  const lastChangeTimeRef = useRef<number>(Date.now());
+  const useScheduleRef = useRef<boolean>(false);
 
   const parseValidityToSeconds = (validity: string | null): number => {
     if (!validity) return 11 * 60;
@@ -42,25 +45,50 @@ function WelcomeContent() {
     }
     setUserId(storedUserId);
 
-    const STREAM_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com/predictions/current.json";
-    
-    // Polling logic for direct database reading only
-    const pollInterval = setInterval(async () => {
-      try {
-        const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
-        const data = await res.json();
-        
-        if (data && data.value) {
-            const currentVal = Number(data.value).toFixed(2);
+    // --- Real-time Logic for Crash V2 with Stagnation Fallback ---
+    const currentRef = ref(database, 'predictions/current');
+    const scheduleRef = ref(database, 'predictions/crash/schedule');
+
+    const handleUpdate = (val: any) => {
+        if (val) {
+            const currentVal = Number(val).toFixed(2);
             if (currentVal !== lastValueRef.current) {
                 setLastRaw(lastValueRef.current === "0.00" ? "—" : lastValueRef.current);
                 setCrashValue(currentVal);
                 lastValueRef.current = currentVal;
+                lastChangeTimeRef.current = Date.now();
+                useScheduleRef.current = false; // Reset to primary source on change
+                setStatus("live");
             }
         }
-        setStatus("live");
-      } catch (e) { setStatus("wait"); }
-    }, 2000);
+    };
+
+    // Primary Listener
+    const unsubPrimary = onValue(currentRef, (snap) => {
+        const val = snap.val()?.value || snap.val();
+        handleUpdate(val);
+    });
+
+    // Schedule Listener (Fallback)
+    const unsubSchedule = onValue(scheduleRef, (snap) => {
+        if (useScheduleRef.current) {
+            const data = snap.val();
+            if (data) {
+                // Get the most recent key in schedule
+                const keys = Object.keys(data).sort();
+                const latestKey = keys[keys.length - 1];
+                const val = data[latestKey]?.value || data[latestKey];
+                handleUpdate(val);
+            }
+        }
+    });
+
+    // Stagnation Checker (2 Minutes)
+    const stagnationInterval = setInterval(() => {
+        if (Date.now() - lastChangeTimeRef.current > 120000) { // 120 seconds
+            useScheduleRef.current = true;
+        }
+    }, 5000);
 
     // Session Timer
     let totalSeconds = parseValidityToSeconds(validity);
@@ -79,7 +107,9 @@ function WelcomeContent() {
     }, 1000);
 
     return () => {
-      clearInterval(pollInterval);
+      unsubPrimary();
+      unsubSchedule();
+      clearInterval(stagnationInterval);
       clearInterval(timerInterval);
     };
   }, [router]);

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
@@ -7,6 +6,8 @@ import { User, LogOut, ShieldCheck, Clock, Loader2, Cpu, Zap, Search } from 'luc
 import KillSwitch from '@/components/kill-switch';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { database } from '@/lib/firebase';
+import { ref, onValue } from 'firebase/database';
 
 // --- Constants ---
 const BOMB_IMG = "https://iili.io/ChyAY5x.png"; 
@@ -65,7 +66,7 @@ function KamikazeTerminal() {
   const [isPathVisible, setIsPathVisible] = useState(false);
   const [randomColumns, setRandomColumns] = useState<any[]>([]);
   
-  const stateRef = useRef<any>(null);
+  const lastStartedAtRef = useRef<number>(0);
 
   const parseValidityToSeconds = (validity: string | null): number => {
     if (!validity) return 11 * 60;
@@ -81,12 +82,6 @@ function KamikazeTerminal() {
     }
   };
 
-  const updateUI = useCallback((newState: any) => {
-    stateRef.current = newState;
-    setGameData(newState);
-    setStatus(newState ? "live" : "wait");
-  }, []);
-
   useEffect(() => {
     document.title = "KAMIKAZE — Tactical Terminal";
     const validity = sessionStorage.getItem('razor_session_validity');
@@ -98,15 +93,23 @@ function KamikazeTerminal() {
     }
     setUserId(storedUserId);
 
-    const STREAM_URL = "https://crash-db-1ff97-default-rtdb.firebaseio.com/kamikaze/current_game.json";
-    let pollInterval = setInterval(async () => {
-      try {
-        const res = await fetch(STREAM_URL + "?_=" + Date.now(), { cache: 'no-store' });
-        const data = await res.json();
-        updateUI(data);
-      } catch (e) { setStatus("wait"); }
-    }, 2000);
+    // --- Real-time database listener ---
+    const kamikazeRef = ref(database, 'kamikaze/current_game');
+    const unsubscribe = onValue(kamikazeRef, (snap) => {
+        const data = snap.val();
+        if (data) {
+            setGameData(data);
+            setStatus("live");
+            if (data.startedAt && data.startedAt !== lastStartedAtRef.current) {
+                setIsPathVisible(false);
+                lastStartedAtRef.current = data.startedAt;
+            }
+        } else {
+            setStatus("wait");
+        }
+    });
 
+    // Session Timer
     let totalSeconds = parseValidityToSeconds(validity);
     const timerInterval = setInterval(() => {
       if (totalSeconds > 0) {
@@ -123,10 +126,10 @@ function KamikazeTerminal() {
     }, 1000);
 
     return () => {
-      clearInterval(pollInterval);
+      unsubscribe();
       clearInterval(timerInterval);
     };
-  }, [router, updateUI]);
+  }, [router]);
 
   const handleStartAnalysis = () => {
     setIsAnalyzing(true);
@@ -282,6 +285,7 @@ function KamikazeTerminal() {
               animate={{ scale: 1.1, opacity: 1, y: 0 }}
               src={RAZOR_LOGO} 
               alt="Razor" 
+              unoptimized
             />
         </div>
 
