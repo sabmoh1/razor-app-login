@@ -203,16 +203,16 @@ export default function LoginForm({
   return (
     <div className="w-full max-w-sm space-y-8">
       <style jsx>{`
-        @keyframes glitch-mini {
-          0% { transform: translate(0); opacity: 1; }
-          25% { transform: translate(-1px, 1px); opacity: 0.8; }
-          50% { transform: translate(1px, -1px); opacity: 1; }
-          75% { transform: translate(-1px, -1px); opacity: 0.8; }
-          100% { transform: translate(0); opacity: 1; }
+        @keyframes glitch-fracture-mini {
+          0%, 100% { clip-path: inset(0 0 0 0); opacity: 1; }
+          5% { clip-path: inset(40% 0 45% 0); opacity: 0.8; }
+          10% { clip-path: inset(10% 0 80% 0); opacity: 0.9; }
+          15% { clip-path: inset(0 0 0 0); }
         }
         .glitch-mini {
-          animation: glitch-mini 0.2s infinite;
+          animation: glitch-fracture-mini 2s infinite linear;
           display: inline-block;
+          position: relative;
         }
       `}</style>
       <AnimatePresence>

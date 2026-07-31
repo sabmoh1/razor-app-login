@@ -9,17 +9,18 @@ export default function Home() {
   return (
     <KillSwitch pageName="razor">
       <style jsx global>{`
-        @keyframes glitch-v2 {
-          0% { transform: translate(0); text-shadow: 0 0 10px rgba(255,255,255,0.4); }
-          20% { transform: translate(-2px, 2px); text-shadow: -2px 0 red, 2px 2px blue; }
-          40% { transform: translate(-2px, -2px); text-shadow: 2px 0 blue, -2px -2px red; }
-          60% { transform: translate(2px, 2px); text-shadow: -2px 0 red, 2px 2px blue; }
-          80% { transform: translate(2px, -2px); text-shadow: 2px 0 blue, -2px -2px red; }
-          100% { transform: translate(0); text-shadow: 0 0 10px rgba(255,255,255,0.4); }
+        @keyframes glitch-fracture-v2 {
+          0%, 100% { clip-path: inset(0 0 0 0); opacity: 1; }
+          2% { clip-path: inset(20% 0 80% 0); opacity: 0.8; }
+          4% { clip-path: inset(60% 0 10% 0); opacity: 0.9; }
+          6% { clip-path: inset(10% 0 70% 0); opacity: 0.7; }
+          8% { clip-path: inset(80% 0 20% 0); opacity: 1; }
+          10% { clip-path: inset(0 0 0 0); }
         }
         .glitch-v2 {
-          animation: glitch-v2 0.3s infinite;
+          animation: glitch-fracture-v2 3s infinite linear alternate-reverse;
           display: inline-block;
+          position: relative;
         }
       `}</style>
       <div className="fixed inset-0 -z-10">

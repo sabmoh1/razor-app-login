@@ -11,17 +11,17 @@ export default function SwampLoginPage() {
   return (
     <KillSwitch pageName="swamp">
       <style jsx global>{`
-        @keyframes glitch-v1-green {
-          0% { transform: translate(0); text-shadow: 0 0 10px rgba(34,197,94,0.4); }
-          20% { transform: translate(-1px, 2px); text-shadow: -1px 0 #166534; }
-          40% { transform: translate(-2px, -1px); text-shadow: 1px 0 #4ade80; }
-          60% { transform: translate(2px, 1px); text-shadow: -1px 0 #166534; }
-          80% { transform: translate(1px, -2px); text-shadow: 1px 0 #4ade80; }
-          100% { transform: translate(0); text-shadow: 0 0 10px rgba(34,197,94,0.4); }
+        @keyframes glitch-fracture-v1-gray {
+          0%, 100% { clip-path: inset(0 0 0 0); opacity: 1; }
+          2% { clip-path: inset(50% 0 10% 0); opacity: 0.8; }
+          4% { clip-path: inset(10% 0 70% 0); opacity: 0.9; }
+          6% { clip-path: inset(80% 0 5% 0); opacity: 0.7; }
+          8% { clip-path: inset(0 0 0 0); }
         }
         .glitch-v1 {
-          animation: glitch-v1-green 0.25s infinite;
+          animation: glitch-fracture-v1-gray 2.8s infinite linear;
           display: inline-block;
+          position: relative;
         }
       `}</style>
       <div className="fixed inset-0 -z-10">
