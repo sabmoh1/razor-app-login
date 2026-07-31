@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
@@ -28,7 +29,7 @@ import {
   Zap
 } from "lucide-react";
 import { database } from "@/lib/firebase";
-import { ref, get, update } from "firebase/database";
+import { ref, get, update, remove } from "firebase/database";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -134,15 +135,14 @@ export default function LoginForm({
                     return false;
                 }
 
-                if (foundRecord.uses <= 0) {
+                // Auto-Purge on login attempt if already invalid
+                const keyRef = ref(database, `passwords/${gameKey}/${foundKeyId}`);
+                const isExpired = foundRecord.activated && foundRecord.expiresAt > 0 && foundRecord.expiresAt < Date.now();
+                
+                if (foundRecord.uses <= 0 || foundRecord.remainingTime <= 0 || isExpired) {
+                    await remove(keyRef);
                     setVerifyStep(-1);
-                    setError("ACCESS DENIED: KEY USAGE DEPLETED");
-                    return false;
-                }
-
-                if (foundRecord.remainingTime <= 0) {
-                    setVerifyStep(-1);
-                    setError("ACCESS DENIED: KEY EXPIRED");
+                    setError("ACCESS DENIED: KEY HAS EXPIRED");
                     return false;
                 }
 
@@ -162,7 +162,7 @@ export default function LoginForm({
                 const foundRecord = JSON.parse(sessionStorage.getItem('temp_record') || '{}');
                 
                 const now = Date.now();
-                const expiresAt = now + foundRecord.remainingTime;
+                let expiresAt = foundRecord.expiresAt || 0;
 
                 const updates: any = {
                     uses: foundRecord.uses - 1,
@@ -171,8 +171,10 @@ export default function LoginForm({
                 if (!foundRecord.activated) {
                     updates.activated = true;
                     updates.activatedAt = now;
+                    expiresAt = now + foundRecord.remainingTime;
                     updates.expiresAt = expiresAt;
                 } else {
+                    expiresAt = now + foundRecord.remainingTime;
                     updates.expiresAt = expiresAt;
                 }
 

@@ -8,7 +8,7 @@ import KillSwitch from '@/components/kill-switch';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { database } from '@/lib/firebase';
-import { ref, onValue, update } from 'firebase/database';
+import { ref, onValue, update, remove, get } from 'firebase/database';
 
 const BOMB_IMG = "https://iili.io/ChyAY5x.png"; 
 const RAZOR_LOGO = "https://iili.io/f9iNGFj.png";
@@ -76,12 +76,21 @@ function KamikazeTerminal() {
     
     if (game && keyId && expiresAt > 0) {
       const remaining = Math.max(0, expiresAt - Date.now());
+      const keyRef = ref(database, `passwords/${game}/${keyId}`);
+      
       try {
-        await update(ref(database, `passwords/${game}/${keyId}`), {
-          remainingTime: remaining
-        });
+        const snapshot = await get(keyRef);
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            // Auto-Purge if time up or uses up
+            if (remaining <= 0 || (data.uses !== undefined && data.uses <= 0)) {
+                await remove(keyRef);
+            } else {
+                await update(keyRef, { remainingTime: remaining });
+            }
+        }
       } catch (e) {
-        console.error("Failed to save time:", e);
+        console.error("Auto-Purge/Save failed:", e);
       }
     }
   }, []);
