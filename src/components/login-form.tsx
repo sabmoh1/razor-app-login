@@ -24,7 +24,9 @@ import {
   User,
   Fingerprint,
   Database,
-  Cpu
+  Cpu,
+  Globe,
+  Zap
 } from "lucide-react";
 import { database } from "@/lib/firebase";
 import { ref, get, update } from "firebase/database";
@@ -51,6 +53,16 @@ export type LoginFormProps = {
   gameKey: 'crash' | 'west' | 'kamikaze' | 'swamp' | 'sharlok';
 };
 
+const VERIFICATION_STEPS = [
+    { text: "INITIALIZING SECURITY CORE...", icon: Cpu },
+    { text: "ESTABLISHING SECURE HANDSHAKE...", icon: Globe },
+    { text: "DECRYPTING SECURITY KEY...", icon: Lock },
+    { text: "SCANNING DEVICE FINGERPRINT...", icon: Fingerprint },
+    { text: "VERIFYING TEMPORAL ACCESS...", icon: Database },
+    { text: "BYPASSING SECURE FIREWALLS...", icon: Zap },
+    { text: "FINALIZING AUTHENTICATION...", icon: Server },
+];
+
 export default function LoginForm({ 
     welcomePath = '/Razor_1x', 
     title = '',
@@ -76,102 +88,120 @@ export default function LoginForm({
   });
 
   useEffect(() => {
-    if (isVerifying) {
+    if (isVerifying && verifyStep >= 0 && verifyStep < VERIFICATION_STEPS.length) {
       const interval = setInterval(() => {
         setBitStream(Math.random().toString(16).substring(2, 10).toUpperCase());
-      }, 80);
+      }, 50);
       return () => clearInterval(interval);
     }
-  }, [isVerifying]);
+  }, [isVerifying, verifyStep]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
     setIsVerifying(true);
-    setVerifyStep(1); 
+    setVerifyStep(0); 
 
-    startTransition(async () => {
-      try {
-        const gamePasswordsRef = ref(database, `passwords/${gameKey}`);
-        const snapshot = await get(gamePasswordsRef);
+    // Simulation sequence for more credibility
+    const runSequence = async () => {
+        for (let i = 0; i < VERIFICATION_STEPS.length; i++) {
+            setVerifyStep(i);
+            await new Promise(r => setTimeout(r, 800 + Math.random() * 500));
+            
+            // Perform actual DB check mid-sequence for better UX flow
+            if (i === 2) {
+                const gamePasswordsRef = ref(database, `passwords/${gameKey}`);
+                const snapshot = await get(gamePasswordsRef);
 
-        if (!snapshot.exists()) {
-          setVerifyStep(-1);
-          setError("ACCESS DENIED: NO KEYS FOUND FOR THIS GAME");
-          setTimeout(() => setIsVerifying(false), 3000);
-          return;
+                if (!snapshot.exists()) {
+                    setVerifyStep(-1);
+                    setError("ACCESS DENIED: NO KEYS FOUND");
+                    return false;
+                }
+
+                const allRecords = snapshot.val();
+                let foundKeyId = null;
+                let foundRecord = null;
+
+                for (const key in allRecords) {
+                    if (allRecords[key].password === values.password) {
+                        foundKeyId = key;
+                        foundRecord = allRecords[key];
+                        break;
+                    }
+                }
+
+                if (!foundRecord || !foundKeyId) {
+                    setVerifyStep(-1);
+                    setError("AUTHENTICATION FAILED: INVALID KEY");
+                    return false;
+                }
+
+                if (foundRecord.uses <= 0) {
+                    setVerifyStep(-1);
+                    setError("ACCESS DENIED: KEY USAGE DEPLETED");
+                    return false;
+                }
+
+                if (foundRecord.remainingTime <= 0) {
+                    setVerifyStep(-1);
+                    setError("ACCESS DENIED: KEY EXPIRED");
+                    return false;
+                }
+
+                // Prepare for next steps
+                sessionStorage.setItem('temp_key_id', foundKeyId);
+                sessionStorage.setItem('temp_record', JSON.stringify(foundRecord));
+            }
         }
+        return true;
+    };
 
-        const allRecords = snapshot.val();
-        let foundKeyId = null;
-        let foundRecord = null;
+    const success = await runSequence();
 
-        for (const key in allRecords) {
-          if (allRecords[key].password === values.password) {
-            foundKeyId = key;
-            foundRecord = allRecords[key];
-            break;
-          }
-        }
+    if (success) {
+        startTransition(async () => {
+            try {
+                const foundKeyId = sessionStorage.getItem('temp_key_id');
+                const foundRecord = JSON.parse(sessionStorage.getItem('temp_record') || '{}');
+                
+                const now = Date.now();
+                const expiresAt = now + foundRecord.remainingTime;
 
-        if (foundRecord && foundKeyId) {
-          // 1. Check Uses
-          if (foundRecord.uses <= 0) {
-            setVerifyStep(-1);
-            setError("ACCESS DENIED: KEY USAGE DEPLETED");
-            setTimeout(() => setIsVerifying(false), 3000);
-            return;
-          }
+                const updates: any = {
+                    uses: foundRecord.uses - 1,
+                };
 
-          // 2. Check Expiry
-          if (foundRecord.remainingTime <= 0) {
-            setVerifyStep(-1);
-            setError("ACCESS DENIED: KEY EXPIRED");
-            setTimeout(() => setIsVerifying(false), 3000);
-            return;
-          }
+                if (!foundRecord.activated) {
+                    updates.activated = true;
+                    updates.activatedAt = now;
+                    updates.expiresAt = expiresAt;
+                } else {
+                    updates.expiresAt = expiresAt;
+                }
 
-          setVerifyStep(2);
-          const now = Date.now();
-          const expiresAt = now + foundRecord.remainingTime;
+                await update(ref(database, `passwords/${gameKey}/${foundKeyId}`), updates);
 
-          // 3. Update Database
-          const updates: any = {
-            uses: foundRecord.uses - 1,
-          };
+                // Final Success step
+                setVerifyStep(VERIFICATION_STEPS.length);
+                
+                sessionStorage.setItem('razor_user_id', values.userId);
+                sessionStorage.setItem('razor_expires_at', String(expiresAt));
+                sessionStorage.setItem('razor_game_key', gameKey);
+                sessionStorage.setItem('razor_db_key_id', foundKeyId!);
+                
+                // Cleanup temp
+                sessionStorage.removeItem('temp_key_id');
+                sessionStorage.removeItem('temp_record');
 
-          if (!foundRecord.activated) {
-            updates.activated = true;
-            updates.activatedAt = now;
-            updates.expiresAt = expiresAt;
-          } else {
-            updates.expiresAt = expiresAt;
-          }
-
-          await update(ref(database, `passwords/${gameKey}/${foundKeyId}`), updates);
-
-          setVerifyStep(3);
-          await new Promise(r => setTimeout(r, 1000));
-          
-          setVerifyStep(4);
-          
-          // Store Session Data
-          sessionStorage.setItem('razor_user_id', values.userId);
-          sessionStorage.setItem('razor_expires_at', String(expiresAt));
-          sessionStorage.setItem('razor_game_key', gameKey);
-          sessionStorage.setItem('razor_db_key_id', foundKeyId);
-
-          router.push(welcomePath);
-        } else {
-          setVerifyStep(-1);
-          setError("AUTHENTICATION FAILED: INVALID SECURITY KEY");
-          setTimeout(() => setIsVerifying(false), 3000);
-        }
-      } catch (e) {
-        setVerifyStep(-1);
-        setError("CONNECTION ERROR: UPLINK FAILED");
+                setTimeout(() => router.push(welcomePath), 1000);
+            } catch (e) {
+                setVerifyStep(-1);
+                setError("CONNECTION ERROR: UPLINK FAILED");
+            }
+        });
+    } else {
         setTimeout(() => setIsVerifying(false), 3000);
-      }
-    });
+    }
   }
 
   return (
@@ -189,7 +219,7 @@ export default function LoginForm({
                 <div className="relative inline-block mb-10">
                   {verifyStep === -1 ? (
                     <ShieldAlert className="h-32 w-32 text-red-600 mx-auto drop-shadow-[0_0_20px_rgba(220,38,38,0.5)]" />
-                  ) : verifyStep === 4 ? (
+                  ) : verifyStep === VERIFICATION_STEPS.length ? (
                     <ShieldCheck className="h-32 w-32 text-green-500 mx-auto animate-bounce drop-shadow-[0_0_20px_rgba(34,197,94,0.5)]" />
                   ) : (
                     <div className="relative flex items-center justify-center">
@@ -200,25 +230,54 @@ export default function LoginForm({
                     </div>
                   )}
                 </div>
-                <h2 className={`text-3xl font-black tracking-[0.4em] uppercase ${verifyStep === -1 ? 'text-red-600' : 'text-white'}`} style={{ fontFamily: 'Orbitron' }}>
-                  {verifyStep === -1 ? 'System Breach' : verifyStep === 4 ? 'Access Granted' : `${versionLabel} DEEP ANALYSIS`}
+                <h2 className={`text-2xl md:text-3xl font-black tracking-[0.3em] uppercase ${verifyStep === -1 ? 'text-red-600' : 'text-white'}`} style={{ fontFamily: 'Orbitron' }}>
+                  {verifyStep === -1 ? 'SYSTEM BREACH' : verifyStep === VERIFICATION_STEPS.length ? 'ACCESS GRANTED' : `${versionLabel} DEEP ENCRYPTION`}
                 </h2>
               </div>
 
-              <div className="space-y-8 max-w-md mx-auto">
-                <div className={`flex items-center justify-between transition-all duration-700 ${verifyStep >= 1 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
-                   <span className="text-lg font-bold tracking-widest uppercase text-white/80" style={{ fontFamily: 'Orbitron' }}>Security Verification</span>
-                   {verifyStep > 1 ? <CheckCircle2 size={24} className="text-green-500" /> : verifyStep === -1 ? <ShieldAlert size={24} className="text-red-600" /> : <Loader2 size={22} className="animate-spin text-cyan-400" />}
-                </div>
-                <div className={`flex items-center justify-between transition-all duration-700 ${verifyStep >= 2 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
-                   <span className="text-lg font-bold tracking-widest uppercase text-white/80" style={{ fontFamily: 'Orbitron' }}>Time Allocation</span>
-                   {verifyStep > 2 ? <CheckCircle2 size={24} className="text-green-500" /> : verifyStep === 2 ? <Loader2 size={22} className="animate-spin text-cyan-400" /> : null}
-                </div>
+              <div className="space-y-4 max-w-md mx-auto h-48 overflow-hidden">
+                <AnimatePresence mode="popLayout">
+                    {verifyStep >= 0 && verifyStep < VERIFICATION_STEPS.length && (
+                        <motion.div 
+                            key={verifyStep}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10"
+                        >
+                            {VERIFICATION_STEPS[verifyStep] && (
+                                <>
+                                    <div className="p-2 bg-cyan-500/10 rounded-lg">
+                                        {(() => {
+                                            const StepIcon = VERIFICATION_STEPS[verifyStep].icon;
+                                            return <StepIcon className="h-5 w-5 text-cyan-400" />;
+                                        })()}
+                                    </div>
+                                    <span className="text-xs md:text-sm font-bold tracking-widest uppercase text-white/90 font-mono">
+                                        {VERIFICATION_STEPS[verifyStep].text}
+                                    </span>
+                                    <Loader2 size={16} className="ml-auto animate-spin text-cyan-400" />
+                                </>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+                
+                {verifyStep === VERIFICATION_STEPS.length && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex items-center gap-4 bg-green-500/10 p-4 rounded-xl border border-green-500/20"
+                    >
+                        <CheckCircle2 size={24} className="text-green-500" />
+                        <span className="text-sm font-bold tracking-widest uppercase text-green-400">ENCRYPTION BYPASSED SUCCESSFULLY</span>
+                    </motion.div>
+                )}
               </div>
 
               {error && (
                 <div className="text-center mt-12">
-                  <p className="text-2xl md:text-3xl text-red-600 font-black tracking-widest uppercase" style={{ fontFamily: 'Orbitron', textShadow: '0 0 30px rgba(220,38,38,0.8)' }}>
+                  <p className="text-xl md:text-2xl text-red-600 font-black tracking-widest uppercase" style={{ fontFamily: 'Orbitron', textShadow: '0 0 30px rgba(220,38,38,0.8)' }}>
                     {error}
                   </p>
                 </div>
