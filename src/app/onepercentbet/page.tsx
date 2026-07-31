@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { 
     Loader2, AlertCircle, ArrowRight, User, KeyRound, Server, Scan, Link2, 
-    CheckCircle, Cpu, Globe, Lock, Fingerprint, Database, Zap, ShieldCheck, ShieldAlert 
+    CheckCircle, Cpu, Globe, Lock, Fingerprint, Database, Zap, ShieldCheck, ShieldAlert, CheckCircle2 
 } from "lucide-react";
 import { database } from "@/lib/firebase";
 import { ref, get, update } from "firebase/database";
@@ -68,6 +68,15 @@ export default function OnePercentBetLogin() {
     defaultValues: { userId: "", activationCode: "" },
   });
 
+  useEffect(() => {
+    if (isVerifying && verifyStep >= 0 && verifyStep < VERIFICATION_STEPS.length) {
+      const interval = setInterval(() => {
+        setBitStream(Math.random().toString(16).substring(2, 10).toUpperCase());
+      }, 50);
+      return () => clearInterval(interval);
+    }
+  }, [isVerifying, verifyStep]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
     setIsVerifying(true);
@@ -76,14 +85,10 @@ export default function OnePercentBetLogin() {
     const runSequence = async () => {
         for (let i = 0; i < VERIFICATION_STEPS.length; i++) {
             setVerifyStep(i);
-            const interval = setInterval(() => {
-                setBitStream(Math.random().toString(16).substring(2, 10).toUpperCase());
-            }, 60);
             await new Promise(r => setTimeout(r, 900 + Math.random() * 500));
-            clearInterval(interval);
 
             if (i === 2) {
-                const codesRef = ref(database, 'passwords/crash'); // Using global pool or per-game
+                const codesRef = ref(database, 'passwords/crash');
                 const snapshot = await get(codesRef);
 
                 if (!snapshot.exists()) {
@@ -165,49 +170,65 @@ export default function OnePercentBetLogin() {
                 {isVerifying && (
                     <motion.div 
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 bg-[#0D1117] flex items-center justify-center p-6"
+                        className="fixed inset-0 z-50 bg-[#0D1117] flex items-center justify-center p-6 overflow-y-auto"
                     >
-                        <div className="w-full max-w-sm space-y-12 text-center">
-                            <div className="relative inline-block mb-4">
-                                {verifyStep === -1 ? (
-                                    <ShieldAlert className="h-24 w-24 text-red-500 mx-auto" />
-                                ) : verifyStep === VERIFICATION_STEPS.length ? (
-                                    <ShieldCheck className="h-24 w-24 text-blue-500 mx-auto animate-pulse" />
-                                ) : (
-                                    <div className="relative flex items-center justify-center">
-                                        <div className="h-32 w-32 flex items-center justify-center border-4 border-blue-500/10 rounded-full">
-                                            <span className="text-xl font-mono text-blue-400 font-bold tracking-widest">{bitStream}</span>
+                        <div className="w-full max-w-md space-y-8 py-10">
+                            <div className="text-center">
+                                <div className="relative inline-block mb-6">
+                                    {verifyStep === -1 ? (
+                                        <ShieldAlert className="h-20 w-20 text-red-500 mx-auto drop-shadow-[0_0_20px_rgba(220,38,38,0.5)]" />
+                                    ) : verifyStep === VERIFICATION_STEPS.length ? (
+                                        <ShieldCheck className="h-20 w-20 text-blue-500 mx-auto animate-pulse" />
+                                    ) : (
+                                        <div className="relative flex items-center justify-center">
+                                            <div className="h-24 w-24 flex items-center justify-center border-4 border-blue-500/10 rounded-full">
+                                                <span className="text-sm font-mono text-blue-400 font-bold tracking-widest">{bitStream}</span>
+                                            </div>
+                                            <div className="absolute -inset-2 rounded-full border-t-2 border-blue-500 animate-spin" />
                                         </div>
-                                        <div className="absolute -inset-2 rounded-full border-t-2 border-blue-500 animate-spin" />
-                                    </div>
-                                )}
-                            </div>
-                            
-                            <h2 className="text-2xl font-black tracking-[0.2em] text-white uppercase font-bebas">
-                                {verifyStep === -1 ? 'AUTHENTICATION FAILED' : verifyStep === VERIFICATION_STEPS.length ? '1% ACCESS GRANTED' : 'QUANTUM VERIFICATION'}
-                            </h2>
-
-                            <div className="space-y-3 h-20 overflow-hidden">
-                                <AnimatePresence mode="wait">
-                                    {verifyStep >= 0 && verifyStep < VERIFICATION_STEPS.length && (
-                                        <motion.div 
-                                            key={verifyStep} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                            className="flex items-center gap-3 bg-blue-500/5 p-3 rounded-lg border border-blue-500/10"
-                                        >
-                                            {VERIFICATION_STEPS[verifyStep] && (
-                                                <>
-                                                    {(() => { const StepIcon = VERIFICATION_STEPS[verifyStep].icon; return <StepIcon className="h-4 w-4 text-blue-400" />; })()}
-                                                    <span className="text-[10px] font-bold tracking-widest uppercase text-blue-300 font-mono">
-                                                        {VERIFICATION_STEPS[verifyStep].text}
-                                                    </span>
-                                                </>
-                                            )}
-                                        </motion.div>
                                     )}
-                                </AnimatePresence>
+                                </div>
+                                
+                                <h2 className="text-xl font-black tracking-[0.2em] text-white uppercase font-bebas">
+                                    {verifyStep === -1 ? 'AUTHENTICATION FAILED' : verifyStep === VERIFICATION_STEPS.length ? '1% ACCESS GRANTED' : 'QUANTUM VERIFICATION'}
+                                </h2>
                             </div>
 
-                            {error && <p className="text-red-500 font-black tracking-widest text-sm uppercase">{error}</p>}
+                            <div className="space-y-3">
+                                {VERIFICATION_STEPS.map((step, index) => (
+                                    <motion.div 
+                                        key={index}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ 
+                                            opacity: index <= verifyStep || verifyStep === VERIFICATION_STEPS.length ? 1 : 0.2,
+                                            x: 0 
+                                        }}
+                                        className={cn(
+                                            "flex items-center gap-4 p-3 rounded-xl border transition-all duration-300",
+                                            index < verifyStep || (verifyStep === VERIFICATION_STEPS.length)
+                                                ? "bg-green-500/5 border-green-500/20 text-green-400" 
+                                                : index === verifyStep 
+                                                    ? "bg-blue-500/10 border-blue-500/40 text-white scale-[1.02] shadow-[0_0_20px_rgba(59,130,246,0.1)]"
+                                                    : "bg-white/5 border-white/5 text-white/40"
+                                        )}
+                                    >
+                                        <div className="flex-shrink-0">
+                                            {index < verifyStep || (verifyStep === VERIFICATION_STEPS.length) ? (
+                                                <CheckCircle2 size={18} className="text-green-500" />
+                                            ) : index === verifyStep ? (
+                                                <Loader2 size={18} className="animate-spin text-blue-400" />
+                                            ) : (
+                                                <step.icon size={18} className="opacity-40" />
+                                            )}
+                                        </div>
+                                        <span className="text-[10px] font-bold tracking-widest uppercase text-blue-300 font-mono">
+                                            {step.text}
+                                        </span>
+                                    </motion.div>
+                                ))}
+                            </div>
+
+                            {error && <p className="text-red-500 font-black tracking-widest text-sm uppercase text-center mt-6">{error}</p>}
                         </div>
                     </motion.div>
                 )}

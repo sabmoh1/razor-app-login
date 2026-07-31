@@ -6,43 +6,60 @@ import { useRouter } from 'next/navigation';
 import { database } from '@/lib/firebase';
 import { ref, get } from 'firebase/database';
 import Head from 'next/head';
-import { Loader2, User, KeyRound, CheckCircle, ShieldCheck, Server, AlertTriangle, X } from 'lucide-react';
+import { Loader2, User, KeyRound, CheckCircle, ShieldCheck, Server, AlertTriangle, X, CheckCircle2 } from 'lucide-react';
 import KillSwitch from '@/components/kill-switch';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Verification Steps Component
 const VerificationModal = ({ step, onCancel }: { step: number; onCancel: () => void }) => {
     const steps = [
-        { text: "Checking input data...", icon: <User /> },
-        { text: "Verifying activation key...", icon: <KeyRound /> },
-        { text: "Connecting to secure server...", icon: <Server /> },
-        { text: "Login successful!", icon: <ShieldCheck /> }
+        { text: "INITIALIZING DATA...", icon: <User size={18} /> },
+        { text: "VERIFYING KEY...", icon: <KeyRound size={18} /> },
+        { text: "STABLISHING UPLINK...", icon: <Server size={18} /> },
+        { text: "FINISHING LOGIN...", icon: <ShieldCheck size={18} /> }
     ];
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-sm bg-gray-900/50 border-2 border-yellow-500/30 rounded-2xl p-6 shadow-2xl shadow-yellow-500/20">
-                <div className="text-center">
-                    <div className="w-20 h-20 mx-auto rounded-full bg-yellow-500/10 border-2 border-yellow-500/50 flex items-center justify-center mb-4">
-                        {step < steps.length -1 ? 
-                            <Loader2 className="w-10 h-10 text-yellow-400 animate-spin" /> : 
-                            <CheckCircle className="w-10 h-10 text-green-400" />
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-gray-900 border-2 border-yellow-500/30 rounded-3xl p-8 shadow-2xl shadow-yellow-500/20">
+                <div className="text-center mb-8">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-yellow-500/10 border-2 border-yellow-500/50 flex items-center justify-center mb-4">
+                        {step < steps.length - 1 ? 
+                            <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" /> : 
+                            <CheckCircle2 className="w-8 h-8 text-green-400" />
                         }
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">{steps[step].text}</h3>
-                    <div className="flex justify-center gap-2 mt-4">
-                        {steps.map((_, index) => (
-                            <div key={index} className={cn("w-3 h-3 rounded-full transition-all duration-500", 
-                                index < step ? 'bg-green-500' : 
-                                index === step ? 'bg-yellow-400 animate-pulse' :
-                                'bg-gray-600'
-                            )}></div>
-                        ))}
-                    </div>
-                    {step < steps.length - 1 && (
-                        <button onClick={onCancel} className="mt-6 text-xs text-gray-400 hover:text-white transition-colors">Cancel</button>
-                    )}
+                    <h3 className="text-xl font-bold text-white uppercase tracking-widest" style={{ fontFamily: 'Orbitron' }}>Verification</h3>
                 </div>
+
+                <div className="space-y-4">
+                    {steps.map((s, index) => (
+                        <div key={index} className={cn(
+                            "flex items-center gap-4 p-3 rounded-xl border transition-all duration-300",
+                            index < step ? "bg-green-500/5 border-green-500/20 text-green-400" :
+                            index === step ? "bg-yellow-500/10 border-yellow-500/40 text-white scale-[1.02]" :
+                            "bg-white/5 border-white/5 text-white/20"
+                        )}>
+                            <div className="flex-shrink-0">
+                                {index < step ? (
+                                    <CheckCircle2 size={18} className="text-green-500" />
+                                ) : index === step ? (
+                                    <Loader2 size={18} className="animate-spin text-yellow-400" />
+                                ) : (
+                                    s.icon
+                                )}
+                            </div>
+                            <span className="text-[10px] font-bold tracking-widest uppercase">
+                                {s.text}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                {step < steps.length - 1 && (
+                    <button onClick={onCancel} className="mt-8 w-full text-xs text-gray-500 hover:text-white transition-colors uppercase tracking-[0.3em]">Cancel</button>
+                )}
             </div>
         </div>
     );
@@ -56,8 +73,8 @@ const AlertModal = ({ message, onClose }: { message: string | null; onClose: () 
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-sm bg-red-900/30 border-2 border-red-500/50 rounded-2xl p-6 text-center shadow-2xl shadow-red-500/20">
                 <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                <p className="text-white mb-6">{message}</p>
-                <button onClick={onClose} className="px-6 py-2 bg-red-500 text-white font-bold rounded-full hover:bg-red-600 transition-colors">OK</button>
+                <p className="text-white mb-6 font-bold">{message}</p>
+                <button onClick={onClose} className="px-8 py-3 bg-red-600 text-white font-bold rounded-full hover:bg-red-700 transition-all uppercase tracking-widest text-xs">OK</button>
             </div>
         </div>
     );
@@ -89,7 +106,7 @@ export default function DuckyAppleLoginPage() {
             await new Promise(resolve => setTimeout(resolve, 1500)); // Step 0
             setProcessingStep(1);
 
-            const passwordsRef = ref(database, 'passwords');
+            const passwordsRef = ref(database, 'passwords/swamp'); // Updated to use swamp or generic path
             const snapshot = await get(passwordsRef);
 
             if (!snapshot.exists()) {
@@ -102,8 +119,7 @@ export default function DuckyAppleLoginPage() {
             let dbKeyId = null;
 
             for (const key in allPasswords) {
-                // Updated to use 'rz' field
-                if (allPasswords[key].rz === password) {
+                if (allPasswords[key].password === password) {
                     keyFound = true;
                     keyData = allPasswords[key];
                     dbKeyId = key;
@@ -115,13 +131,8 @@ export default function DuckyAppleLoginPage() {
                 throw new Error("Invalid Key. Please check and try again.");
             }
 
-            if (typeof keyData.attemps === 'undefined' && typeof keyData.attempts === 'undefined') {
-                throw new Error("This key is not valid for the Apple game.");
-            }
-
-            const attempts = parseInt(keyData.attemps || keyData.attempts, 10);
-            if (attempts <= 0) {
-                throw new Error("This key has no attempts left.");
+            if (keyData.remainingTime <= 0) {
+                throw new Error("This key has expired.");
             }
             
             await new Promise(resolve => setTimeout(resolve, 1500)); // Step 1
@@ -130,8 +141,6 @@ export default function DuckyAppleLoginPage() {
             const userAuth = {
                 userId: userId,
                 userKey: password,
-                attempts: attempts,
-                uses: keyData.uses || 1,
                 dbKeyId: dbKeyId,
             };
             sessionStorage.setItem('ducky_apple_auth', JSON.stringify(userAuth));
@@ -174,8 +183,6 @@ export default function DuckyAppleLoginPage() {
             .submit-btn { background: linear-gradient(45deg, #FFB020, #FF8C00); color: #000; width: 100%; border: none; border-radius: 12px; padding: 1.1rem; font-size: 1.25rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(255,176,32,0.6); position: relative; overflow: hidden; }
             .submit-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 0 30px rgba(255,176,32,0.8); }
             .submit-btn:disabled { background: #333; cursor: not-allowed; box-shadow: none; }
-            .submit-btn .sparkle { position: absolute; top: -20px; left: -20px; width: 20px; height: 40px; background: white; filter: blur(5px); transform: rotate(45deg); animation: sparkle-move 1s linear infinite; }
-            @keyframes sparkle-move { 0% { transform: rotate(45deg) translate(-200px, -200px); } 100% { transform: rotate(45deg) translate(200px, 200px); } }
         `}</style>
         <div className="cyber-grid-bg"></div>
 

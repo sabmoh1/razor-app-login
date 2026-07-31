@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,7 @@ import Head from "next/head";
 import { Loader2, Cpu, Globe, Lock, Fingerprint, Database, Zap, Server, ShieldCheck, ShieldAlert, CheckCircle2 } from "lucide-react";
 import KillSwitch from "@/components/kill-switch";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   userId: z
@@ -58,6 +59,15 @@ export default function VirusLoginPage() {
     setValue("game", selectedGame === game ? (undefined as any) : game);
   };
 
+  useEffect(() => {
+    if (isVerifying && verifyStep >= 0 && verifyStep < VERIFICATION_STEPS.length) {
+      const interval = setInterval(() => {
+        setBitStream(Math.random().toString(16).substring(2, 10).toUpperCase());
+      }, 50);
+      return () => clearInterval(interval);
+    }
+  }, [isVerifying, verifyStep]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setAuthError(null);
     setIsVerifying(true);
@@ -66,14 +76,10 @@ export default function VirusLoginPage() {
     const runSequence = async () => {
         for (let i = 0; i < VERIFICATION_STEPS.length; i++) {
             setVerifyStep(i);
-            const interval = setInterval(() => {
-                setBitStream(Math.random().toString(16).substring(2, 10).toUpperCase());
-            }, 50);
             await new Promise(r => setTimeout(r, 800 + Math.random() * 400));
-            clearInterval(interval);
 
             if (i === 2) {
-                const passwordsRef = ref(database, "passwords/crash"); // Defaulting to crash or similar for virus
+                const passwordsRef = ref(database, "passwords/crash");
                 const snapshot = await get(passwordsRef);
 
                 if (!snapshot.exists()) {
@@ -190,18 +196,19 @@ export default function VirusLoginPage() {
         {isVerifying && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-6"
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-6 overflow-y-auto"
           >
-            <div className="w-full max-w-sm space-y-10 text-center">
-              <div className="relative inline-block mb-4">
+            <div className="w-full max-w-md space-y-8 py-10">
+              <div className="text-center">
+                <div className="relative inline-block mb-6">
                  {verifyStep === -1 ? (
-                    <ShieldAlert className="h-24 w-24 text-red-600 mx-auto" />
+                    <ShieldAlert className="h-20 w-20 text-red-600 mx-auto drop-shadow-[0_0_20px_rgba(220,38,38,0.5)]" />
                  ) : verifyStep === VERIFICATION_STEPS.length ? (
-                    <ShieldCheck className="h-24 w-24 text-green-500 mx-auto animate-bounce" />
+                    <ShieldCheck className="h-20 w-20 text-green-500 mx-auto animate-bounce" />
                  ) : (
                     <div className="relative flex items-center justify-center">
-                        <div className="h-32 w-32 flex items-center justify-center border-4 border-red-500/20 rounded-full">
-                            <span className="text-lg font-mono text-red-500 tracking-tighter">{bitStream}</span>
+                        <div className="h-24 w-24 flex items-center justify-center border-4 border-red-500/20 rounded-full">
+                            <span className="text-sm font-mono text-red-500 tracking-tighter">{bitStream}</span>
                         </div>
                         <div className="absolute -inset-2 rounded-full border-t-2 border-red-500 animate-spin" />
                     </div>
@@ -212,27 +219,41 @@ export default function VirusLoginPage() {
                 {verifyStep === -1 ? 'VIRUS REJECTED' : verifyStep === VERIFICATION_STEPS.length ? 'INFECTED' : 'SYSTEM OVERRIDE'}
               </h2>
 
-              <div className="space-y-3 h-20 overflow-hidden">
-                <AnimatePresence mode="wait">
-                    {verifyStep >= 0 && verifyStep < VERIFICATION_STEPS.length && (
-                        <motion.div 
-                            key={verifyStep} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                            className="flex items-center gap-3 bg-red-500/5 p-3 rounded-lg border border-red-500/20"
-                        >
-                            {VERIFICATION_STEPS[verifyStep] && (
-                                <>
-                                    {(() => { const StepIcon = VERIFICATION_STEPS[verifyStep].icon; return <StepIcon className="h-4 w-4 text-red-500" />; })()}
-                                    <span className="text-[10px] font-bold tracking-widest uppercase text-red-400 font-mono">
-                                        {VERIFICATION_STEPS[verifyStep].text}
-                                    </span>
-                                </>
-                            )}
-                        </motion.div>
+              <div className="space-y-3">
+                {VERIFICATION_STEPS.map((step, index) => (
+                  <motion.div 
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ 
+                      opacity: index <= verifyStep || verifyStep === VERIFICATION_STEPS.length ? 1 : 0.2, 
+                      x: 0 
+                    }}
+                    className={cn(
+                      "flex items-center gap-4 p-3 rounded-xl border transition-all duration-300",
+                      index < verifyStep || (verifyStep === VERIFICATION_STEPS.length)
+                        ? "bg-green-500/5 border-green-500/20 text-green-400" 
+                        : index === verifyStep 
+                          ? "bg-red-500/10 border-red-500/40 text-white scale-[1.02] shadow-[0_0_20px_rgba(239,68,68,0.1)]"
+                          : "bg-white/5 border-white/5 text-white/40"
                     )}
-                </AnimatePresence>
+                  >
+                    <div className="flex-shrink-0">
+                      {index < verifyStep || (verifyStep === VERIFICATION_STEPS.length) ? (
+                        <CheckCircle2 size={18} className="text-green-500" />
+                      ) : index === verifyStep ? (
+                        <Loader2 size={18} className="animate-spin text-red-500" />
+                      ) : (
+                        <step.icon size={18} className="opacity-40" />
+                      )}
+                    </div>
+                    <span className="text-[10px] font-bold tracking-widest uppercase font-mono">
+                      {step.text}
+                    </span>
+                  </motion.div>
+                ))}
               </div>
 
-              {authError && <p className="text-red-600 font-black tracking-widest text-sm uppercase">{authError}</p>}
+              {authError && <p className="text-red-600 font-black tracking-widest text-sm uppercase text-center mt-6">{authError}</p>}
             </div>
           </motion.div>
         )}

@@ -4,11 +4,12 @@
 import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle2, Cpu, Globe, Zap, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { database } from '@/lib/firebase';
 import { ref, remove, onValue } from 'firebase/database';
 import KillSwitch from '@/components/kill-switch';
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 // --- Constants for Images ---
@@ -30,29 +31,57 @@ type RowData = {
 // --- Helper Components ---
 
 const BroadcastOverlay = ({ onComplete }: { onComplete: () => void }) => {
-  const [message, setMessage] = useState("Connecting...");
+  const [step, setStep] = useState(0);
+  const steps = [
+    { text: "FETCHING DATA...", icon: Cpu },
+    { text: "CONNECTING TO PLATFORM...", icon: Globe },
+    { text: "APPLYING SEQUENCE...", icon: Zap },
+    { text: "UPLINK SECURED", icon: ShieldCheck }
+  ];
 
   useEffect(() => {
-    const messages = ["Fetching data...", "Connecting to platform...", "Applying sequence..."];
-    let currentIndex = 0;
+    const timer = setInterval(() => {
+      setStep(prev => {
+        if (prev < steps.length - 1) return prev + 1;
+        clearInterval(timer);
+        setTimeout(onComplete, 800);
+        return prev;
+      });
+    }, 1000);
 
-    const interval = setInterval(() => {
-      if (currentIndex < messages.length) {
-        setMessage(messages[currentIndex]);
-        currentIndex++;
-      } else {
-        clearInterval(interval);
-        setTimeout(onComplete, 800); // Wait a bit after the last message
-      }
-    }, 1200); // Duration for each message
-
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center text-white">
-      <Loader2 className="w-16 h-16 animate-spin text-blue-400 mb-4" />
-      <p className="text-xl font-semibold animate-pulse">{message}</p>
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-sm space-y-6">
+        <div className="text-center mb-10">
+             <Loader2 className="w-16 h-16 animate-spin text-blue-400 mx-auto mb-4" />
+             <h2 className="text-xl font-bold text-white tracking-[0.2em] uppercase">Broadcasting</h2>
+        </div>
+
+        <div className="space-y-3">
+          {steps.map((s, index) => (
+            <div key={index} className={cn(
+              "flex items-center gap-4 p-3 rounded-xl border transition-all duration-300",
+              index < step || (step === steps.length - 1 && index === steps.length - 1)
+                ? "bg-green-500/5 border-green-500/20 text-green-400" 
+                : index === step 
+                  ? "bg-blue-500/10 border-blue-500/40 text-white scale-[1.02]"
+                  : "bg-white/5 border-white/5 text-white/20"
+            )}>
+               {index < step || (step === steps.length - 1 && index === steps.length - 1) ? (
+                 <CheckCircle2 size={18} className="text-green-500" />
+               ) : index === step ? (
+                 <Loader2 size={18} className="animate-spin text-blue-400" />
+               ) : (
+                 <s.icon size={18} className="opacity-40" />
+               )}
+               <span className="text-[10px] font-bold tracking-widest uppercase">{s.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
@@ -150,7 +179,7 @@ function WelcomeB16() {
         alert("You have no attempts left. You will be logged out.");
         const keyId = sessionStorage.getItem('razor_key_id');
         if (keyId) {
-            const passwordRef = ref(database, `passwords/${keyId}`);
+            const passwordRef = ref(database, `passwords/swamp/${keyId}`); // Simplified
             remove(passwordRef).catch(err => console.error("Failed to remove key on attempt depletion:", err));
         }
         sessionStorage.clear();

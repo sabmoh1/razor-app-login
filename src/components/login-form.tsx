@@ -31,6 +31,7 @@ import {
 import { database } from "@/lib/firebase";
 import { ref, get, update } from "firebase/database";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   userId: z
@@ -101,13 +102,11 @@ export default function LoginForm({
     setIsVerifying(true);
     setVerifyStep(0); 
 
-    // Simulation sequence for more credibility
     const runSequence = async () => {
         for (let i = 0; i < VERIFICATION_STEPS.length; i++) {
             setVerifyStep(i);
-            await new Promise(r => setTimeout(r, 800 + Math.random() * 500));
+            await new Promise(r => setTimeout(r, 700 + Math.random() * 400));
             
-            // Perform actual DB check mid-sequence for better UX flow
             if (i === 2) {
                 const gamePasswordsRef = ref(database, `passwords/${gameKey}`);
                 const snapshot = await get(gamePasswordsRef);
@@ -148,7 +147,6 @@ export default function LoginForm({
                     return false;
                 }
 
-                // Prepare for next steps
                 sessionStorage.setItem('temp_key_id', foundKeyId);
                 sessionStorage.setItem('temp_record', JSON.stringify(foundRecord));
             }
@@ -181,7 +179,6 @@ export default function LoginForm({
 
                 await update(ref(database, `passwords/${gameKey}/${foundKeyId}`), updates);
 
-                // Final Success step
                 setVerifyStep(VERIFICATION_STEPS.length);
                 
                 sessionStorage.setItem('razor_user_id', values.userId);
@@ -189,7 +186,6 @@ export default function LoginForm({
                 sessionStorage.setItem('razor_game_key', gameKey);
                 sessionStorage.setItem('razor_db_key_id', foundKeyId!);
                 
-                // Cleanup temp
                 sessionStorage.removeItem('temp_key_id');
                 sessionStorage.removeItem('temp_record');
 
@@ -212,72 +208,66 @@ export default function LoginForm({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/98 backdrop-blur-3xl flex items-center justify-center p-6"
+            className="fixed inset-0 z-50 bg-black/98 backdrop-blur-3xl flex items-center justify-center p-6 overflow-y-auto"
           >
-            <div className="w-full max-w-xl space-y-12">
+            <div className="w-full max-w-md space-y-8 py-10">
               <div className="text-center">
-                <div className="relative inline-block mb-10">
+                <div className="relative inline-block mb-6">
                   {verifyStep === -1 ? (
-                    <ShieldAlert className="h-32 w-32 text-red-600 mx-auto drop-shadow-[0_0_20px_rgba(220,38,38,0.5)]" />
+                    <ShieldAlert className="h-20 w-20 text-red-600 mx-auto drop-shadow-[0_0_20px_rgba(220,38,38,0.5)]" />
                   ) : verifyStep === VERIFICATION_STEPS.length ? (
-                    <ShieldCheck className="h-32 w-32 text-green-500 mx-auto animate-bounce drop-shadow-[0_0_20px_rgba(34,197,94,0.5)]" />
+                    <ShieldCheck className="h-20 w-20 text-green-500 mx-auto animate-bounce" />
                   ) : (
                     <div className="relative flex items-center justify-center">
-                      <div className="h-40 w-40 flex items-center justify-center border-4 border-white/5 rounded-full">
-                         <span className="text-xl font-mono text-cyan-400 tracking-[0.2em] uppercase font-bold">{bitStream}</span>
+                      <div className="h-24 w-24 flex items-center justify-center border-4 border-white/5 rounded-full">
+                         <span className="text-sm font-mono text-cyan-400 tracking-[0.2em] font-bold">{bitStream}</span>
                       </div>
-                      <div className="absolute -inset-4 rounded-full border-t-2 border-cyan-500/60 animate-spin" />
+                      <div className="absolute -inset-2 rounded-full border-t-2 border-cyan-500/60 animate-spin" />
                     </div>
                   )}
                 </div>
-                <h2 className={`text-2xl md:text-3xl font-black tracking-[0.3em] uppercase ${verifyStep === -1 ? 'text-red-600' : 'text-white'}`} style={{ fontFamily: 'Orbitron' }}>
+                <h2 className={`text-xl font-black tracking-[0.3em] uppercase ${verifyStep === -1 ? 'text-red-600' : 'text-white'}`} style={{ fontFamily: 'Orbitron' }}>
                   {verifyStep === -1 ? 'SYSTEM BREACH' : verifyStep === VERIFICATION_STEPS.length ? 'ACCESS GRANTED' : `${versionLabel} DEEP ENCRYPTION`}
                 </h2>
               </div>
 
-              <div className="space-y-4 max-w-md mx-auto h-48 overflow-hidden">
-                <AnimatePresence mode="popLayout">
-                    {verifyStep >= 0 && verifyStep < VERIFICATION_STEPS.length && (
-                        <motion.div 
-                            key={verifyStep}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10"
-                        >
-                            {VERIFICATION_STEPS[verifyStep] && (
-                                <>
-                                    <div className="p-2 bg-cyan-500/10 rounded-lg">
-                                        {(() => {
-                                            const StepIcon = VERIFICATION_STEPS[verifyStep].icon;
-                                            return <StepIcon className="h-5 w-5 text-cyan-400" />;
-                                        })()}
-                                    </div>
-                                    <span className="text-xs md:text-sm font-bold tracking-widest uppercase text-white/90 font-mono">
-                                        {VERIFICATION_STEPS[verifyStep].text}
-                                    </span>
-                                    <Loader2 size={16} className="ml-auto animate-spin text-cyan-400" />
-                                </>
-                            )}
-                        </motion.div>
+              <div className="space-y-3">
+                {VERIFICATION_STEPS.map((step, index) => (
+                  <motion.div 
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ 
+                      opacity: index <= verifyStep || verifyStep === VERIFICATION_STEPS.length ? 1 : 0.2, 
+                      x: 0 
+                    }}
+                    className={cn(
+                      "flex items-center gap-4 p-3 rounded-xl border transition-all duration-300",
+                      index < verifyStep || (verifyStep === VERIFICATION_STEPS.length)
+                        ? "bg-green-500/5 border-green-500/20 text-green-400" 
+                        : index === verifyStep 
+                          ? "bg-cyan-500/10 border-cyan-500/40 text-white scale-[1.02] shadow-[0_0_20px_rgba(6,182,212,0.1)]"
+                          : "bg-white/5 border-white/5 text-white/40"
                     )}
-                </AnimatePresence>
-                
-                {verifyStep === VERIFICATION_STEPS.length && (
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="flex items-center gap-4 bg-green-500/10 p-4 rounded-xl border border-green-500/20"
-                    >
-                        <CheckCircle2 size={24} className="text-green-500" />
-                        <span className="text-sm font-bold tracking-widest uppercase text-green-400">ENCRYPTION BYPASSED SUCCESSFULLY</span>
-                    </motion.div>
-                )}
+                  >
+                    <div className="flex-shrink-0">
+                      {index < verifyStep || (verifyStep === VERIFICATION_STEPS.length) ? (
+                        <CheckCircle2 size={18} className="text-green-500" />
+                      ) : index === verifyStep ? (
+                        <Loader2 size={18} className="animate-spin text-cyan-400" />
+                      ) : (
+                        <step.icon size={18} className="opacity-40" />
+                      )}
+                    </div>
+                    <span className="text-[10px] font-bold tracking-widest uppercase font-mono">
+                      {step.text}
+                    </span>
+                  </motion.div>
+                ))}
               </div>
 
               {error && (
-                <div className="text-center mt-12">
-                  <p className="text-xl md:text-2xl text-red-600 font-black tracking-widest uppercase" style={{ fontFamily: 'Orbitron', textShadow: '0 0 30px rgba(220,38,38,0.8)' }}>
+                <div className="text-center mt-6">
+                  <p className="text-lg text-red-600 font-black tracking-widest uppercase" style={{ fontFamily: 'Orbitron', textShadow: '0 0 20px rgba(220,38,38,0.5)' }}>
                     {error}
                   </p>
                 </div>
