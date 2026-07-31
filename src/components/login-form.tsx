@@ -105,7 +105,7 @@ export default function LoginForm({
     const runSequence = async () => {
         for (let i = 0; i < VERIFICATION_STEPS.length; i++) {
             setVerifyStep(i);
-            await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
+            await new Promise(r => setTimeout(r, 800 + Math.random() * 400));
             
             if (i === 2) {
                 const gamePasswordsRef = ref(database, `passwords/${gameKey}`);
@@ -203,16 +203,50 @@ export default function LoginForm({
   return (
     <div className="w-full max-w-sm space-y-8">
       <style jsx>{`
-        @keyframes glitch-fracture-mini {
-          0%, 100% { clip-path: inset(0 0 0 0); opacity: 1; }
-          5% { clip-path: inset(40% 0 45% 0); opacity: 0.8; }
-          10% { clip-path: inset(10% 0 80% 0); opacity: 0.9; }
-          15% { clip-path: inset(0 0 0 0); }
-        }
-        .glitch-mini {
-          animation: glitch-fracture-mini 2s infinite linear;
-          display: inline-block;
+        .glitch-label-internal {
           position: relative;
+          display: inline-block;
+          animation: glitch-internal-move 4s infinite;
+        }
+
+        .glitch-label-internal::before,
+        .glitch-label-internal::after {
+          content: '${versionLabel}';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+        }
+
+        .glitch-label-internal::before {
+          left: -2px;
+          text-shadow: 1px 0 gray;
+          clip-path: inset(0 0 50% 0);
+          animation: glitch-top-internal 1.3s infinite linear alternate-reverse;
+        }
+
+        .glitch-label-internal::after {
+          left: 2px;
+          text-shadow: -1px 0 gray;
+          clip-path: inset(50% 0 0 0);
+          animation: glitch-bottom-internal 1.3s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-internal-move {
+          0%, 100% { transform: none; }
+          10% { transform: skew(-1deg); }
+          20% { transform: none; }
+        }
+
+        @keyframes glitch-top-internal {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-3px); }
+        }
+
+        @keyframes glitch-bottom-internal {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(3px); }
         }
       `}</style>
       <AnimatePresence>
@@ -240,7 +274,7 @@ export default function LoginForm({
                   )}
                 </div>
                 <h2 className={`text-xl font-black tracking-[0.3em] uppercase ${verifyStep === -1 ? 'text-red-600' : 'text-white'}`} style={{ fontFamily: 'Orbitron' }}>
-                  {verifyStep === -1 ? 'SYSTEM BREACH' : verifyStep === VERIFICATION_STEPS.length ? 'ACCESS GRANTED' : <><span className="glitch-mini">{versionLabel}</span> DEEP ENCRYPTION</>}
+                  {verifyStep === -1 ? 'SYSTEM BREACH' : verifyStep === VERIFICATION_STEPS.length ? 'ACCESS GRANTED' : <><span className="glitch-label-internal">{versionLabel}</span> DEEP ENCRYPTION</>}
                 </h2>
               </div>
 
@@ -341,7 +375,7 @@ export default function LoginForm({
 
       <div className="pt-10 text-center opacity-30">
         <span className="text-[11px] text-white tracking-[0.5em] uppercase font-black" style={{ fontFamily: 'Orbitron' }}>
-           RAZOR <span className="glitch-mini">{versionLabel}</span> SYSTEM
+           RAZOR <span className="glitch-label-internal">{versionLabel}</span> SYSTEM
         </span>
       </div>
     </div>

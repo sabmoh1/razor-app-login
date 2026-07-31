@@ -11,17 +11,53 @@ export default function SwampLoginPage() {
   return (
     <KillSwitch pageName="swamp">
       <style jsx global>{`
-        @keyframes glitch-fracture-v1-gray {
-          0%, 100% { clip-path: inset(0 0 0 0); opacity: 1; }
-          2% { clip-path: inset(50% 0 10% 0); opacity: 0.8; }
-          4% { clip-path: inset(10% 0 70% 0); opacity: 0.9; }
-          6% { clip-path: inset(80% 0 5% 0); opacity: 0.7; }
-          8% { clip-path: inset(0 0 0 0); }
+        @keyframes glitch-v1-move-swamp {
+          0%, 100% { transform: none; opacity: 1; }
+          10% { transform: skew(-0.8deg, -0.2deg); opacity: 0.8; }
+          20% { transform: none; opacity: 1; }
+          60% { transform: none; opacity: 1; }
+          70% { transform: skew(0.8deg, 0.2deg); opacity: 0.8; }
+          80% { transform: none; opacity: 1; }
         }
-        .glitch-v1 {
-          animation: glitch-fracture-v1-gray 2.8s infinite linear;
-          display: inline-block;
+
+        .glitch-v1-label {
           position: relative;
+          display: inline-block;
+          animation: glitch-v1-move-swamp 4s infinite;
+        }
+
+        .glitch-v1-label::before,
+        .glitch-v1-label::after {
+          content: 'V1';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+        }
+
+        .glitch-v1-label::before {
+          left: -2px;
+          text-shadow: 1px 0 rgba(255,255,255,0.3);
+          clip-path: inset(0 0 50% 0);
+          animation: glitch-top-v1 1.2s infinite linear alternate-reverse;
+        }
+
+        .glitch-v1-label::after {
+          left: 2px;
+          text-shadow: -1px 0 rgba(255,255,255,0.3);
+          clip-path: inset(50% 0 0 0);
+          animation: glitch-bottom-v1 1.2s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-top-v1 {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-3px); }
+        }
+
+        @keyframes glitch-bottom-v1 {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(3px); }
         }
       `}</style>
       <div className="fixed inset-0 -z-10">
@@ -52,7 +88,7 @@ export default function SwampLoginPage() {
                 <div className="relative group">
                     <h1 className="text-4xl md:text-6xl font-black tracking-[0.1em] uppercase" style={{ fontFamily: 'Orbitron', color: '#22c55e', textShadow: '0 0 30px rgba(34,197,94,0.4)' }}>
                         SWAMP LAND
-                        <span className="inline-block ml-6 text-white font-sans not-italic glitch-v1" style={{ fontFamily: 'Orbitron' }}>
+                        <span className="inline-block ml-6 text-white font-sans not-italic glitch-v1-label" style={{ fontFamily: 'Orbitron' }}>
                             V1
                         </span>
                     </h1>

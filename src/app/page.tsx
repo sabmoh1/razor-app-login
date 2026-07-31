@@ -9,18 +9,67 @@ export default function Home() {
   return (
     <KillSwitch pageName="razor">
       <style jsx global>{`
-        @keyframes glitch-fracture-v2 {
-          0%, 100% { clip-path: inset(0 0 0 0); opacity: 1; }
-          2% { clip-path: inset(20% 0 80% 0); opacity: 0.8; }
-          4% { clip-path: inset(60% 0 10% 0); opacity: 0.9; }
-          6% { clip-path: inset(10% 0 70% 0); opacity: 0.7; }
-          8% { clip-path: inset(80% 0 20% 0); opacity: 1; }
-          10% { clip-path: inset(0 0 0 0); }
+        @keyframes glitch-v2-move {
+          0%, 100% { transform: none; opacity: 1; }
+          7% { transform: skew(-0.5deg, -0.9deg); opacity: 0.75; }
+          10% { transform: none; opacity: 1; }
+          27% { transform: none; opacity: 1; }
+          30% { transform: skew(0.8deg, -0.1deg); opacity: 0.75; }
+          35% { transform: none; opacity: 1; }
+          52% { transform: none; opacity: 1; }
+          55% { transform: skew(-1deg, 0.2deg); opacity: 0.75; }
+          50% { transform: none; opacity: 1; }
+          72% { transform: none; opacity: 1; }
+          75% { transform: skew(0.4deg, 1deg); opacity: 0.75; }
+          80% { transform: none; opacity: 1; }
+          100% { transform: none; opacity: 1; }
         }
-        .glitch-v2 {
-          animation: glitch-fracture-v2 3s infinite linear alternate-reverse;
-          display: inline-block;
+
+        .glitch-wrapper {
           position: relative;
+          display: inline-block;
+          color: white;
+        }
+
+        .glitch-v2-label {
+          position: relative;
+          display: inline-block;
+          animation: glitch-v2-move 4s infinite;
+        }
+
+        .glitch-v2-label::before,
+        .glitch-v2-label::after {
+          content: 'V2';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: transparent;
+        }
+
+        .glitch-v2-label::before {
+          left: -2px;
+          text-shadow: 1px 0 rgba(255,255,255,0.3);
+          clip-path: inset(0 0 50% 0);
+          animation: glitch-top 1.2s infinite linear alternate-reverse;
+        }
+
+        .glitch-v2-label::after {
+          left: 2px;
+          text-shadow: -1px 0 rgba(255,255,255,0.3);
+          clip-path: inset(50% 0 0 0);
+          animation: glitch-bottom 1.2s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-top {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-3px); }
+        }
+
+        @keyframes glitch-bottom {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(3px); }
         }
       `}</style>
       <div className="fixed inset-0 -z-10">
@@ -48,7 +97,7 @@ export default function Home() {
                 <div className="relative group">
                     <h1 className="text-4xl md:text-6xl font-black tracking-[0.1em] uppercase" style={{ fontFamily: 'Orbitron', color: '#fff', textShadow: '0 0 30px rgba(255,255,255,0.4)' }}>
                         RAZOR CRASH
-                        <span className="inline-block ml-6 text-white font-sans not-italic glitch-v2" style={{ fontFamily: 'Orbitron' }}>
+                        <span className="inline-block ml-6 not-italic glitch-v2-label" style={{ fontFamily: 'Orbitron' }}>
                             V2
                         </span>
                     </h1>
@@ -62,6 +111,7 @@ export default function Home() {
           themeGlow=""
           useCustomGlow={true}
           gameKey="crash"
+          versionLabel="V2"
         />
       </main>
     </KillSwitch>
