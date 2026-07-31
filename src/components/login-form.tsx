@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
@@ -203,10 +202,27 @@ export default function LoginForm({
   return (
     <div className="w-full max-w-sm space-y-8">
       <style jsx>{`
+        @keyframes glitch-internal-top {
+          0% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          50% { transform: translateX(2px); }
+          75% { transform: translateX(-2px); }
+          100% { transform: translateX(0); }
+        }
+
+        @keyframes glitch-internal-bottom {
+          0% { transform: translateX(0); }
+          25% { transform: translateX(4px); }
+          50% { transform: translateX(-2px); }
+          75% { transform: translateX(2px); }
+          100% { transform: translateX(0); }
+        }
+
         .glitch-label-internal {
           position: relative;
           display: inline-block;
-          animation: glitch-internal-move 4s infinite;
+          font-family: 'Orbitron', sans-serif;
+          font-weight: 900;
         }
 
         .glitch-label-internal::before,
@@ -220,33 +236,15 @@ export default function LoginForm({
         }
 
         .glitch-label-internal::before {
-          left: -2px;
-          text-shadow: 1px 0 gray;
           clip-path: inset(0 0 50% 0);
-          animation: glitch-top-internal 1.3s infinite linear alternate-reverse;
+          animation: glitch-internal-top 0.1s infinite linear;
+          text-shadow: 2px 0 rgba(255,255,255,0.4);
         }
 
         .glitch-label-internal::after {
-          left: 2px;
-          text-shadow: -1px 0 gray;
           clip-path: inset(50% 0 0 0);
-          animation: glitch-bottom-internal 1.3s infinite linear alternate-reverse;
-        }
-
-        @keyframes glitch-internal-move {
-          0%, 100% { transform: none; }
-          10% { transform: skew(-1deg); }
-          20% { transform: none; }
-        }
-
-        @keyframes glitch-top-internal {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-3px); }
-        }
-
-        @keyframes glitch-bottom-internal {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(3px); }
+          animation: glitch-internal-bottom 0.1s infinite linear;
+          text-shadow: -2px 0 rgba(100,100,100,0.4);
         }
       `}</style>
       <AnimatePresence>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import LoginForm from '@/components/login-form';
@@ -9,19 +8,27 @@ export default function KamikazeLoginPage() {
   return (
     <KillSwitch pageName="kamikaze">
       <style jsx global>{`
-        @keyframes glitch-v1-move {
-          0%, 100% { transform: none; opacity: 1; }
-          5% { transform: skew(-1deg, -0.5deg); opacity: 0.8; }
-          10% { transform: none; opacity: 1; }
-          45% { transform: none; opacity: 1; }
-          50% { transform: skew(1deg, 0.1deg); opacity: 0.8; }
-          55% { transform: none; opacity: 1; }
+        @keyframes glitch-v1-top {
+          0% { transform: translateX(0); }
+          25% { transform: translateX(-3px); }
+          50% { transform: translateX(1px); }
+          75% { transform: translateX(-1px); }
+          100% { transform: translateX(0); }
+        }
+
+        @keyframes glitch-v1-bottom {
+          0% { transform: translateX(0); }
+          25% { transform: translateX(3px); }
+          50% { transform: translateX(-1px); }
+          75% { transform: translateX(1px); }
+          100% { transform: translateX(0); }
         }
 
         .glitch-v1-label {
           position: relative;
           display: inline-block;
-          animation: glitch-v1-move 3.5s infinite;
+          font-family: 'Orbitron', sans-serif;
+          font-weight: 900;
         }
 
         .glitch-v1-label::before,
@@ -35,27 +42,15 @@ export default function KamikazeLoginPage() {
         }
 
         .glitch-v1-label::before {
-          left: -2px;
-          text-shadow: 1px 0 rgba(255,255,255,0.3);
           clip-path: inset(0 0 50% 0);
-          animation: glitch-top-v1 1s infinite linear alternate-reverse;
+          animation: glitch-v1-top 0.1s infinite linear;
+          text-shadow: 2px 0 rgba(255,255,255,0.3);
         }
 
         .glitch-v1-label::after {
-          left: 2px;
-          text-shadow: -1px 0 rgba(255,255,255,0.3);
           clip-path: inset(50% 0 0 0);
-          animation: glitch-bottom-v1 1s infinite linear alternate-reverse;
-        }
-
-        @keyframes glitch-top-v1 {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-3px); }
-        }
-
-        @keyframes glitch-bottom-v1 {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(3px); }
+          animation: glitch-v1-bottom 0.1s infinite linear;
+          text-shadow: -2px 0 rgba(255,255,255,0.2);
         }
       `}</style>
       <div className="fixed inset-0 -z-10">
@@ -78,7 +73,7 @@ export default function KamikazeLoginPage() {
                 <div className="relative group">
                     <h1 className="text-4xl md:text-6xl font-black tracking-[0.1em] uppercase" style={{ fontFamily: 'Orbitron', color: '#ff4d4d', textShadow: '0 0 30px rgba(255,77,77,0.4)' }}>
                         KAMIKAZE
-                        <span className="inline-block ml-6 text-white font-sans not-italic glitch-v1-label" style={{ fontFamily: 'Orbitron' }}>
+                        <span className="inline-block ml-6 text-white font-sans not-italic glitch-v1-label">
                             V1
                         </span>
                     </h1>
