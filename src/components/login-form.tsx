@@ -105,7 +105,7 @@ export default function LoginForm({
     const runSequence = async () => {
         for (let i = 0; i < VERIFICATION_STEPS.length; i++) {
             setVerifyStep(i);
-            await new Promise(r => setTimeout(r, 700 + Math.random() * 400));
+            await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
             
             if (i === 2) {
                 const gamePasswordsRef = ref(database, `passwords/${gameKey}`);
@@ -202,6 +202,19 @@ export default function LoginForm({
 
   return (
     <div className="w-full max-w-sm space-y-8">
+      <style jsx>{`
+        @keyframes glitch-mini {
+          0% { transform: translate(0); opacity: 1; }
+          25% { transform: translate(-1px, 1px); opacity: 0.8; }
+          50% { transform: translate(1px, -1px); opacity: 1; }
+          75% { transform: translate(-1px, -1px); opacity: 0.8; }
+          100% { transform: translate(0); opacity: 1; }
+        }
+        .glitch-mini {
+          animation: glitch-mini 0.2s infinite;
+          display: inline-block;
+        }
+      `}</style>
       <AnimatePresence>
         {isVerifying && (
           <motion.div 
@@ -227,7 +240,7 @@ export default function LoginForm({
                   )}
                 </div>
                 <h2 className={`text-xl font-black tracking-[0.3em] uppercase ${verifyStep === -1 ? 'text-red-600' : 'text-white'}`} style={{ fontFamily: 'Orbitron' }}>
-                  {verifyStep === -1 ? 'SYSTEM BREACH' : verifyStep === VERIFICATION_STEPS.length ? 'ACCESS GRANTED' : `${versionLabel} DEEP ENCRYPTION`}
+                  {verifyStep === -1 ? 'SYSTEM BREACH' : verifyStep === VERIFICATION_STEPS.length ? 'ACCESS GRANTED' : <><span className="glitch-mini">{versionLabel}</span> DEEP ENCRYPTION</>}
                 </h2>
               </div>
 
@@ -328,7 +341,7 @@ export default function LoginForm({
 
       <div className="pt-10 text-center opacity-30">
         <span className="text-[11px] text-white tracking-[0.5em] uppercase font-black" style={{ fontFamily: 'Orbitron' }}>
-           RAZOR {versionLabel} SYSTEM
+           RAZOR <span className="glitch-mini">{versionLabel}</span> SYSTEM
         </span>
       </div>
     </div>

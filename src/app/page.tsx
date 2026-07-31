@@ -8,6 +8,20 @@ import { motion } from "framer-motion";
 export default function Home() {
   return (
     <KillSwitch pageName="razor">
+      <style jsx global>{`
+        @keyframes glitch-v2 {
+          0% { transform: translate(0); text-shadow: 0 0 10px rgba(255,255,255,0.4); }
+          20% { transform: translate(-2px, 2px); text-shadow: -2px 0 red, 2px 2px blue; }
+          40% { transform: translate(-2px, -2px); text-shadow: 2px 0 blue, -2px -2px red; }
+          60% { transform: translate(2px, 2px); text-shadow: -2px 0 red, 2px 2px blue; }
+          80% { transform: translate(2px, -2px); text-shadow: 2px 0 blue, -2px -2px red; }
+          100% { transform: translate(0); text-shadow: 0 0 10px rgba(255,255,255,0.4); }
+        }
+        .glitch-v2 {
+          animation: glitch-v2 0.3s infinite;
+          display: inline-block;
+        }
+      `}</style>
       <div className="fixed inset-0 -z-10">
         <div 
           className="absolute inset-0 w-full h-full bg-cover bg-center"
@@ -33,7 +47,7 @@ export default function Home() {
                 <div className="relative group">
                     <h1 className="text-4xl md:text-6xl font-black tracking-[0.1em] uppercase" style={{ fontFamily: 'Orbitron', color: '#fff', textShadow: '0 0 30px rgba(255,255,255,0.4)' }}>
                         RAZOR CRASH
-                        <span className="inline-block ml-6 text-white font-sans not-italic" style={{ fontFamily: 'Orbitron' }}>
+                        <span className="inline-block ml-6 text-white font-sans not-italic glitch-v2" style={{ fontFamily: 'Orbitron' }}>
                             V2
                         </span>
                     </h1>
