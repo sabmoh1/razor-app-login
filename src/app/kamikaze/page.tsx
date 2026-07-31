@@ -8,19 +8,19 @@ export default function KamikazeLoginPage() {
   return (
     <KillSwitch pageName="kamikaze">
       <style jsx global>{`
-        @keyframes glitch-v1-top {
+        @keyframes glitch-v1-top-kamikaze {
           0% { transform: translateX(0); }
-          25% { transform: translateX(-3px); }
-          50% { transform: translateX(1px); }
-          75% { transform: translateX(-1px); }
+          25% { transform: translateX(-4px); }
+          50% { transform: translateX(2px); }
+          75% { transform: translateX(-2px); }
           100% { transform: translateX(0); }
         }
 
-        @keyframes glitch-v1-bottom {
+        @keyframes glitch-v1-bottom-kamikaze {
           0% { transform: translateX(0); }
-          25% { transform: translateX(3px); }
-          50% { transform: translateX(-1px); }
-          75% { transform: translateX(1px); }
+          25% { transform: translateX(4px); }
+          50% { transform: translateX(-2px); }
+          75% { transform: translateX(2px); }
           100% { transform: translateX(0); }
         }
 
@@ -43,13 +43,13 @@ export default function KamikazeLoginPage() {
 
         .glitch-v1-label::before {
           clip-path: inset(0 0 50% 0);
-          animation: glitch-v1-top 0.1s infinite linear;
+          animation: glitch-v1-top-kamikaze 0.1s infinite linear;
           text-shadow: 2px 0 rgba(255,255,255,0.3);
         }
 
         .glitch-v1-label::after {
           clip-path: inset(50% 0 0 0);
-          animation: glitch-v1-bottom 0.1s infinite linear;
+          animation: glitch-v1-bottom-kamikaze 0.1s infinite linear;
           text-shadow: -2px 0 rgba(255,255,255,0.2);
         }
       `}</style>
@@ -70,15 +70,20 @@ export default function KamikazeLoginPage() {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center"
             >
+                <img 
+                  src="https://iili.io/f9iNGFj.png" 
+                  alt="Razor Logo" 
+                  className="w-40 md:w-48 drop-shadow-[0_0_30px_rgba(255,77,77,0.2)] mb-2" 
+                />
                 <div className="relative group">
-                    <h1 className="text-4xl md:text-6xl font-black tracking-[0.1em] uppercase" style={{ fontFamily: 'Orbitron', color: '#ff4d4d', textShadow: '0 0 30px rgba(255,77,77,0.4)' }}>
+                    <h1 className="text-2xl md:text-3xl font-black tracking-[0.1em] uppercase" style={{ fontFamily: 'Orbitron', color: '#ff4d4d', textShadow: '0 0 30px rgba(255,77,77,0.4)' }}>
                         KAMIKAZE
-                        <span className="inline-block ml-6 text-white font-sans not-italic glitch-v1-label">
+                        <span className="inline-block ml-4 not-italic glitch-v1-label">
                             V1
                         </span>
                     </h1>
                 </div>
-                <p className="text-gray-400 tracking-[0.3em] uppercase text-xs mt-2 font-bold">Secure Tactical Path Predictor</p>
+                <p className="text-gray-400 tracking-[0.3em] uppercase text-[10px] mt-2 font-bold opacity-60">Secure Tactical Path Predictor</p>
             </motion.div>
         </div>
         

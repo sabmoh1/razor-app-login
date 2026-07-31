@@ -80,15 +80,20 @@ export default function SwampLoginPage() {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center"
             >
+                <img 
+                  src="https://iili.io/f9iNGFj.png" 
+                  alt="Razor Logo" 
+                  className="w-40 md:w-48 drop-shadow-[0_0_30px_rgba(34,197,94,0.2)] mb-2" 
+                />
                 <div className="relative group">
-                    <h1 className="text-4xl md:text-6xl font-black tracking-[0.1em] uppercase" style={{ fontFamily: 'Orbitron', color: '#22c55e', textShadow: '0 0 30px rgba(34,197,94,0.4)' }}>
+                    <h1 className="text-2xl md:text-3xl font-black tracking-[0.1em] uppercase" style={{ fontFamily: 'Orbitron', color: '#22c55e', textShadow: '0 0 30px rgba(34,197,94,0.4)' }}>
                         SWAMP LAND
-                        <span className="inline-block ml-6 text-white font-sans not-italic glitch-v1-label">
+                        <span className="inline-block ml-4 not-italic glitch-v1-label">
                             V1
                         </span>
                     </h1>
                 </div>
-                <p className="text-gray-400 tracking-[0.3em] uppercase text-xs mt-2 font-bold">Secure Tactical Path Predictor</p>
+                <p className="text-gray-400 tracking-[0.3em] uppercase text-[10px] mt-2 font-bold opacity-60">Secure Tactical Path Predictor</p>
             </motion.div>
         </div>
         
