@@ -27,7 +27,7 @@ import {
   Cpu
 } from "lucide-react";
 import { database } from "@/lib/firebase";
-import { ref, get, remove, update } from "firebase/database";
+import { ref, get, update } from "firebase/database";
 import { motion, AnimatePresence } from "framer-motion";
 
 const formSchema = z.object({
@@ -47,7 +47,8 @@ export type LoginFormProps = {
   themeColor: string;
   themeGlow: string;
   useCustomGlow?: boolean;
-  versionLabel?: string; // Prop to handle V1 or V2
+  versionLabel?: string;
+  gameKey: 'crash' | 'west' | 'kamikaze' | 'swamp' | 'sharlok';
 };
 
 export default function LoginForm({ 
@@ -56,7 +57,8 @@ export default function LoginForm({
     themeColor = '#FFFFFF',
     themeGlow = '',
     useCustomGlow = true,
-    versionLabel = 'V2' // Default to V2
+    versionLabel = 'V2',
+    gameKey
 }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -87,70 +89,87 @@ export default function LoginForm({
     setIsVerifying(true);
     setVerifyStep(1); 
 
-    await new Promise(r => setTimeout(r, 3000));
-
     startTransition(async () => {
       try {
-        const passwordsRef = ref(database, 'passwords');
-        const snapshot = await get(passwordsRef);
+        const gamePasswordsRef = ref(database, `passwords/${gameKey}`);
+        const snapshot = await get(gamePasswordsRef);
 
-        if (snapshot.exists()) {
-          const allPasswords = snapshot.val();
-          let isValid = false;
-          let passwordKey: string | null = null;
-          let passwordData: any = null;
+        if (!snapshot.exists()) {
+          setVerifyStep(-1);
+          setError("ACCESS DENIED: NO KEYS FOUND FOR THIS GAME");
+          setTimeout(() => setIsVerifying(false), 3000);
+          return;
+        }
 
-          for (const key in allPasswords) {
-            if (allPasswords[key].password === values.password) {
-              isValid = true;
-              passwordKey = key;
-              passwordData = allPasswords[key];
-              break;
-            }
+        const allRecords = snapshot.val();
+        let foundKeyId = null;
+        let foundRecord = null;
+
+        for (const key in allRecords) {
+          if (allRecords[key].password === values.password) {
+            foundKeyId = key;
+            foundRecord = allRecords[key];
+            break;
           }
+        }
 
-          if (isValid && passwordKey && passwordData) {
-            const currentUses = passwordData.uses;
-            
-            if (currentUses !== undefined && currentUses <= 0) {
-                setVerifyStep(-1);
-                setError("ACCESS DENIED: KEY USAGE DEPLETED");
-                setTimeout(() => setIsVerifying(false), 4000);
-                return;
-            }
-
-            setVerifyStep(2); 
-            await new Promise(r => setTimeout(r, 2800));
-
-            setVerifyStep(3); 
-            await new Promise(r => setTimeout(r, 2500));
-            
-            setVerifyStep(4); 
-            await new Promise(r => setTimeout(r, 1200));
-            
-            sessionStorage.setItem('razor_user_id', values.userId);
-            sessionStorage.setItem('razor_session_validity', passwordData.validity || '11m');
-
-            const keyRef = ref(database, `passwords/${passwordKey}`);
-            if (currentUses !== undefined) {
-              if (currentUses > 1) { await update(keyRef, { uses: currentUses - 1 }); }
-              else { await remove(keyRef); }
-            }
-            router.push(welcomePath);
-          } else {
+        if (foundRecord && foundKeyId) {
+          // 1. Check Uses
+          if (foundRecord.uses <= 0) {
             setVerifyStep(-1);
-            setError("AUTHENTICATION FAILED: INVALID SECURITY KEY");
-            setTimeout(() => setIsVerifying(false), 4000);
+            setError("ACCESS DENIED: KEY USAGE DEPLETED");
+            setTimeout(() => setIsVerifying(false), 3000);
+            return;
           }
+
+          // 2. Check Expiry
+          if (foundRecord.remainingTime <= 0) {
+            setVerifyStep(-1);
+            setError("ACCESS DENIED: KEY EXPIRED");
+            setTimeout(() => setIsVerifying(false), 3000);
+            return;
+          }
+
+          setVerifyStep(2);
+          const now = Date.now();
+          const expiresAt = now + foundRecord.remainingTime;
+
+          // 3. Update Database
+          const updates: any = {
+            uses: foundRecord.uses - 1,
+          };
+
+          if (!foundRecord.activated) {
+            updates.activated = true;
+            updates.activatedAt = now;
+            updates.expiresAt = expiresAt;
+          } else {
+            updates.expiresAt = expiresAt;
+          }
+
+          await update(ref(database, `passwords/${gameKey}/${foundKeyId}`), updates);
+
+          setVerifyStep(3);
+          await new Promise(r => setTimeout(r, 1000));
+          
+          setVerifyStep(4);
+          
+          // Store Session Data
+          sessionStorage.setItem('razor_user_id', values.userId);
+          sessionStorage.setItem('razor_expires_at', String(expiresAt));
+          sessionStorage.setItem('razor_game_key', gameKey);
+          sessionStorage.setItem('razor_db_key_id', foundKeyId);
+
+          router.push(welcomePath);
         } else {
           setVerifyStep(-1);
-          setError("SYSTEM ERROR: DATABASE UNREACHABLE");
-          setTimeout(() => setIsVerifying(false), 4000);
+          setError("AUTHENTICATION FAILED: INVALID SECURITY KEY");
+          setTimeout(() => setIsVerifying(false), 3000);
         }
       } catch (e) {
         setVerifyStep(-1);
         setError("CONNECTION ERROR: UPLINK FAILED");
-        setTimeout(() => setIsVerifying(false), 4000);
+        setTimeout(() => setIsVerifying(false), 3000);
       }
     });
   }
@@ -178,7 +197,6 @@ export default function LoginForm({
                          <span className="text-xl font-mono text-cyan-400 tracking-[0.2em] uppercase font-bold">{bitStream}</span>
                       </div>
                       <div className="absolute -inset-4 rounded-full border-t-2 border-cyan-500/60 animate-spin" />
-                      <div className="absolute -inset-2 rounded-full border-b-2 border-white/10 animate-spin-slow" />
                     </div>
                   )}
                 </div>
@@ -189,36 +207,18 @@ export default function LoginForm({
 
               <div className="space-y-8 max-w-md mx-auto">
                 <div className={`flex items-center justify-between transition-all duration-700 ${verifyStep >= 1 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
-                  <div className="flex items-center gap-6">
-                    <Fingerprint size={32} className={verifyStep > 1 ? 'text-green-500' : verifyStep === -1 ? 'text-red-600' : 'text-cyan-400 animate-pulse'} />
-                    <span className={`text-lg font-bold tracking-widest uppercase ${verifyStep > 1 ? 'text-green-500' : 'text-white/80'}`} style={{ fontFamily: 'Acme' }}>ID & Access Key Analysis</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    {verifyStep >= 1 && <span className="text-sm font-mono text-cyan-500/60">{form.getValues('userId')}</span>}
-                    {verifyStep > 1 ? <CheckCircle2 size={24} className="text-green-500" /> : verifyStep === -1 ? <ShieldAlert size={24} className="text-red-600" /> : <Loader2 size={22} className="animate-spin text-cyan-400" />}
-                  </div>
+                   <span className="text-lg font-bold tracking-widest uppercase text-white/80" style={{ fontFamily: 'Orbitron' }}>Security Verification</span>
+                   {verifyStep > 1 ? <CheckCircle2 size={24} className="text-green-500" /> : verifyStep === -1 ? <ShieldAlert size={24} className="text-red-600" /> : <Loader2 size={22} className="animate-spin text-cyan-400" />}
                 </div>
-
-                <div className={`flex items-center justify-between transition-all duration-700 delay-100 ${verifyStep >= 2 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
-                  <div className="flex items-center gap-6">
-                    <Server size={32} className={verifyStep > 2 ? 'text-green-500' : verifyStep === -1 ? 'text-red-600/30' : 'text-cyan-400'} />
-                    <span className={`text-lg font-bold tracking-widest uppercase ${verifyStep > 2 ? 'text-green-500' : 'text-white/80'}`} style={{ fontFamily: 'Acme' }}>Uplink Authorization</span>
-                  </div>
-                  {verifyStep > 2 ? <CheckCircle2 size={24} className="text-green-500" /> : verifyStep >= 2 ? <Loader2 size={22} className="animate-spin text-cyan-400" /> : null}
-                </div>
-
-                <div className={`flex items-center justify-between transition-all duration-700 delay-200 ${verifyStep >= 3 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
-                  <div className="flex items-center gap-6">
-                    <Cpu size={32} className={verifyStep > 3 ? 'text-green-500' : verifyStep === -1 ? 'text-red-600/30' : 'text-cyan-400'} />
-                    <span className={`text-lg font-bold tracking-widest uppercase ${verifyStep > 3 ? 'text-green-500' : 'text-white/80'}`} style={{ fontFamily: 'Acme' }}>Data Stream Encryption</span>
-                  </div>
-                  {verifyStep > 3 ? <CheckCircle2 size={24} className="text-green-500" /> : verifyStep >= 3 ? <Loader2 size={22} className="animate-spin text-cyan-400" /> : null}
+                <div className={`flex items-center justify-between transition-all duration-700 ${verifyStep >= 2 ? 'opacity-100 translate-x-0' : 'opacity-10 -translate-x-4'}`}>
+                   <span className="text-lg font-bold tracking-widest uppercase text-white/80" style={{ fontFamily: 'Orbitron' }}>Time Allocation</span>
+                   {verifyStep > 2 ? <CheckCircle2 size={24} className="text-green-500" /> : verifyStep === 2 ? <Loader2 size={22} className="animate-spin text-cyan-400" /> : null}
                 </div>
               </div>
 
               {error && (
                 <div className="text-center mt-12">
-                  <p className="text-4xl md:text-5xl text-red-600 font-black tracking-widest uppercase" style={{ fontFamily: 'Orbitron', textShadow: '0 0 30px rgba(220,38,38,0.8)' }}>
+                  <p className="text-2xl md:text-3xl text-red-600 font-black tracking-widest uppercase" style={{ fontFamily: 'Orbitron', textShadow: '0 0 30px rgba(220,38,38,0.8)' }}>
                     {error}
                   </p>
                 </div>
@@ -230,11 +230,7 @@ export default function LoginForm({
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative"
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative">
             <FormField control={form.control} name="userId" render={({ field }) => (
               <FormItem>
                 <FormControl>
@@ -243,7 +239,7 @@ export default function LoginForm({
                     <Input 
                       type="text" 
                       placeholder="TERMINAL ID" 
-                      className="bg-black/40 backdrop-blur-xl border-2 border-white/5 hover:border-cyan-500/30 focus:border-cyan-500/60 text-white h-16 pl-14 rounded-2xl tracking-[0.2em] font-black placeholder:text-white/10 transition-all text-lg shadow-2xl" 
+                      className="bg-black/40 backdrop-blur-xl border-2 border-white/5 focus:border-cyan-500/60 text-white h-16 pl-14 rounded-2xl tracking-[0.2em] font-black placeholder:text-white/10 transition-all text-lg shadow-2xl" 
                       {...field} 
                     />
                   </div>
@@ -252,12 +248,7 @@ export default function LoginForm({
             )} />
           </motion.div>
 
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-            className="relative"
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="relative">
             <FormField control={form.control} name="password" render={({ field }) => (
               <FormItem>
                 <FormControl>
@@ -267,19 +258,15 @@ export default function LoginForm({
                       <Input 
                         type="password" 
                         placeholder="ACCESS KEY" 
-                        className="bg-black/40 backdrop-blur-xl border-2 border-white/5 hover:border-cyan-500/30 focus:border-cyan-500/60 text-white h-16 pl-14 pr-16 rounded-2xl tracking-[0.2em] font-black placeholder:text-white/10 transition-all text-lg shadow-2xl w-full" 
+                        className="bg-black/40 backdrop-blur-xl border-2 border-white/5 focus:border-cyan-500/60 text-white h-16 pl-14 pr-16 rounded-2xl tracking-[0.2em] font-black placeholder:text-white/10 transition-all text-lg shadow-2xl w-full" 
                         {...field} 
                       />
                       <button 
                         type="submit" 
                         disabled={isVerifying || isPending}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 flex items-center justify-center text-cyan-400/40 hover:text-cyan-400 active:scale-90 transition-all disabled:opacity-30 drop-shadow-[0_0_10px_rgba(34,211,238,0.3)]"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 flex items-center justify-center text-cyan-400/40 hover:text-cyan-400 active:scale-90 transition-all disabled:opacity-30"
                       >
-                        {isVerifying || isPending ? (
-                          <Loader2 className="h-8 w-8 animate-spin" />
-                        ) : (
-                          <ArrowRightCircle className="h-10 w-10 stroke-[1px]" />
-                        )}
+                        {isVerifying || isPending ? <Loader2 className="h-8 w-8 animate-spin" /> : <ArrowRightCircle className="h-10 w-10 stroke-[1px]" />}
                       </button>
                     </div>
                   </div>

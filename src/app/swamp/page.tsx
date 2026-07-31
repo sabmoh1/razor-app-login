@@ -1,3 +1,4 @@
+
 "use client";
 
 import LoginForm from '@/components/login-form';
@@ -52,6 +53,7 @@ export default function SwampLoginPage() {
           themeGlow=""
           useCustomGlow={true}
           versionLabel="V1"
+          gameKey="swamp"
         />
       </main>
     </KillSwitch>

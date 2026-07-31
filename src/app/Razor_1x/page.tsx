@@ -1,12 +1,13 @@
+
 "use client";
 
 import { useEffect, useRef, Suspense, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, Activity } from 'lucide-react';
+import { User, LogOut, Activity, Clock } from 'lucide-react';
 import KillSwitch from '@/components/kill-switch';
 import { motion } from 'framer-motion';
 import { database } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, update } from 'firebase/database';
 
 function WelcomeContent() {
   const router = useRouter();
@@ -14,38 +15,50 @@ function WelcomeContent() {
   const [crashValue, setCrashValue] = useState<string>("0.00");
   const [lastRaw, setLastRaw] = useState<string>("—");
   const [status, setStatus] = useState<"live" | "wait">("wait");
-  const [timeLeft, setTimeLeft] = useState<string>("000 : 00 : 00");
+  const [timeLeft, setTimeLeft] = useState<string>("00:00:00");
   
   const lastValueRef = useRef<string>("0.00");
   const lastChangeTimeRef = useRef<number>(Date.now());
   const useScheduleRef = useRef<boolean>(false);
+  const expiresAtRef = useRef<number>(0);
 
-  const parseValidityToSeconds = (validity: string | null): number => {
-    if (!validity) return 11 * 60;
-    const value = parseInt(validity.slice(0, -1));
-    const unit = validity.slice(-1).toLowerCase();
-    if (isNaN(value)) return 11 * 60;
-    switch (unit) {
-      case 'h': return value * 3600;
-      case 'd': return value * 86400;
-      case 'm': return value * 60;
-      case 's': return value;
-      default: return value * 60;
+  const saveRemainingTime = useCallback(async () => {
+    const game = sessionStorage.getItem('razor_game_key');
+    const keyId = sessionStorage.getItem('razor_db_key_id');
+    const expiresAt = expiresAtRef.current;
+    
+    if (game && keyId && expiresAt > 0) {
+      const remaining = Math.max(0, expiresAt - Date.now());
+      try {
+        await update(ref(database, `passwords/${game}/${keyId}`), {
+          remainingTime: remaining
+        });
+      } catch (e) {
+        console.error("Failed to save time:", e);
+      }
     }
-  };
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    await saveRemainingTime();
+    sessionStorage.clear();
+    router.push('/');
+  }, [router, saveRemainingTime]);
 
   useEffect(() => {
     document.title = "RAZOR — Predictor V2";
-    const validity = sessionStorage.getItem('razor_session_validity');
+    const storedExpiresAt = parseInt(sessionStorage.getItem('razor_expires_at') || '0');
     const storedUserId = sessionStorage.getItem('razor_user_id');
 
-    if (!validity || !storedUserId) {
+    if (!storedExpiresAt || !storedUserId || storedExpiresAt <= Date.now()) {
       router.push('/');
       return;
     }
-    setUserId(storedUserId);
 
-    // --- Real-time Logic for Crash V2 with Stagnation Fallback ---
+    setUserId(storedUserId);
+    expiresAtRef.current = storedExpiresAt;
+
+    // Real-time Database Listeners
     const currentRef = ref(database, 'predictions/current');
     const scheduleRef = ref(database, 'predictions/crash/schedule');
 
@@ -57,24 +70,21 @@ function WelcomeContent() {
                 setCrashValue(currentVal);
                 lastValueRef.current = currentVal;
                 lastChangeTimeRef.current = Date.now();
-                useScheduleRef.current = false; // Reset to primary source on change
+                useScheduleRef.current = false;
                 setStatus("live");
             }
         }
     };
 
-    // Primary Listener
     const unsubPrimary = onValue(currentRef, (snap) => {
         const val = snap.val()?.value || snap.val();
         handleUpdate(val);
     });
 
-    // Schedule Listener (Fallback)
     const unsubSchedule = onValue(scheduleRef, (snap) => {
         if (useScheduleRef.current) {
             const data = snap.val();
             if (data) {
-                // Get the most recent key in schedule
                 const keys = Object.keys(data).sort();
                 const latestKey = keys[keys.length - 1];
                 const val = data[latestKey]?.value || data[latestKey];
@@ -83,41 +93,37 @@ function WelcomeContent() {
         }
     });
 
-    // Stagnation Checker (2 Minutes)
     const stagnationInterval = setInterval(() => {
-        if (Date.now() - lastChangeTimeRef.current > 120000) { // 120 seconds
+        if (Date.now() - lastChangeTimeRef.current > 120000) {
             useScheduleRef.current = true;
         }
     }, 5000);
 
     // Session Timer
-    let totalSeconds = parseValidityToSeconds(validity);
     const timerInterval = setInterval(() => {
-      if (totalSeconds > 0) {
-        totalSeconds--;
-        const h = Math.floor(totalSeconds / 3600);
-        const m = Math.floor((totalSeconds % 3600) / 60);
-        const s = totalSeconds % 60;
-        setTimeLeft(`${String(h).padStart(3, '0')} : ${String(m).padStart(2, '0')} : ${String(s).padStart(2, '0')}`);
+      const remaining = expiresAtRef.current - Date.now();
+      if (remaining > 0) {
+        const h = Math.floor(remaining / 3600000);
+        const m = Math.floor((remaining % 3600000) / 60000);
+        const s = Math.floor((remaining % 60000) / 1000);
+        setTimeLeft(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
       } else {
         clearInterval(timerInterval);
-        sessionStorage.clear();
-        router.push('/');
+        handleLogout();
       }
     }, 1000);
+
+    // Save on browser close
+    window.addEventListener('beforeunload', saveRemainingTime);
 
     return () => {
       unsubPrimary();
       unsubSchedule();
       clearInterval(stagnationInterval);
       clearInterval(timerInterval);
+      window.removeEventListener('beforeunload', saveRemainingTime);
     };
-  }, [router]);
-
-  const handleLogout = () => {
-    sessionStorage.clear();
-    router.push('/');
-  };
+  }, [router, handleLogout, saveRemainingTime]);
 
   return (
     <KillSwitch pageName="razor">
@@ -180,7 +186,7 @@ function WelcomeContent() {
           .value { position: relative; font-size: 72px; font-family: var(--font-accent); text-shadow: 0 0 30px rgba(255,255,255,0.6); }
           .value::after { content: "x"; font-size: 28px; vertical-align: super; margin-left: 5px; opacity: 0.6; }
           .footer { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 10px; }
-          .timer { font-size: 18px; letter-spacing: 2px; font-weight: bold; }
+          .timer { font-size: 18px; letter-spacing: 2px; font-weight: bold; display: flex; align-items: center; gap: 8px; color: var(--green); }
           .lastraw { text-align: right; }
           .lastraw .label { font-size: 10px; color: var(--muted); margin-bottom: 5px; display: block; }
           .lastraw .val { font-size: 16px; font-weight: bold; font-family: var(--font-accent); }
@@ -226,7 +232,10 @@ function WelcomeContent() {
         </div>
 
         <footer className="footer">
-          <div className="timer">{timeLeft}</div>
+          <div className="timer">
+            <Clock size={16} />
+            {timeLeft}
+          </div>
           <div className="lastraw">
             <span className="label">LAST RAW</span>
             <span className="val">{lastRaw}</span>

@@ -33,7 +33,7 @@ export default function Home() {
                 <div className="relative group">
                     <h1 className="text-4xl md:text-6xl font-black tracking-[0.1em] uppercase" style={{ fontFamily: 'Orbitron', color: '#fff', textShadow: '0 0 30px rgba(255,255,255,0.4)' }}>
                         RAZOR CRASH
-                        <span className="inline-block ml-6 text-white font-sans not-italic glitch-v2" style={{ fontFamily: 'Orbitron' }}>
+                        <span className="inline-block ml-6 text-white font-sans not-italic" style={{ fontFamily: 'Orbitron' }}>
                             V2
                         </span>
                     </h1>
@@ -41,58 +41,12 @@ export default function Home() {
             </motion.div>
         </div>
         
-        <style jsx global>{`
-          @keyframes break-top {
-            0%, 100% { clip-path: inset(0 0 50% 0); transform: translate(0); opacity: 1; }
-            15% { clip-path: inset(0 0 50% 0); transform: translate(-12px, 0); color: #ccc; }
-            30% { clip-path: inset(0 0 50% 0); transform: translate(6px, 0); }
-            45% { clip-path: inset(0 0 50% 0); transform: translate(-4px, 0); }
-          }
-          
-          @keyframes break-bottom {
-            0%, 100% { clip-path: inset(50% 0 0 0); transform: translate(0); opacity: 1; }
-            20% { clip-path: inset(50% 0 0 0); transform: translate(12px, 0); color: #999; }
-            40% { clip-path: inset(50% 0 0 0); transform: translate(-8px, 0); }
-            60% { clip-path: inset(50% 0 0 0); transform: translate(4px, 0); }
-          }
-
-          .glitch-v2 {
-            display: inline-block;
-            position: relative;
-            color: #fff;
-          }
-
-          .glitch-v2::before, .glitch-v2::after {
-            content: 'V2';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            pointer-events: none;
-          }
-
-          .glitch-v2::before {
-            animation: break-top 2.2s infinite steps(1);
-            text-shadow: 2px 0 #888;
-          }
-
-          .glitch-v2::after {
-            animation: break-bottom 1.8s infinite steps(1);
-            text-shadow: -2px 0 #fff;
-          }
-
-          .glitch-v2 {
-            color: rgba(255,255,255,0.1);
-          }
-        `}</style>
-
         <LoginForm 
           welcomePath="/Razor_1x" 
           themeColor="#FFFFFF"
           themeGlow=""
           useCustomGlow={true}
+          gameKey="crash"
         />
       </main>
     </KillSwitch>
