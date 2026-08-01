@@ -1,7 +1,1 @@
-
-"use client";
-import ControlPage from '@/components/control-page';
-
-export default function NasserbetsControlPage() {
-    return <ControlPage pageName="nasserbets" />;
-}
+export default function Page() { return null; }
