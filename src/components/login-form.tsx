@@ -105,7 +105,7 @@ export default function LoginForm({
     const runSequence = async () => {
         for (let i = 0; i < VERIFICATION_STEPS.length; i++) {
             setVerifyStep(i);
-            await new Promise(r => setTimeout(r, 700 + Math.random() * 300));
+            await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
             
             if (i === 2) {
                 const gamePasswordsRef = ref(database, `passwords/${gameKey}`);
@@ -142,7 +142,7 @@ export default function LoginForm({
                 if (foundRecord.uses <= 0 || foundRecord.remainingTime <= 0 || isExpired) {
                     await remove(keyRef); // Self-destruct expired key
                     setVerifyStep(-1);
-                    setError("ACCESS DENIED: KEY HAS EXPIRED AND BEEN PURGED");
+                    setError("ACCESS DENIED: KEY EXPIRED AND PURGED");
                     return false;
                 }
 
@@ -179,8 +179,6 @@ export default function LoginForm({
                 }
 
                 const keyRef = ref(database, `passwords/${gameKey}/${foundKeyId}`);
-                
-                // Final Check: If uses became 0 now, it will stay for this session but will be purged on exit or next attempt
                 await update(keyRef, updates);
 
                 setVerifyStep(VERIFICATION_STEPS.length);
@@ -208,21 +206,21 @@ export default function LoginForm({
     <div className="w-full max-w-sm space-y-8">
       <style jsx>{`
         @keyframes glitch-internal-top {
-          0% { transform: translate(0); }
-          20% { transform: translate(-5px, -2px); }
-          40% { transform: translate(5px, 2px); }
-          60% { transform: translate(-5px, 2px); }
-          80% { transform: translate(5px, -2px); }
-          100% { transform: translate(0); }
+          0% { transform: translate(0); clip-path: inset(0 0 50% 0); }
+          20% { transform: translate(-4px, -1px); clip-path: inset(0 0 50% 0); }
+          40% { transform: translate(4px, 1px); clip-path: inset(0 0 50% 0); }
+          60% { transform: translate(-4px, 1px); clip-path: inset(0 0 50% 0); }
+          80% { transform: translate(4px, -1px); clip-path: inset(0 0 50% 0); }
+          100% { transform: translate(0); clip-path: inset(0 0 50% 0); }
         }
 
         @keyframes glitch-internal-bottom {
-          0% { transform: translate(0); }
-          20% { transform: translate(5px, 2px); }
-          40% { transform: translate(-5px, -2px); }
-          60% { transform: translate(5px, -2px); }
-          80% { transform: translate(-5px, 2px); }
-          100% { transform: translate(0); }
+          0% { transform: translate(0); clip-path: inset(50% 0 0 0); }
+          20% { transform: translate(4px, 1px); clip-path: inset(50% 0 0 0); }
+          40% { transform: translate(-4px, -1px); clip-path: inset(50% 0 0 0); }
+          60% { transform: translate(4px, -1px); clip-path: inset(50% 0 0 0); }
+          80% { transform: translate(-4px, 1px); clip-path: inset(50% 0 0 0); }
+          100% { transform: translate(0); clip-path: inset(50% 0 0 0); }
         }
 
         .glitch-label-internal {
@@ -241,18 +239,17 @@ export default function LoginForm({
           left: 0;
           width: 100%;
           height: 100%;
+          background: transparent;
         }
 
         .glitch-label-internal::before {
-          clip-path: inset(0 0 50% 0);
           animation: glitch-internal-top 0.1s infinite linear;
           text-shadow: 2px 0 rgba(255,255,255,0.4);
         }
 
         .glitch-label-internal::after {
-          clip-path: inset(50% 0 0 0);
           animation: glitch-internal-bottom 0.1s infinite linear;
-          text-shadow: -2px 0 rgba(120,120,120,0.4);
+          text-shadow: -2px 0 rgba(150,150,150,0.4);
         }
       `}</style>
       <AnimatePresence>

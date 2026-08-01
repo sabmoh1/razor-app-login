@@ -72,7 +72,7 @@ function SwampTerminal() {
         const snapshot = await get(keyRef);
         if (snapshot.exists()) {
             const data = snapshot.val();
-            // Auto-Purge if time up or uses up
+            // AUTO-PURGE: If time up or uses 0
             if (remaining <= 0 || (data.uses !== undefined && data.uses <= 0)) {
                 await remove(keyRef);
             } else {
@@ -96,7 +96,7 @@ function SwampTerminal() {
     const storedUserId = sessionStorage.getItem('razor_user_id');
 
     if (!storedExpiresAt || !storedUserId || storedExpiresAt <= Date.now()) {
-      router.push('/swamp');
+      handleLogout();
       return;
     }
 
@@ -170,7 +170,7 @@ function SwampTerminal() {
       <div className="fixed inset-0 -z-10">
         <div 
           className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url('${BG_GIF}')`, filter: 'hue-rotate(60deg) brightness(0.4) contrast(1.1)' }}
+          style={{ backgroundImage: `url('${BG_GIF}')`, filter: 'hue-rotate(60deg) brightness(0.6) contrast(1.2)' }}
         ></div>
         <div className="absolute inset-0 w-full h-full bg-black/60"></div>
       </div>
@@ -207,7 +207,7 @@ function SwampTerminal() {
 
         <div className="flex flex-col items-center py-4">
             <img src={RAZOR_LOGO} alt="Razor" className="h-16 w-auto drop-shadow-lg mb-2" />
-            <h1 className="text-xs font-black text-green-500 tracking-[0.3em] uppercase">Swamp Terminal</h1>
+            <h1 className="text-xs font-black text-green-500 tracking-[0.3em] uppercase">Swamp Land</h1>
         </div>
 
         <div className="grid-wrapper">

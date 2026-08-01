@@ -9,22 +9,22 @@ export default function SwampLoginPage() {
   return (
     <KillSwitch pageName="swamp">
       <style jsx global>{`
-        @keyframes glitch-v1-top-swamp {
-          0% { transform: translate(0); }
-          20% { transform: translate(-5px, -2px); }
-          40% { transform: translate(5px, 2px); }
-          60% { transform: translate(-5px, 2px); }
-          80% { transform: translate(5px, -2px); }
-          100% { transform: translate(0); }
+        @keyframes glitch-v1-top {
+          0% { transform: translate(0); clip-path: inset(0 0 50% 0); }
+          20% { transform: translate(-3px, -1px); clip-path: inset(0 0 50% 0); }
+          40% { transform: translate(3px, 1px); clip-path: inset(0 0 50% 0); }
+          60% { transform: translate(-3px, 1px); clip-path: inset(0 0 50% 0); }
+          80% { transform: translate(3px, -1px); clip-path: inset(0 0 50% 0); }
+          100% { transform: translate(0); clip-path: inset(0 0 50% 0); }
         }
 
-        @keyframes glitch-v1-bottom-swamp {
-          0% { transform: translate(0); }
-          20% { transform: translate(5px, 2px); }
-          40% { transform: translate(-5px, -2px); }
-          60% { transform: translate(5px, -2px); }
-          80% { transform: translate(-5px, 2px); }
-          100% { transform: translate(0); }
+        @keyframes glitch-v1-bottom {
+          0% { transform: translate(0); clip-path: inset(50% 0 0 0); }
+          20% { transform: translate(3px, 1px); clip-path: inset(50% 0 0 0); }
+          40% { transform: translate(-3px, -1px); clip-path: inset(50% 0 0 0); }
+          60% { transform: translate(3px, -1px); clip-path: inset(50% 0 0 0); }
+          80% { transform: translate(-3px, 1px); clip-path: inset(50% 0 0 0); }
+          100% { transform: translate(0); clip-path: inset(50% 0 0 0); }
         }
 
         .glitch-v1-label {
@@ -43,18 +43,17 @@ export default function SwampLoginPage() {
           left: 0;
           width: 100%;
           height: 100%;
+          background: transparent;
         }
 
         .glitch-v1-label::before {
-          clip-path: inset(0 0 50% 0);
-          animation: glitch-v1-top-swamp 0.1s infinite linear;
+          animation: glitch-v1-top 0.1s infinite linear;
           text-shadow: 2px 0 rgba(255,255,255,0.4);
         }
 
         .glitch-v1-label::after {
-          clip-path: inset(50% 0 0 0);
-          animation: glitch-v1-bottom-swamp 0.1s infinite linear;
-          text-shadow: -2px 0 rgba(100,100,100,0.4);
+          animation: glitch-v1-bottom 0.1s infinite linear;
+          text-shadow: -2px 0 rgba(150,150,150,0.4);
         }
       `}</style>
       <div className="fixed inset-0 -z-10">

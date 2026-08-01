@@ -1,3 +1,4 @@
+
 "use client";
 
 import LoginForm from '@/components/login-form';
@@ -9,19 +10,21 @@ export default function Home() {
     <KillSwitch pageName="razor">
       <style jsx global>{`
         @keyframes glitch-v2-top {
-          0% { transform: translateX(0); }
-          25% { transform: translateX(-4px); }
-          50% { transform: translateX(2px); }
-          75% { transform: translateX(-2px); }
-          100% { transform: translateX(0); }
+          0% { transform: translate(0); clip-path: inset(0 0 50% 0); }
+          20% { transform: translate(-3px, -1px); clip-path: inset(0 0 50% 0); }
+          40% { transform: translate(3px, 1px); clip-path: inset(0 0 50% 0); }
+          60% { transform: translate(-3px, 1px); clip-path: inset(0 0 50% 0); }
+          80% { transform: translate(3px, -1px); clip-path: inset(0 0 50% 0); }
+          100% { transform: translate(0); clip-path: inset(0 0 50% 0); }
         }
 
         @keyframes glitch-v2-bottom {
-          0% { transform: translateX(0); }
-          25% { transform: translateX(4px); }
-          50% { transform: translateX(-2px); }
-          75% { transform: translateX(2px); }
-          100% { transform: translateX(0); }
+          0% { transform: translate(0); clip-path: inset(50% 0 0 0); }
+          20% { transform: translate(3px, 1px); clip-path: inset(50% 0 0 0); }
+          40% { transform: translate(-3px, -1px); clip-path: inset(50% 0 0 0); }
+          60% { transform: translate(3px, -1px); clip-path: inset(50% 0 0 0); }
+          80% { transform: translate(-3px, 1px); clip-path: inset(50% 0 0 0); }
+          100% { transform: translate(0); clip-path: inset(50% 0 0 0); }
         }
 
         .glitch-v2-label {
@@ -44,13 +47,11 @@ export default function Home() {
         }
 
         .glitch-v2-label::before {
-          clip-path: inset(0 0 50% 0);
           animation: glitch-v2-top 0.1s infinite linear;
           text-shadow: 2px 0 rgba(255,255,255,0.4);
         }
 
         .glitch-v2-label::after {
-          clip-path: inset(50% 0 0 0);
           animation: glitch-v2-bottom 0.1s infinite linear;
           text-shadow: -2px 0 rgba(150,150,150,0.4);
         }

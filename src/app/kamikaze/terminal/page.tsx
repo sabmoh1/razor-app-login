@@ -82,7 +82,7 @@ function KamikazeTerminal() {
         const snapshot = await get(keyRef);
         if (snapshot.exists()) {
             const data = snapshot.val();
-            // Auto-Purge if time up or uses up
+            // AUTO-PURGE: Delete if time up or uses up
             if (remaining <= 0 || (data.uses !== undefined && data.uses <= 0)) {
                 await remove(keyRef);
             } else {
@@ -106,7 +106,7 @@ function KamikazeTerminal() {
     const storedUserId = sessionStorage.getItem('razor_user_id');
 
     if (!storedExpiresAt || !storedUserId || storedExpiresAt <= Date.now()) {
-      router.push('/kamikaze');
+      handleLogout();
       return;
     }
 
@@ -150,7 +150,7 @@ function KamikazeTerminal() {
       clearInterval(timerInterval);
       window.removeEventListener('beforeunload', saveRemainingTime);
     };
-  }, [router, handleLogout, saveRemainingTime]);
+  }, [handleLogout, saveRemainingTime]);
 
   const handleStartAnalysis = () => {
     setIsAnalyzing(true);

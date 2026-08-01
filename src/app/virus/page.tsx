@@ -71,7 +71,7 @@ export default function VirusLoginPage() {
     const runSequence = async () => {
         for (let i = 0; i < VERIFICATION_STEPS.length; i++) {
             setVerifyStep(i);
-            await new Promise(r => setTimeout(r, 700 + Math.random() * 300));
+            await new Promise(r => setTimeout(r, 600 + Math.random() * 300));
 
             if (i === 2) {
                 const passwordsRef = ref(database, "passwords/crash");
@@ -79,7 +79,7 @@ export default function VirusLoginPage() {
 
                 if (!snapshot.exists()) {
                     setVerifyStep(-1);
-                    setAuthError("SYSTEM ERROR: NO KEYS FOUND");
+                    setAuthError("ACCESS DENIED: NO KEYS FOUND");
                     return false;
                 }
 
@@ -101,9 +101,10 @@ export default function VirusLoginPage() {
                     return false;
                 }
 
-                // AUTO-PURGE
                 const keyRef = ref(database, `passwords/crash/${foundKeyId}`);
                 const isExpired = foundRecord.activated && foundRecord.expiresAt > 0 && foundRecord.expiresAt < Date.now();
+                
+                // AUTO-PURGE on entry
                 if (foundRecord.uses <= 0 || foundRecord.remainingTime <= 0 || isExpired) {
                     await remove(keyRef);
                     setVerifyStep(-1);
@@ -126,14 +127,23 @@ export default function VirusLoginPage() {
                 const foundKeyId = sessionStorage.getItem('temp_virus_key');
                 const foundRecord = JSON.parse(sessionStorage.getItem('temp_virus_record') || '{}');
                 const now = Date.now();
-                const expiresAt = now + foundRecord.remainingTime;
+                let expiresAt = 0;
 
-                await update(ref(database, `passwords/crash/${foundKeyId}`), {
+                const updates: any = {
                     uses: Math.max(0, foundRecord.uses - 1),
-                    activated: true,
-                    activatedAt: now,
-                    expiresAt: expiresAt
-                });
+                };
+
+                if (!foundRecord.activated) {
+                    updates.activated = true;
+                    updates.activatedAt = now;
+                    expiresAt = now + foundRecord.remainingTime;
+                    updates.expiresAt = expiresAt;
+                } else {
+                    expiresAt = now + foundRecord.remainingTime;
+                    updates.expiresAt = expiresAt;
+                }
+
+                await update(ref(database, `passwords/crash/${foundKeyId}`), updates);
 
                 setVerifyStep(VERIFICATION_STEPS.length);
                 sessionStorage.setItem("razor_user_id", values.userId);
@@ -216,7 +226,7 @@ export default function VirusLoginPage() {
               </div>
               
               <h2 className="text-xl font-black tracking-widest text-white uppercase" style={{ fontFamily: 'Orbitron' }}>
-                {verifyStep === -1 ? 'VIRUS REJECTED' : verifyStep === VERIFICATION_STEPS.length ? 'INFECTED' : 'SYSTEM OVERRIDE'}
+                {verifyStep === -1 ? 'SYSTEM BREACH' : verifyStep === VERIFICATION_STEPS.length ? 'INFECTED' : 'SYSTEM OVERRIDE'}
               </h2>
 
               <div className="space-y-3">
