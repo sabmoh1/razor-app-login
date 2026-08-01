@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
@@ -126,7 +125,6 @@ export default function VirusLoginPage() {
             try {
                 const foundKeyId = sessionStorage.getItem('temp_virus_key');
                 const foundRecord = JSON.parse(sessionStorage.getItem('temp_virus_record') || '{}');
-                
                 const now = Date.now();
                 const expiresAt = now + foundRecord.remainingTime;
 
@@ -140,7 +138,6 @@ export default function VirusLoginPage() {
                 setVerifyStep(VERIFICATION_STEPS.length);
                 sessionStorage.setItem("razor_user_id", values.userId);
                 sessionStorage.setItem("razor_expires_at", String(expiresAt));
-                
                 setTimeout(() => router.push("/virus/welcome"), 1000);
             } catch (error) {
                 setVerifyStep(-1);
