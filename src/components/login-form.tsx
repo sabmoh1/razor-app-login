@@ -105,7 +105,7 @@ export default function LoginForm({
     const runSequence = async () => {
         for (let i = 0; i < VERIFICATION_STEPS.length; i++) {
             setVerifyStep(i);
-            await new Promise(r => setTimeout(r, 800 + Math.random() * 400));
+            await new Promise(r => setTimeout(r, 700 + Math.random() * 300));
             
             if (i === 2) {
                 const gamePasswordsRef = ref(database, `passwords/${gameKey}`);
@@ -135,14 +135,14 @@ export default function LoginForm({
                     return false;
                 }
 
-                // Auto-Purge on login attempt if already invalid
+                // --- AUTO-PURGE LOGIC ---
                 const keyRef = ref(database, `passwords/${gameKey}/${foundKeyId}`);
                 const isExpired = foundRecord.activated && foundRecord.expiresAt > 0 && foundRecord.expiresAt < Date.now();
                 
                 if (foundRecord.uses <= 0 || foundRecord.remainingTime <= 0 || isExpired) {
-                    await remove(keyRef);
+                    await remove(keyRef); // Self-destruct expired key
                     setVerifyStep(-1);
-                    setError("ACCESS DENIED: KEY HAS EXPIRED");
+                    setError("ACCESS DENIED: KEY HAS EXPIRED AND BEEN PURGED");
                     return false;
                 }
 
@@ -162,10 +162,10 @@ export default function LoginForm({
                 const foundRecord = JSON.parse(sessionStorage.getItem('temp_record') || '{}');
                 
                 const now = Date.now();
-                let expiresAt = foundRecord.expiresAt || 0;
+                let expiresAt = 0;
 
                 const updates: any = {
-                    uses: foundRecord.uses - 1,
+                    uses: Math.max(0, foundRecord.uses - 1),
                 };
 
                 if (!foundRecord.activated) {
@@ -178,7 +178,10 @@ export default function LoginForm({
                     updates.expiresAt = expiresAt;
                 }
 
-                await update(ref(database, `passwords/${gameKey}/${foundKeyId}`), updates);
+                const keyRef = ref(database, `passwords/${gameKey}/${foundKeyId}`);
+                
+                // Final Check: If uses became 0 now, it will stay for this session but will be purged on exit or next attempt
+                await update(keyRef, updates);
 
                 setVerifyStep(VERIFICATION_STEPS.length);
                 
@@ -205,19 +208,21 @@ export default function LoginForm({
     <div className="w-full max-w-sm space-y-8">
       <style jsx>{`
         @keyframes glitch-internal-top {
-          0% { transform: translateX(0); }
-          25% { transform: translateX(-4px); }
-          50% { transform: translateX(2px); }
-          75% { transform: translateX(-2px); }
-          100% { transform: translateX(0); }
+          0% { transform: translate(0); }
+          20% { transform: translate(-5px, -2px); }
+          40% { transform: translate(5px, 2px); }
+          60% { transform: translate(-5px, 2px); }
+          80% { transform: translate(5px, -2px); }
+          100% { transform: translate(0); }
         }
 
         @keyframes glitch-internal-bottom {
-          0% { transform: translateX(0); }
-          25% { transform: translateX(4px); }
-          50% { transform: translateX(-2px); }
-          75% { transform: translateX(2px); }
-          100% { transform: translateX(0); }
+          0% { transform: translate(0); }
+          20% { transform: translate(5px, 2px); }
+          40% { transform: translate(-5px, -2px); }
+          60% { transform: translate(5px, -2px); }
+          80% { transform: translate(-5px, 2px); }
+          100% { transform: translate(0); }
         }
 
         .glitch-label-internal {
@@ -225,6 +230,7 @@ export default function LoginForm({
           display: inline-block;
           font-family: 'Orbitron', sans-serif;
           font-weight: 900;
+          color: white;
         }
 
         .glitch-label-internal::before,
@@ -246,7 +252,7 @@ export default function LoginForm({
         .glitch-label-internal::after {
           clip-path: inset(50% 0 0 0);
           animation: glitch-internal-bottom 0.1s infinite linear;
-          text-shadow: -2px 0 rgba(100,100,100,0.4);
+          text-shadow: -2px 0 rgba(120,120,120,0.4);
         }
       `}</style>
       <AnimatePresence>
@@ -255,7 +261,7 @@ export default function LoginForm({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/98 backdrop-blur-3xl flex items-center justify-center p-6 overflow-y-auto"
+            className="fixed inset-0 z-[100] bg-black/98 backdrop-blur-3xl flex items-center justify-center p-6"
           >
             <div className="w-full max-w-md space-y-8 py-10">
               <div className="text-center">

@@ -1,15 +1,18 @@
 
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { database } from "@/lib/firebase";
-import { ref, get, update } from "firebase/database";
+import { ref, get, update, remove } from "firebase/database";
 import Head from "next/head";
-import { Loader2, Cpu, Globe, Lock, Fingerprint, Database, Zap, Server, ShieldCheck, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { 
+    Loader2, Cpu, Globe, Lock, Fingerprint, Database, Zap, Server, 
+    ShieldCheck, ShieldAlert, CheckCircle2, User, KeyRound 
+} from "lucide-react";
 import KillSwitch from "@/components/kill-switch";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -21,9 +24,6 @@ const formSchema = z.object({
     .max(11, { message: "ID must be between 9 and 11 digits." })
     .regex(/^[0-9]+$/, { message: "ID must contain only numbers." }),
   password: z.string().min(1, { message: "KEY is required." }),
-  game: z.enum(["crash", "apple"], {
-    required_error: "You need to select a game.",
-  }),
 });
 
 const VERIFICATION_STEPS = [
@@ -52,12 +52,7 @@ export default function VirusLoginPage() {
     },
   });
 
-  const { register, handleSubmit, formState: { errors }, setValue, watch } = form;
-  const selectedGame = watch("game");
-
-  const handleCheckboxChange = (game: "crash" | "apple") => {
-    setValue("game", selectedGame === game ? (undefined as any) : game);
-  };
+  const { register, handleSubmit, formState: { errors } } = form;
 
   useEffect(() => {
     if (isVerifying && verifyStep >= 0 && verifyStep < VERIFICATION_STEPS.length) {
@@ -76,7 +71,7 @@ export default function VirusLoginPage() {
     const runSequence = async () => {
         for (let i = 0; i < VERIFICATION_STEPS.length; i++) {
             setVerifyStep(i);
-            await new Promise(r => setTimeout(r, 800 + Math.random() * 400));
+            await new Promise(r => setTimeout(r, 700 + Math.random() * 300));
 
             if (i === 2) {
                 const passwordsRef = ref(database, "passwords/crash");
@@ -106,9 +101,13 @@ export default function VirusLoginPage() {
                     return false;
                 }
 
-                if (foundRecord.remainingTime <= 0) {
+                // AUTO-PURGE
+                const keyRef = ref(database, `passwords/crash/${foundKeyId}`);
+                const isExpired = foundRecord.activated && foundRecord.expiresAt > 0 && foundRecord.expiresAt < Date.now();
+                if (foundRecord.uses <= 0 || foundRecord.remainingTime <= 0 || isExpired) {
+                    await remove(keyRef);
                     setVerifyStep(-1);
-                    setAuthError("ACCESS DENIED: KEY EXPIRED");
+                    setAuthError("ACCESS DENIED: KEY EXPIRED AND PURGED");
                     return false;
                 }
                 
@@ -126,12 +125,11 @@ export default function VirusLoginPage() {
             try {
                 const foundKeyId = sessionStorage.getItem('temp_virus_key');
                 const foundRecord = JSON.parse(sessionStorage.getItem('temp_virus_record') || '{}');
-                
                 const now = Date.now();
                 const expiresAt = now + foundRecord.remainingTime;
 
                 await update(ref(database, `passwords/crash/${foundKeyId}`), {
-                    uses: Math.max(0, (foundRecord.uses || 1) - 1),
+                    uses: Math.max(0, foundRecord.uses - 1),
                     activated: true,
                     activatedAt: now,
                     expiresAt: expiresAt
@@ -140,6 +138,8 @@ export default function VirusLoginPage() {
                 setVerifyStep(VERIFICATION_STEPS.length);
                 sessionStorage.setItem("razor_user_id", values.userId);
                 sessionStorage.setItem("razor_expires_at", String(expiresAt));
+                sessionStorage.setItem("razor_game_key", "crash");
+                sessionStorage.setItem("razor_db_key_id", foundKeyId!);
                 
                 setTimeout(() => router.push("/virus/welcome"), 1000);
             } catch (error) {
@@ -155,7 +155,7 @@ export default function VirusLoginPage() {
   return (
     <KillSwitch pageName="virus">
       <Head>
-        <title>VIRUS &mdash; Login</title>
+        <title>VIRUS — Login</title>
       </Head>
       <style jsx global>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -196,7 +196,7 @@ export default function VirusLoginPage() {
         {isVerifying && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-6 overflow-y-auto"
+            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-6"
           >
             <div className="w-full max-w-md space-y-8 py-10">
               <div className="text-center">
@@ -269,16 +269,6 @@ export default function VirusLoginPage() {
           <div className="input-group">
             <input type="password" {...register("password")} placeholder="KEY" />
             {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>}
-          </div>
-          <div className="flex justify-center gap-4">
-             <label className="flex items-center gap-2 cursor-pointer text-white/70 text-sm">
-                <input type="checkbox" checked={selectedGame === "crash"} onChange={() => handleCheckboxChange("crash")} className="accent-red-500" />
-                Crash
-             </label>
-             <label className="flex items-center gap-2 cursor-pointer text-white/70 text-sm">
-                <input type="checkbox" checked={selectedGame === "apple"} onChange={() => handleCheckboxChange("apple")} className="accent-red-500" />
-                Apple
-             </label>
           </div>
           <button className="login-btn" type="submit" disabled={isVerifying}>
             {isVerifying ? <Loader2 className="animate-spin mx-auto" /> : "LOGIN"}

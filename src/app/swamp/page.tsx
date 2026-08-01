@@ -1,3 +1,4 @@
+
 "use client";
 
 import LoginForm from '@/components/login-form';
@@ -9,19 +10,21 @@ export default function SwampLoginPage() {
     <KillSwitch pageName="swamp">
       <style jsx global>{`
         @keyframes glitch-v1-top-swamp {
-          0% { transform: translateX(0); }
-          25% { transform: translateX(-4px); }
-          50% { transform: translateX(2px); }
-          75% { transform: translateX(-2px); }
-          100% { transform: translateX(0); }
+          0% { transform: translate(0); }
+          20% { transform: translate(-5px, -2px); }
+          40% { transform: translate(5px, 2px); }
+          60% { transform: translate(-5px, 2px); }
+          80% { transform: translate(5px, -2px); }
+          100% { transform: translate(0); }
         }
 
         @keyframes glitch-v1-bottom-swamp {
-          0% { transform: translateX(0); }
-          25% { transform: translateX(4px); }
-          50% { transform: translateX(-2px); }
-          75% { transform: translateX(2px); }
-          100% { transform: translateX(0); }
+          0% { transform: translate(0); }
+          20% { transform: translate(5px, 2px); }
+          40% { transform: translate(-5px, -2px); }
+          60% { transform: translate(5px, -2px); }
+          80% { transform: translate(-5px, 2px); }
+          100% { transform: translate(0); }
         }
 
         .glitch-v1-label {
@@ -29,6 +32,7 @@ export default function SwampLoginPage() {
           display: inline-block;
           font-family: 'Orbitron', sans-serif;
           font-weight: 900;
+          color: white;
         }
 
         .glitch-v1-label::before,
@@ -44,13 +48,13 @@ export default function SwampLoginPage() {
         .glitch-v1-label::before {
           clip-path: inset(0 0 50% 0);
           animation: glitch-v1-top-swamp 0.1s infinite linear;
-          text-shadow: 2px 0 rgba(255,255,255,0.3);
+          text-shadow: 2px 0 rgba(255,255,255,0.4);
         }
 
         .glitch-v1-label::after {
           clip-path: inset(50% 0 0 0);
           animation: glitch-v1-bottom-swamp 0.1s infinite linear;
-          text-shadow: -2px 0 rgba(255,255,255,0.2);
+          text-shadow: -2px 0 rgba(100,100,100,0.4);
         }
       `}</style>
       <div className="fixed inset-0 -z-10">
@@ -74,7 +78,7 @@ export default function SwampLoginPage() {
                 <img 
                   src="https://iili.io/f9iNGFj.png" 
                   alt="Razor Logo" 
-                  className="w-40 md:w-48 drop-shadow-[0_0_30px_rgba(34,197,94,0.2)] mb-2" 
+                  className="w-48 md:w-56 drop-shadow-[0_0_30px_rgba(34,197,94,0.3)] mb-4" 
                 />
                 <div className="relative group">
                     <h1 className="text-2xl md:text-3xl font-black tracking-[0.1em] uppercase" style={{ fontFamily: 'Orbitron', color: '#22c55e', textShadow: '0 0 30px rgba(34,197,94,0.4)' }}>
@@ -84,7 +88,6 @@ export default function SwampLoginPage() {
                         </span>
                     </h1>
                 </div>
-                <p className="text-gray-400 tracking-[0.3em] uppercase text-[10px] mt-2 font-bold opacity-60">Secure Tactical Path Predictor</p>
             </motion.div>
         </div>
         
